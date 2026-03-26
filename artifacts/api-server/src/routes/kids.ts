@@ -452,11 +452,18 @@ router.delete("/:kidId", async (req, res) => {
       await tx.delete(mealLogsTable).where(eq(mealLogsTable.kidId, kidId));
       await tx.delete(mealDaysTable).where(eq(mealDaysTable.kidId, kidId));
       await tx.delete(medicalSettingsTable).where(eq(medicalSettingsTable.kidId, kidId));
-      await tx.delete(kidsTable).where(and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId)));
+      const deleted = await tx.delete(kidsTable).where(and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId))).returning({ id: kidsTable.id });
+      if (deleted.length === 0) {
+        throw new Error("NOT_FOUND");
+      }
     });
 
     res.status(204).send();
   } catch (err) {
+    if (err instanceof Error && err.message === "NOT_FOUND") {
+      res.status(404).json({ error: "NOT_FOUND", message: "Kid not found" });
+      return;
+    }
     req.log.error({ err }, "Delete kid error");
     res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
   }

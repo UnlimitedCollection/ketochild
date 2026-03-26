@@ -36,10 +36,12 @@ export default function KidProfilePage() {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const deleteKidMutation = useDeleteKid({
     mutation: {
       onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["/api/kids"] });
         toast({ title: "Patient removed", description: "The patient record has been deleted." });
         setLocation("/kids");
       },
