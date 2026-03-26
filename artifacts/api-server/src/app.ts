@@ -15,8 +15,8 @@ declare module "express-session" {
 const isProduction = process.env.NODE_ENV === "production";
 
 const sessionSecret = process.env.SESSION_SECRET;
-if (!sessionSecret) {
-  throw new Error("SESSION_SECRET environment variable is required but was not set.");
+if (!sessionSecret && isProduction) {
+  throw new Error("SESSION_SECRET environment variable is required in production but was not set.");
 }
 
 const app: Express = express();
@@ -54,11 +54,11 @@ app.use(
         callback(null, true);
         return;
       }
-      if (
-        !isProduction ||
-        allowedOrigins.length === 0 ||
-        allowedOrigins.includes(origin)
-      ) {
+      if (!isProduction) {
+        callback(null, true);
+        return;
+      }
+      if (allowedOrigins.length > 0 && allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));
@@ -73,7 +73,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(
   session({
-    secret: sessionSecret,
+    secret: sessionSecret ?? "dev-only-insecure-secret-change-in-production",
     resave: false,
     saveUninitialized: false,
     proxy: true,
