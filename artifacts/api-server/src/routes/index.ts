@@ -6,11 +6,15 @@ import kidsRouter from "./kids";
 import foodsRouter from "./foods";
 import mealPlansRouter from "./meal-plans";
 import storageRouter from "./storage";
+import { requireAuth } from "../middleware/requireAuth";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use("/auth", authRouter);
+
+router.use(requireAuth);
+
 router.use("/dashboard", dashboardRouter);
 router.use("/kids", kidsRouter);
 router.use("/foods", foodsRouter);

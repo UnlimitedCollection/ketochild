@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { doctorsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { DoctorLoginBody } from "@workspace/api-zod";
+import bcrypt from "bcryptjs";
 
 const router: IRouter = Router();
 
@@ -22,13 +23,22 @@ router.post("/login", async (req, res) => {
       .where(eq(doctorsTable.username, username))
       .limit(1);
 
-    if (!doctor || doctor.password !== password) {
+    if (!doctor) {
       res.status(401).json({ error: "UNAUTHORIZED", message: "Invalid username or password" });
       return;
     }
 
-    (req.session as Record<string, unknown>).doctorId = doctor.id;
-    (req.session as Record<string, unknown>).doctorName = doctor.name;
+    const passwordValid = doctor.password.startsWith("$2")
+      ? await bcrypt.compare(password, doctor.password)
+      : doctor.password === password;
+
+    if (!passwordValid) {
+      res.status(401).json({ error: "UNAUTHORIZED", message: "Invalid username or password" });
+      return;
+    }
+
+    req.session.doctorId = doctor.id;
+    req.session.doctorName = doctor.name;
 
     res.json({
       doctor: {
@@ -38,7 +48,6 @@ router.post("/login", async (req, res) => {
         email: doctor.email,
         specialty: doctor.specialty,
       },
-      token: `session-${doctor.id}`,
     });
   } catch (err) {
     req.log.error({ err }, "Login error");
@@ -48,12 +57,12 @@ router.post("/login", async (req, res) => {
 
 router.post("/logout", (req, res) => {
   req.session.destroy(() => {
-    res.json({ success: true, message: "Logged out successfully" });
+    res.json({ success: true });
   });
 });
 
 router.get("/me", async (req, res) => {
-  const doctorId = (req.session as Record<string, unknown>).doctorId as number | undefined;
+  const doctorId = req.session.doctorId;
   if (!doctorId) {
     res.status(401).json({ error: "UNAUTHORIZED", message: "Not authenticated" });
     return;
@@ -67,6 +76,7 @@ router.get("/me", async (req, res) => {
       .limit(1);
 
     if (!doctor) {
+      req.session.destroy(() => {});
       res.status(401).json({ error: "UNAUTHORIZED", message: "Session invalid" });
       return;
     }

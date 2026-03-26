@@ -100,7 +100,32 @@ async function getLast24hCompletionRate(kidId: number): Promise<number> {
   return completed / logs.length;
 }
 
+async function resolveOwnedKid(kidId: number, doctorId: number) {
+  const [kid] = await db
+    .select()
+    .from(kidsTable)
+    .where(and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId)))
+    .limit(1);
+  return kid ?? null;
+}
+
+router.param("kidId", async (req, res, next, kidIdStr) => {
+  const kidId = parseInt(kidIdStr);
+  if (isNaN(kidId)) {
+    res.status(400).json({ error: "BAD_REQUEST", message: "Invalid kid ID" });
+    return;
+  }
+  const doctorId = req.session.doctorId!;
+  const kid = await resolveOwnedKid(kidId, doctorId);
+  if (!kid) {
+    res.status(404).json({ error: "NOT_FOUND", message: "Kid not found" });
+    return;
+  }
+  next();
+});
+
 router.get("/", async (req, res) => {
+  const doctorId = req.session.doctorId!;
   const query = GetKidsQueryParams.safeParse(req.query);
   const search = query.success ? query.data.search : undefined;
   const phase = query.success ? query.data.phase : undefined;
@@ -109,9 +134,9 @@ router.get("/", async (req, res) => {
   try {
     let kidsQuery = db.select().from(kidsTable).$dynamic();
 
-    if (phase) {
-      kidsQuery = kidsQuery.where(eq(kidsTable.phase, phase));
-    }
+    const conditions = [eq(kidsTable.doctorId, doctorId)];
+    if (phase) conditions.push(eq(kidsTable.phase, phase));
+    kidsQuery = kidsQuery.where(and(...conditions));
 
     const kids = await kidsQuery.orderBy(asc(kidsTable.name));
 
@@ -221,6 +246,7 @@ router.post("/", async (req, res) => {
 });
 
 router.get("/:kidId", async (req, res) => {
+  const doctorId = req.session.doctorId!;
   const kidId = parseInt(req.params.kidId);
   if (isNaN(kidId)) {
     res.status(400).json({ error: "BAD_REQUEST", message: "Invalid kid ID" });
@@ -228,7 +254,11 @@ router.get("/:kidId", async (req, res) => {
   }
 
   try {
-    const [kid] = await db.select().from(kidsTable).where(eq(kidsTable.id, kidId)).limit(1);
+    const [kid] = await db
+      .select()
+      .from(kidsTable)
+      .where(and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId)))
+      .limit(1);
     if (!kid) {
       res.status(404).json({ error: "NOT_FOUND", message: "Kid not found" });
       return;
@@ -345,11 +375,12 @@ router.put("/:kidId", async (req, res) => {
     return;
   }
 
+  const doctorId = req.session.doctorId!;
   try {
     const [kid] = await db
       .update(kidsTable)
       .set(parsed.data)
-      .where(eq(kidsTable.id, kidId))
+      .where(and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId)))
       .returning();
 
     if (!kid) {
@@ -894,7 +925,7 @@ router.delete("/:kidId/ketones/:readingId", async (req, res) => {
   }
 });
 
-// ─── Meal Plans ────────────────────────────────────────────────────────────────
+
 
 router.get("/:kidId/meal-plans", async (req, res) => {
   try {
@@ -1066,33 +1097,18 @@ router.delete("/:kidId/meal-plans/:planId/items/:itemId", async (req, res) => {
   }
 });
 
-// ─── Library Meal Plan Assignment ──────────────────────────────────────────────
-
-// GET /kids/:kidId/meal-plan — get the assigned library plan for a kid (or 204)
-// Requires authentication and verifies the kid belongs to the calling doctor.
 router.get("/:kidId/meal-plan", async (req, res) => {
+  const doctorId = req.session.doctorId!;
+  const kidId = parseInt(req.params.kidId, 10);
   try {
-    const doctorId = req.session?.doctorId;
-    if (!doctorId) {
-      res.status(401).json({ error: "UNAUTHORIZED", message: "Authentication required" });
-      return;
-    }
-
-    const kidId = parseInt(req.params.kidId, 10);
     const [kid] = await db
-      .select({ currentMealPlanId: kidsTable.currentMealPlanId, doctorId: kidsTable.doctorId })
+      .select({ currentMealPlanId: kidsTable.currentMealPlanId })
       .from(kidsTable)
-      .where(eq(kidsTable.id, kidId))
+      .where(and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId)))
       .limit(1);
 
     if (!kid) {
       res.status(404).json({ error: "NOT_FOUND", message: "Kid not found" });
-      return;
-    }
-
-    // Strict ownership check — kid must be explicitly owned by the calling doctor
-    if (kid.doctorId !== doctorId) {
-      res.status(403).json({ error: "FORBIDDEN", message: "Access denied" });
       return;
     }
 
@@ -1131,17 +1147,10 @@ router.get("/:kidId/meal-plan", async (req, res) => {
   }
 });
 
-// PUT /kids/:kidId/meal-plan — assign (or unassign) a library plan to a kid
-// Requires authentication; validates request body, kid ownership, and plan ownership.
 router.put("/:kidId/meal-plan", async (req, res) => {
+  const doctorId = req.session.doctorId!;
+  const kidId = parseInt(req.params.kidId, 10);
   try {
-    const doctorId = req.session?.doctorId;
-    if (!doctorId) {
-      res.status(401).json({ error: "UNAUTHORIZED", message: "Authentication required" });
-      return;
-    }
-
-    // Validate the request body with zod
     const parsed = AssignKidMealPlanBody.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: "INVALID_INPUT", message: parsed.error.message });
@@ -1149,38 +1158,15 @@ router.put("/:kidId/meal-plan", async (req, res) => {
     }
     const planId = parsed.data.planId;
 
-    const kidId = parseInt(req.params.kidId, 10);
-
-    // Verify the kid belongs to the calling doctor (strict ownership)
-    const [kid] = await db
-      .select({ id: kidsTable.id, doctorId: kidsTable.doctorId })
-      .from(kidsTable)
-      .where(eq(kidsTable.id, kidId))
-      .limit(1);
-
-    if (!kid) {
-      res.status(404).json({ error: "NOT_FOUND", message: "Kid not found" });
-      return;
-    }
-    if (kid.doctorId !== doctorId) {
-      res.status(403).json({ error: "FORBIDDEN", message: "Access denied" });
-      return;
-    }
-
-    // If assigning, verify the plan exists and belongs to the doctor (strict ownership)
     if (planId !== null) {
       const [plan] = await db
-        .select({ id: libraryMealPlansTable.id, doctorId: libraryMealPlansTable.doctorId })
+        .select({ id: libraryMealPlansTable.id })
         .from(libraryMealPlansTable)
-        .where(eq(libraryMealPlansTable.id, planId))
+        .where(and(eq(libraryMealPlansTable.id, planId), eq(libraryMealPlansTable.doctorId, doctorId)))
         .limit(1);
 
       if (!plan) {
         res.status(404).json({ error: "NOT_FOUND", message: "Library plan not found" });
-        return;
-      }
-      if (plan.doctorId !== doctorId) {
-        res.status(403).json({ error: "FORBIDDEN", message: "Plan not accessible" });
         return;
       }
     }
@@ -1188,38 +1174,19 @@ router.put("/:kidId/meal-plan", async (req, res) => {
     await db
       .update(kidsTable)
       .set({ currentMealPlanId: planId })
-      .where(eq(kidsTable.id, kidId));
+      .where(and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId)));
 
-    res.json({ success: true, message: planId ? "Plan assigned" : "Plan unassigned" });
+    res.json({ success: true });
   } catch (err) {
     req.log.error({ err }, "Assign meal plan error");
     res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
   }
 });
 
-// PUT /kids/:kidId/meal-logs/:logId/image — set or clear the photo image URL
 router.put("/:kidId/meal-logs/:logId/image", async (req, res) => {
+  const kidId = parseInt(req.params.kidId, 10);
+  const logId = parseInt(req.params.logId, 10);
   try {
-    const doctorId = req.session?.doctorId;
-    if (!doctorId) {
-      res.status(401).json({ error: "UNAUTHORIZED", message: "Authentication required" });
-      return;
-    }
-
-    const kidId = parseInt(req.params.kidId, 10);
-    const logId = parseInt(req.params.logId, 10);
-
-    const [kid] = await db
-      .select({ id: kidsTable.id, doctorId: kidsTable.doctorId })
-      .from(kidsTable)
-      .where(eq(kidsTable.id, kidId))
-      .limit(1);
-
-    if (!kid || kid.doctorId !== doctorId) {
-      res.status(404).json({ error: "NOT_FOUND", message: "Kid not found" });
-      return;
-    }
-
     const parsed = UpdateMealLogImageBody.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: "INVALID_INPUT", message: parsed.error.message });
@@ -1244,33 +1211,13 @@ router.put("/:kidId/meal-logs/:logId/image", async (req, res) => {
   }
 });
 
-// GET /kids/:kidId/food-approvals — list all food approvals for a kid
 router.get("/:kidId/food-approvals", async (req, res) => {
+  const kidId = parseInt(req.params.kidId, 10);
   try {
-    const doctorId = req.session?.doctorId;
-    if (!doctorId) {
-      res.status(401).json({ error: "UNAUTHORIZED", message: "Authentication required" });
-      return;
-    }
-
-    const kidId = parseInt(req.params.kidId, 10);
-
-    const [kid] = await db
-      .select({ id: kidsTable.id, doctorId: kidsTable.doctorId })
-      .from(kidsTable)
-      .where(eq(kidsTable.id, kidId))
-      .limit(1);
-
-    if (!kid || kid.doctorId !== doctorId) {
-      res.status(404).json({ error: "NOT_FOUND", message: "Kid not found" });
-      return;
-    }
-
     const approvals = await db
       .select()
       .from(kidFoodApprovalsTable)
       .where(eq(kidFoodApprovalsTable.kidId, kidId));
-
     res.json(approvals);
   } catch (err) {
     req.log.error({ err }, "Get food approvals error");
@@ -1278,29 +1225,10 @@ router.get("/:kidId/food-approvals", async (req, res) => {
   }
 });
 
-// PUT /kids/:kidId/food-approvals/:foodId — upsert or delete a food approval
 router.put("/:kidId/food-approvals/:foodId", async (req, res) => {
+  const kidId = parseInt(req.params.kidId, 10);
+  const foodId = parseInt(req.params.foodId, 10);
   try {
-    const doctorId = req.session?.doctorId;
-    if (!doctorId) {
-      res.status(401).json({ error: "UNAUTHORIZED", message: "Authentication required" });
-      return;
-    }
-
-    const kidId = parseInt(req.params.kidId, 10);
-    const foodId = parseInt(req.params.foodId, 10);
-
-    const [kid] = await db
-      .select({ id: kidsTable.id, doctorId: kidsTable.doctorId })
-      .from(kidsTable)
-      .where(eq(kidsTable.id, kidId))
-      .limit(1);
-
-    if (!kid || kid.doctorId !== doctorId) {
-      res.status(404).json({ error: "NOT_FOUND", message: "Kid not found" });
-      return;
-    }
-
     const parsed = UpsertKidFoodApprovalBody.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: "INVALID_INPUT", message: parsed.error.message });

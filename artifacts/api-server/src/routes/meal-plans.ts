@@ -1,4 +1,4 @@
-import { Router, type IRouter, type Request, type Response } from "express";
+import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { libraryMealPlansTable, libraryMealPlanItemsTable } from "@workspace/db";
 import { eq, desc, asc, and } from "drizzle-orm";
@@ -10,38 +10,18 @@ import {
 
 const router: IRouter = Router();
 
-/** Resolve the authenticated doctor ID from the request session.
- *  Returns undefined and sends a 401 response when no session is present. */
-function requireDoctorId(req: Request, res: Response): number | undefined {
-  const doctorId = req.session?.doctorId;
-  if (!doctorId) {
-    res.status(401).json({ error: "UNAUTHORIZED", message: "Authentication required" });
-    return undefined;
-  }
-  return doctorId;
-}
-
-/** Look up a library plan that belongs to the given doctor.
- *  Returns null if not found or if the plan is not explicitly owned by doctorId (strict equality). */
 async function getOwnedPlan(planId: number, doctorId: number) {
   const [plan] = await db
     .select()
     .from(libraryMealPlansTable)
-    .where(eq(libraryMealPlansTable.id, planId))
+    .where(and(eq(libraryMealPlansTable.id, planId), eq(libraryMealPlansTable.doctorId, doctorId)))
     .limit(1);
-
-  if (!plan) return null;
-  // Strict ownership: plan must be explicitly owned by the calling doctor
-  if (plan.doctorId !== doctorId) return null;
-  return plan;
+  return plan ?? null;
 }
 
-// GET /meal-plans — list all plans owned by the current doctor
 router.get("/", async (req, res) => {
+  const doctorId = req.session.doctorId!;
   try {
-    const doctorId = requireDoctorId(req, res);
-    if (!doctorId) return;
-
     const plans = await db
       .select()
       .from(libraryMealPlansTable)
@@ -54,12 +34,9 @@ router.get("/", async (req, res) => {
   }
 });
 
-// POST /meal-plans — create a library plan owned by the current doctor
 router.post("/", async (req, res) => {
+  const doctorId = req.session.doctorId!;
   try {
-    const doctorId = requireDoctorId(req, res);
-    if (!doctorId) return;
-
     const body = { ...req.body };
     if (body.targetPhase === null) delete body.targetPhase;
     const parsed = CreateLibraryMealPlanBody.safeParse(body);
@@ -83,12 +60,9 @@ router.post("/", async (req, res) => {
   }
 });
 
-// GET /meal-plans/:planId — get plan detail (must be owned by calling doctor)
 router.get("/:planId", async (req, res) => {
+  const doctorId = req.session.doctorId!;
   try {
-    const doctorId = requireDoctorId(req, res);
-    if (!doctorId) return;
-
     const planId = parseInt(req.params.planId, 10);
     const plan = await getOwnedPlan(planId, doctorId);
     if (!plan) {
@@ -107,12 +81,9 @@ router.get("/:planId", async (req, res) => {
   }
 });
 
-// PUT /meal-plans/:planId — update plan (must be owned by calling doctor)
 router.put("/:planId", async (req, res) => {
+  const doctorId = req.session.doctorId!;
   try {
-    const doctorId = requireDoctorId(req, res);
-    if (!doctorId) return;
-
     const planId = parseInt(req.params.planId, 10);
     const existing = await getOwnedPlan(planId, doctorId);
     if (!existing) {
@@ -134,7 +105,7 @@ router.put("/:planId", async (req, res) => {
     const [updated] = await db
       .update(libraryMealPlansTable)
       .set(updateData)
-      .where(eq(libraryMealPlansTable.id, planId))
+      .where(and(eq(libraryMealPlansTable.id, planId), eq(libraryMealPlansTable.doctorId, doctorId)))
       .returning();
     res.json(updated);
   } catch (err) {
@@ -143,13 +114,9 @@ router.put("/:planId", async (req, res) => {
   }
 });
 
-// DELETE /meal-plans/:planId — delete plan (must be owned by calling doctor)
-// CASCADE: onDelete: "set null" on kids.currentMealPlanId handles unassignment automatically
 router.delete("/:planId", async (req, res) => {
+  const doctorId = req.session.doctorId!;
   try {
-    const doctorId = requireDoctorId(req, res);
-    if (!doctorId) return;
-
     const planId = parseInt(req.params.planId, 10);
     const existing = await getOwnedPlan(planId, doctorId);
     if (!existing) {
@@ -158,19 +125,16 @@ router.delete("/:planId", async (req, res) => {
     }
     await db.delete(libraryMealPlanItemsTable).where(eq(libraryMealPlanItemsTable.planId, planId));
     await db.delete(libraryMealPlansTable).where(eq(libraryMealPlansTable.id, planId));
-    res.json({ success: true, message: "Meal plan deleted" });
+    res.json({ success: true });
   } catch (err) {
     req.log.error({ err }, "Delete library meal plan error");
     res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
   }
 });
 
-// POST /meal-plans/:planId/items — add a food item (plan must be owned by calling doctor)
 router.post("/:planId/items", async (req, res) => {
+  const doctorId = req.session.doctorId!;
   try {
-    const doctorId = requireDoctorId(req, res);
-    if (!doctorId) return;
-
     const planId = parseInt(req.params.planId, 10);
     const plan = await getOwnedPlan(planId, doctorId);
     if (!plan) {
@@ -204,12 +168,9 @@ router.post("/:planId/items", async (req, res) => {
   }
 });
 
-// DELETE /meal-plans/:planId/items/:itemId — remove item (plan must be owned by calling doctor)
 router.delete("/:planId/items/:itemId", async (req, res) => {
+  const doctorId = req.session.doctorId!;
   try {
-    const doctorId = requireDoctorId(req, res);
-    if (!doctorId) return;
-
     const planId = parseInt(req.params.planId, 10);
     const itemId = parseInt(req.params.itemId, 10);
     const plan = await getOwnedPlan(planId, doctorId);
@@ -220,7 +181,7 @@ router.delete("/:planId/items/:itemId", async (req, res) => {
     await db
       .delete(libraryMealPlanItemsTable)
       .where(and(eq(libraryMealPlanItemsTable.id, itemId), eq(libraryMealPlanItemsTable.planId, planId)));
-    res.json({ success: true, message: "Item removed" });
+    res.json({ success: true });
   } catch (err) {
     req.log.error({ err }, "Delete library meal plan item error");
     res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });

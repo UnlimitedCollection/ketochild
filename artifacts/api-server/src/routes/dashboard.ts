@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { kidsTable, weightRecordsTable, mealDaysTable, mealLogsTable } from "@workspace/db";
-import { eq, gte, and } from "drizzle-orm";
+import { eq, gte } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -12,14 +12,42 @@ function calcAgeMonths(dateOfBirth: string): number {
 }
 
 router.get("/stats", async (req, res) => {
+  const doctorId = req.session.doctorId!;
+
   try {
-    const allKids = await db.select().from(kidsTable);
+    const allKids = await db
+      .select()
+      .from(kidsTable)
+      .where(eq(kidsTable.doctorId, doctorId));
+
     const totalChildren = allKids.length;
+    const kidIds = allKids.map((k) => k.id);
+
+    if (kidIds.length === 0) {
+      res.json({
+        totalChildren: 0,
+        highRiskChildren: 0,
+        unfilledMealRecords: 0,
+        last24hUnfilledMealRecords: 0,
+        averageWeightChange: 0,
+        phaseDistribution: [1, 2, 3, 4].map((p) => ({ phase: p, count: 0, label: `Phase ${p}` })),
+        recentHighRiskKids: [],
+      });
+      return;
+    }
 
     const cutoff24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-    const recentMealDays = await db.select().from(mealDaysTable);
-    const last24hLogs = await db.select().from(mealLogsTable).where(gte(mealLogsTable.createdAt, cutoff24h));
+    const allMealDays = await db.select().from(mealDaysTable);
+    const recentMealDays = allMealDays.filter((m) => kidIds.includes(m.kidId));
+
+    const last24hLogs = await db
+      .select()
+      .from(mealLogsTable)
+      .where(gte(mealLogsTable.createdAt, cutoff24h));
+    const last24hUnfilledMealRecords = last24hLogs
+      .filter((l) => kidIds.includes(l.kidId) && !l.isCompleted)
+      .length;
 
     const kidMealStats = new Map<number, { filled: number; total: number }>();
     for (const m of recentMealDays) {
@@ -33,13 +61,10 @@ router.get("/stats", async (req, res) => {
     let unfilledMealRecords = 0;
     const recentHighRiskKids: unknown[] = [];
 
-    const last24hUnfilledMealRecords = last24hLogs.filter(l => !l.isCompleted).length;
-
     for (const kid of allKids) {
       const stats = kidMealStats.get(kid.id) || { filled: 0, total: 0 };
       const completionRate = stats.total > 0 ? stats.filled / stats.total : 0;
-      const unfilled = stats.total - stats.filled;
-      unfilledMealRecords += unfilled;
+      unfilledMealRecords += stats.total - stats.filled;
 
       const isHighRisk = completionRate < 0.6 && stats.total > 0;
       if (isHighRisk) {
@@ -62,7 +87,6 @@ router.get("/stats", async (req, res) => {
     for (const kid of allKids) {
       phaseCountMap.set(kid.phase, (phaseCountMap.get(kid.phase) || 0) + 1);
     }
-
     const phaseDistribution = [1, 2, 3, 4].map((p) => ({
       phase: p,
       count: phaseCountMap.get(p) || 0,
@@ -70,32 +94,32 @@ router.get("/stats", async (req, res) => {
     }));
 
     const allWeights = await db.select().from(weightRecordsTable);
-    let totalWeightChange = 0;
-    let weightChangeCount = 0;
+    const ownedWeights = allWeights.filter((w) => kidIds.includes(w.kidId));
 
     const kidWeights = new Map<number, { weight: number; date: string }[]>();
-    for (const w of allWeights) {
+    for (const w of ownedWeights) {
       if (!kidWeights.has(w.kidId)) kidWeights.set(w.kidId, []);
       kidWeights.get(w.kidId)!.push({ weight: w.weight, date: w.date });
     }
 
+    let totalWeightChange = 0;
+    let weightChangeCount = 0;
     for (const [, weights] of kidWeights) {
       if (weights.length >= 2) {
         weights.sort((a, b) => a.date.localeCompare(b.date));
-        const change = weights[weights.length - 1].weight - weights[0].weight;
-        totalWeightChange += change;
+        totalWeightChange += weights[weights.length - 1].weight - weights[0].weight;
         weightChangeCount++;
       }
     }
-
-    const averageWeightChange = weightChangeCount > 0 ? totalWeightChange / weightChangeCount : 0;
 
     res.json({
       totalChildren,
       highRiskChildren,
       unfilledMealRecords,
       last24hUnfilledMealRecords,
-      averageWeightChange: Math.round(averageWeightChange * 100) / 100,
+      averageWeightChange: weightChangeCount > 0
+        ? Math.round((totalWeightChange / weightChangeCount) * 100) / 100
+        : 0,
       phaseDistribution,
       recentHighRiskKids,
     });
