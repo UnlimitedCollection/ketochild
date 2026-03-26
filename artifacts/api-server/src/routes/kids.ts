@@ -436,22 +436,24 @@ router.delete("/:kidId", async (req, res) => {
   const kidId = parseInt(req.params.kidId);
   const doctorId = req.session.doctorId!;
   try {
-    await db.delete(kidFoodApprovalsTable).where(eq(kidFoodApprovalsTable.kidId, kidId));
-    await db.delete(ketoneReadingsTable).where(eq(ketoneReadingsTable.kidId, kidId));
-    await db.delete(notesTable).where(eq(notesTable.kidId, kidId));
-    await db.delete(weightRecordsTable).where(eq(weightRecordsTable.kidId, kidId));
-    await db.delete(mealEntriesTable).where(eq(mealEntriesTable.kidId, kidId));
+    await db.transaction(async (tx) => {
+      await tx.delete(kidFoodApprovalsTable).where(eq(kidFoodApprovalsTable.kidId, kidId));
+      await tx.delete(ketoneReadingsTable).where(eq(ketoneReadingsTable.kidId, kidId));
+      await tx.delete(notesTable).where(eq(notesTable.kidId, kidId));
+      await tx.delete(weightRecordsTable).where(eq(weightRecordsTable.kidId, kidId));
+      await tx.delete(mealEntriesTable).where(eq(mealEntriesTable.kidId, kidId));
 
-    const kidMealPlans = await db.select().from(mealPlansTable).where(eq(mealPlansTable.kidId, kidId));
-    for (const plan of kidMealPlans) {
-      await db.delete(mealPlanItemsTable).where(eq(mealPlanItemsTable.planId, plan.id));
-    }
-    await db.delete(mealPlansTable).where(eq(mealPlansTable.kidId, kidId));
+      const kidMealPlans = await tx.select().from(mealPlansTable).where(eq(mealPlansTable.kidId, kidId));
+      for (const plan of kidMealPlans) {
+        await tx.delete(mealPlanItemsTable).where(eq(mealPlanItemsTable.planId, plan.id));
+      }
+      await tx.delete(mealPlansTable).where(eq(mealPlansTable.kidId, kidId));
 
-    await db.delete(mealLogsTable).where(eq(mealLogsTable.kidId, kidId));
-    await db.delete(mealDaysTable).where(eq(mealDaysTable.kidId, kidId));
-    await db.delete(medicalSettingsTable).where(eq(medicalSettingsTable.kidId, kidId));
-    await db.delete(kidsTable).where(and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId)));
+      await tx.delete(mealLogsTable).where(eq(mealLogsTable.kidId, kidId));
+      await tx.delete(mealDaysTable).where(eq(mealDaysTable.kidId, kidId));
+      await tx.delete(medicalSettingsTable).where(eq(medicalSettingsTable.kidId, kidId));
+      await tx.delete(kidsTable).where(and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId)));
+    });
 
     res.status(204).send();
   } catch (err) {
