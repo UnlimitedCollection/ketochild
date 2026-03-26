@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useGetMe, useUpdateDoctorProfile, useChangeDoctorPassword } from "@workspace/api-client-react";
+import { useGetMe, useUpdateDoctorProfile, useChangeDoctorPassword, getGetMeQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
@@ -87,12 +87,14 @@ export default function SettingsPage() {
     updateProfile.mutate(
       { data: { name: profile.name.trim(), email: profile.email.trim(), username: profile.username.trim(), specialty: profile.specialty.trim() || undefined } },
       {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["getMe"] });
+        onSuccess: (updated) => {
+          queryClient.setQueryData(getGetMeQueryKey(), updated);
+          queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
           toast({ title: "Profile updated", description: "Your profile information has been saved." });
         },
         onError: (err: unknown) => {
-          const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Failed to update profile.";
+          const apiErr = err as { data?: { message?: string }; message?: string };
+          const msg = apiErr?.data?.message ?? apiErr?.message ?? "Failed to update profile.";
           setProfileError(msg);
         },
       }
@@ -121,7 +123,8 @@ export default function SettingsPage() {
           toast({ title: "Password changed", description: "Your password has been updated successfully." });
         },
         onError: (err: unknown) => {
-          const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Failed to change password.";
+          const apiErr = err as { data?: { message?: string }; message?: string };
+          const msg = apiErr?.data?.message ?? apiErr?.message ?? "Failed to change password.";
           setPasswordError(msg);
         },
       }
