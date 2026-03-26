@@ -794,6 +794,90 @@ export const useUpdateKid = <
 };
 
 /**
+ * @summary Delete a kid and all associated data
+ */
+export const getDeleteKidUrl = (kidId: number) => {
+  return `/api/kids/${kidId}`;
+};
+
+export const deleteKid = async (
+  kidId: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteKidUrl(kidId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteKidMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteKid>>,
+    TError,
+    { kidId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteKid>>,
+  TError,
+  { kidId: number },
+  TContext
+> => {
+  const mutationKey = ["deleteKid"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteKid>>,
+    { kidId: number }
+  > = (props) => {
+    const { kidId } = props ?? {};
+
+    return deleteKid(kidId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteKidMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteKid>>
+>;
+
+export type DeleteKidMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Delete a kid and all associated data
+ */
+export const useDeleteKid = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteKid>>,
+    TError,
+    { kidId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteKid>>,
+  TError,
+  { kidId: number },
+  TContext
+> => {
+  return useMutation(getDeleteKidMutationOptions(options));
+};
+
+/**
  * @summary Add weight record for a kid
  */
 export const getAddWeightRecordUrl = (kidId: number) => {

@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef } from "react";
-import { useParams, Link } from "wouter";
-import { useGetKid, useAddWeightRecord, useUpdateKidMedical, useAddKidNote, useDeleteKidNote, useGetKidMealHistory, useGetKidKetoneReadings, useAddKetoneReading, useDeleteKetoneReading, useGetKidMealLogs, useAddMealLog, useDeleteMealLog, useGetKidMealLog, useGetKidAssignedMealPlan, useAssignKidMealPlan, useGetLibraryMealPlans, useGetFoods, useGetKidFoodApprovals, useUpsertKidFoodApproval, useUpdateMealLogImage, getGetKidAssignedMealPlanQueryKey, type LibraryMealPlanDetail, type LibraryMealPlanItem, type FoodApproval, type MedicalSettingsRequest, type Note } from "@workspace/api-client-react";
+import { useParams, Link, useLocation } from "wouter";
+import { useGetKid, useAddWeightRecord, useUpdateKidMedical, useUpdateKid, useDeleteKid, useAddKidNote, useDeleteKidNote, useGetKidMealHistory, useGetKidKetoneReadings, useAddKetoneReading, useDeleteKetoneReading, useGetKidMealLogs, useAddMealLog, useDeleteMealLog, useGetKidMealLog, useGetKidAssignedMealPlan, useAssignKidMealPlan, useGetLibraryMealPlans, useGetFoods, useGetKidFoodApprovals, useUpsertKidFoodApproval, useUpdateMealLogImage, getGetKidAssignedMealPlanQueryKey, type LibraryMealPlanDetail, type LibraryMealPlanItem, type FoodApproval, type MedicalSettingsRequest, type Note, type UpdateKidRequest } from "@workspace/api-client-react";
 import { useUpload } from "@workspace/object-storage-web";
 import { z } from "zod";
 import { useForm, useWatch } from "react-hook-form";
@@ -25,12 +25,28 @@ import { Slider } from "@/components/ui/slider";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { Activity, User, Scale, Calendar, FileText, Trash2, Settings, Plus, Loader2, BarChart2, TrendingUp, Flame, FlaskConical, AlertTriangle, ClipboardList, CheckCircle2, Circle, ChevronDown, ChevronUp, Coffee, Sun, Moon, Apple as AppleIcon, LayoutGrid, Camera, ThumbsUp, ThumbsDown, Minus, ImageIcon, X, Search } from "lucide-react";
+import { Activity, User, Scale, Calendar, FileText, Trash2, Settings, Plus, Loader2, BarChart2, TrendingUp, Flame, FlaskConical, AlertTriangle, ClipboardList, CheckCircle2, Circle, ChevronDown, ChevronUp, Coffee, Sun, Moon, Apple as AppleIcon, LayoutGrid, Camera, ThumbsUp, ThumbsDown, Minus, ImageIcon, X, Search, Pencil } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function KidProfilePage() {
   const { id } = useParams();
   const kidId = parseInt(id || "0", 10);
+  const [, setLocation] = useLocation();
   const { data: profile, isLoading } = useGetKid(kidId);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const deleteKidMutation = useDeleteKid({
+    mutation: {
+      onSuccess: () => {
+        toast({ title: "Patient removed", description: "The patient record has been deleted." });
+        setLocation("/kids");
+      },
+      onError: () => toast({ title: "Failed to delete patient", variant: "destructive" }),
+    }
+  });
 
   if (isLoading) {
     return (
@@ -48,6 +64,31 @@ export default function KidProfilePage() {
 
   return (
     <div className="space-y-6">
+      {/* Edit Kid Dialog */}
+      <EditKidDialog kidId={kidId} kid={kid} open={editOpen} onOpenChange={setEditOpen} />
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Patient Record</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete <strong>{kid.name}</strong> and all associated data including weight records, meal logs, ketone readings, and notes. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteKidMutation.mutate({ kidId })}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteKidMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete Patient
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Header Profile Card */}
       <div className="flex flex-col lg:flex-row gap-6">
         <Card className="flex-1 rounded-2xl border-slate-200 shadow-sm overflow-hidden bg-white">
@@ -66,15 +107,23 @@ export default function KidProfilePage() {
                     <span className="capitalize">{kid.gender}</span>
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-2">
-                  <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 text-sm py-1 px-3">
-                    Phase {kid.phase}
-                  </Badge>
-                  {kid.isHighRisk && (
-                    <Badge variant="destructive" className="bg-destructive/10 text-destructive border border-destructive/20 text-xs">
-                      High Risk
+                <div className="flex items-start gap-2">
+                  <Button size="sm" variant="outline" className="rounded-lg gap-1.5" onClick={() => setEditOpen(true)}>
+                    <Pencil className="h-3.5 w-3.5" /> Edit
+                  </Button>
+                  <Button size="sm" variant="outline" className="rounded-lg gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setDeleteOpen(true)}>
+                    <Trash2 className="h-3.5 w-3.5" /> Delete
+                  </Button>
+                  <div className="flex flex-col items-end gap-2 ml-2">
+                    <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 text-sm py-1 px-3">
+                      Phase {kid.phase}
                     </Badge>
-                  )}
+                    {kid.isHighRisk && (
+                      <Badge variant="destructive" className="bg-destructive/10 text-destructive border border-destructive/20 text-xs">
+                        High Risk
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -122,7 +171,7 @@ export default function KidProfilePage() {
             <LayoutGrid className="h-4 w-4" /> Compliance
           </TabsTrigger>
           <TabsTrigger value="notes" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white py-2.5 px-4 flex items-center gap-2 transition-all">
-            <FileText className="h-4 w-4" /> Private Notes
+            <FileText className="h-4 w-4" /> Notes
           </TabsTrigger>
           <TabsTrigger value="approved-foods" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white py-2.5 px-4 flex items-center gap-2 transition-all">
             <ThumbsUp className="h-4 w-4" /> Approved Foods
@@ -207,24 +256,6 @@ export default function KidProfilePage() {
                     </div>
                   </div>
                   
-                  <div>
-                    <h4 className="text-sm font-semibold text-slate-900 mb-3">Latest Notes</h4>
-                    {notes.length > 0 ? (
-                      <div className="space-y-3">
-                        {notes.slice(0, 2).map(note => (
-                          <div key={note.id} className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                            <p className="text-sm text-slate-700 line-clamp-2">{note.content}</p>
-                            <p className="text-xs text-slate-400 mt-2 flex items-center justify-between">
-                              <span>{format(parseISO(note.createdAt), 'MMM d')}</span>
-                              <span>Dr. {note.doctorName}</span>
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-slate-500 italic">No recent notes.</p>
-                    )}
-                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -264,6 +295,133 @@ export default function KidProfilePage() {
 }
 
 // Sub-components
+
+type KidData = {
+  name: string;
+  dateOfBirth: string;
+  gender?: string;
+  parentName: string;
+  parentContact: string;
+  phase: number;
+};
+
+const editKidSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  dateOfBirth: z.string().min(1, "Date of birth is required"),
+  gender: z.enum(["male", "female"]),
+  parentName: z.string().min(1, "Parent name is required"),
+  parentContact: z.string().min(1, "Contact is required"),
+  phase: z.coerce.number().min(1).max(4),
+});
+
+function EditKidDialog({ kidId, kid, open, onOpenChange }: { kidId: number; kid: KidData; open: boolean; onOpenChange: (v: boolean) => void }) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const form = useForm<z.infer<typeof editKidSchema>>({
+    resolver: zodResolver(editKidSchema),
+    defaultValues: {
+      name: kid.name,
+      dateOfBirth: kid.dateOfBirth,
+      gender: (kid.gender ?? "male") as "male" | "female",
+      parentName: kid.parentName,
+      parentContact: kid.parentContact,
+      phase: kid.phase,
+    },
+  });
+
+  const mutation = useUpdateKid({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: [`/api/kids/${kidId}`] });
+        queryClient.invalidateQueries({ queryKey: ["/api/kids"] });
+        onOpenChange(false);
+        toast({ title: "Patient updated", description: "Patient information has been saved." });
+      },
+      onError: () => toast({ title: "Failed to update patient", variant: "destructive" }),
+    }
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg rounded-2xl">
+        <DialogHeader>
+          <DialogTitle>Edit Patient Information</DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit((d) => mutation.mutate({ kidId, data: d as UpdateKidRequest }))} className="space-y-4 pt-2">
+            <div className="grid grid-cols-2 gap-4">
+              <FormField control={form.control} name="name" render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel>Full Name</FormLabel>
+                  <FormControl><Input className="rounded-xl" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="dateOfBirth" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Date of Birth</FormLabel>
+                  <FormControl><Input type="date" className="rounded-xl" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="gender" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Gender</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="phase" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phase</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value.toString()}>
+                    <FormControl>
+                      <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {[1, 2, 3, 4].map(p => <SelectItem key={p} value={p.toString()}>Phase {p}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="parentName" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Parent/Guardian Name</FormLabel>
+                  <FormControl><Input className="rounded-xl" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="parentContact" render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel>Parent Contact</FormLabel>
+                  <FormControl><Input className="rounded-xl" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl">Cancel</Button>
+              <Button type="submit" disabled={mutation.isPending} className="rounded-xl px-8 shadow-md">
+                {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Changes
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 const weightSchema = z.object({
   weight: z.coerce.number().positive("Weight must be positive"),

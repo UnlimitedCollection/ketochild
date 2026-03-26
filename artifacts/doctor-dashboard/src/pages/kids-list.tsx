@@ -1,13 +1,16 @@
 import { useState, useEffect } from "react";
-import { Link, useSearch } from "wouter";
-import { useGetKids } from "@workspace/api-client-react";
-import { Search, Filter, Loader2, User, ChevronRight, Flame, Clock } from "lucide-react";
+import { Link, useSearch, useLocation } from "wouter";
+import { useGetKids, useDeleteKid } from "@workspace/api-client-react";
+import { Search, Filter, Loader2, User, ChevronRight, Flame, Clock, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/use-debounce";
 
 export default function KidsListPage() {
@@ -19,6 +22,10 @@ export default function KidsListPage() {
 
   const [searchTerm, setSearchTerm] = useState(initialSearch);
   const debouncedSearch = useDebounce(searchTerm, 300);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingKid, setDeletingKid] = useState<{ id: number; name: string } | null>(null);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   useEffect(() => {
     setSearchTerm(urlParams.get("search") ?? "");
@@ -31,8 +38,42 @@ export default function KidsListPage() {
     { query: { queryKey: ["/api/kids", debouncedSearch, activePhase] } }
   );
 
+  const deleteKidMutation = useDeleteKid({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["/api/kids"] });
+        toast({ title: "Patient removed", description: `${deletingKid?.name} has been deleted.` });
+        setDeleteDialogOpen(false);
+        setDeletingKid(null);
+      },
+      onError: () => toast({ title: "Failed to delete patient", variant: "destructive" }),
+    }
+  });
+
   return (
     <div className="space-y-6">
+      {/* Delete Confirmation */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Patient Record</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete <strong>{deletingKid?.name}</strong> and all associated data. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deletingKid && deleteKidMutation.mutate({ kidId: deletingKid.id })}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteKidMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete Patient
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">
@@ -184,11 +225,21 @@ export default function KidsListPage() {
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button size="sm" variant="ghost" asChild className="rounded-lg text-primary hover:text-primary hover:bg-primary/10">
-                        <Link href={`/kids/${kid.id}`}>
-                          View <ChevronRight className="h-4 w-4 ml-1" />
-                        </Link>
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button size="sm" variant="ghost" asChild className="rounded-lg text-primary hover:text-primary hover:bg-primary/10">
+                          <Link href={`/kids/${kid.id}`}>
+                            View <ChevronRight className="h-4 w-4 ml-1" />
+                          </Link>
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="rounded-lg text-slate-400 hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => { setDeletingKid({ id: kid.id, name: kid.name }); setDeleteDialogOpen(true); }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

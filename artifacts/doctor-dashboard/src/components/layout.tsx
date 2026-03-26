@@ -102,8 +102,6 @@ const NAV_ITEMS = [
   { title: "Analysis",          url: "/high-risk", icon: IconAnalysis   },
   { title: "Food Visibility",   url: "/foods",     icon: IconVisibility },
   { title: "Recipe Visibility", url: "/foods",     icon: IconRecipe     },
-  { title: "Private Notes",     url: "/kids?notes=1", icon: IconNotes   },
-  { title: "Missing Records",   url: "/high-risk", icon: IconWarning    },
 ];
 
 function AppSidebar() {

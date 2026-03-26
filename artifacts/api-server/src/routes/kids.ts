@@ -371,7 +371,15 @@ router.put("/:kidId", async (req, res) => {
     return;
   }
 
-  const parsed = UpdateKidBody.safeParse(req.body);
+  const rawBody = req.body as Record<string, unknown>;
+  const bodyToParse = {
+    ...rawBody,
+    dateOfBirth:
+      typeof rawBody.dateOfBirth === "string"
+        ? new Date(rawBody.dateOfBirth)
+        : rawBody.dateOfBirth,
+  };
+  const parsed = UpdateKidBody.safeParse(bodyToParse);
   if (!parsed.success) {
     res.status(400).json({ error: "VALIDATION_ERROR", message: "Invalid request body" });
     return;
@@ -420,6 +428,34 @@ router.put("/:kidId", async (req, res) => {
     });
   } catch (err) {
     req.log.error({ err }, "Update kid error");
+    res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
+  }
+});
+
+router.delete("/:kidId", async (req, res) => {
+  const kidId = parseInt(req.params.kidId);
+  const doctorId = req.session.doctorId!;
+  try {
+    await db.delete(kidFoodApprovalsTable).where(eq(kidFoodApprovalsTable.kidId, kidId));
+    await db.delete(ketoneReadingsTable).where(eq(ketoneReadingsTable.kidId, kidId));
+    await db.delete(notesTable).where(eq(notesTable.kidId, kidId));
+    await db.delete(weightRecordsTable).where(eq(weightRecordsTable.kidId, kidId));
+    await db.delete(mealEntriesTable).where(eq(mealEntriesTable.kidId, kidId));
+
+    const kidMealPlans = await db.select().from(mealPlansTable).where(eq(mealPlansTable.kidId, kidId));
+    for (const plan of kidMealPlans) {
+      await db.delete(mealPlanItemsTable).where(eq(mealPlanItemsTable.planId, plan.id));
+    }
+    await db.delete(mealPlansTable).where(eq(mealPlansTable.kidId, kidId));
+
+    await db.delete(mealLogsTable).where(eq(mealLogsTable.kidId, kidId));
+    await db.delete(mealDaysTable).where(eq(mealDaysTable.kidId, kidId));
+    await db.delete(medicalSettingsTable).where(eq(medicalSettingsTable.kidId, kidId));
+    await db.delete(kidsTable).where(and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId)));
+
+    res.status(204).send();
+  } catch (err) {
+    req.log.error({ err }, "Delete kid error");
     res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
   }
 });

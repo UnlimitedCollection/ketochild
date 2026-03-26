@@ -225,8 +225,8 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-        <div className="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="grid grid-cols-1 gap-5">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
             <h2 className="font-bold text-slate-800">High-Risk Children</h2>
             <Link href="/high-risk" className="text-xs font-bold text-blue-600 hover:underline">
@@ -303,64 +303,6 @@ export default function DashboardPage() {
                 })}
               </tbody>
             </table>
-          )}
-        </div>
-
-        <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-            <h2 className="font-bold text-slate-800">Missing Records</h2>
-            <span
-              className="text-xs font-bold px-2.5 py-0.5 rounded-full"
-              style={{ background: `${AMBER}20`, color: AMBER }}
-            >
-              {stats.last24hUnfilledMealRecords} Pending
-            </span>
-          </div>
-          {stats.last24hUnfilledMealRecords === 0 && stats.recentHighRiskKids.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-slate-400">
-              <p className="text-sm">All records up to date</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-slate-100">
-              {stats.last24hUnfilledMealRecords > 0 && (
-                <div className="flex items-center justify-between px-6 py-3 gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">🍽️</span>
-                    <div>
-                      <p className="font-semibold text-slate-800 text-sm">Unfilled meal logs</p>
-                      <p className="text-xs text-slate-400">{stats.last24hUnfilledMealRecords} incomplete in the last 24h</p>
-                    </div>
-                  </div>
-                  <Link
-                    href="/high-risk"
-                    className="shrink-0 text-xs font-semibold border border-blue-600 text-blue-600 px-3 py-1 rounded-full hover:bg-blue-50 transition-colors"
-                  >
-                    Review
-                  </Link>
-                </div>
-              )}
-              {stats.recentHighRiskKids.map((kid) => (
-                <div key={kid.id} className="flex items-center justify-between px-6 py-3 gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">📋</span>
-                    <div>
-                      <p className="font-semibold text-slate-800 text-sm">{kid.name}</p>
-                      <p className="text-xs text-slate-400">{kid.riskReason}</p>
-                    </div>
-                  </div>
-                  <button
-                    className="shrink-0 text-xs font-semibold border border-blue-600 text-blue-600 px-3 py-1 rounded-full hover:bg-blue-50 transition-colors"
-                    onClick={() => {
-                      if (kid.parentContact) {
-                        window.open(`mailto:${kid.parentContact}?subject=Missing%20Records%20Reminder`, "_blank");
-                      }
-                    }}
-                  >
-                    Send Reminder
-                  </button>
-                </div>
-              ))}
-            </div>
           )}
         </div>
       </div>

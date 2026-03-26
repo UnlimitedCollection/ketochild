@@ -206,6 +206,26 @@ paths:
               schema:
                 $ref: "#/components/schemas/Kid"
 
+    delete:
+      operationId: deleteKid
+      tags: [kids]
+      summary: Delete a kid and all associated data
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Kid deleted
+        "404":
+          description: Kid not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /kids/{kidId}/weight:
     post:
       operationId: addWeightRecord

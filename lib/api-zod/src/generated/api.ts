@@ -266,6 +266,13 @@ export const UpdateKidResponse = zod.object({
 });
 
 /**
+ * @summary Delete a kid and all associated data
+ */
+export const DeleteKidParams = zod.object({
+  kidId: zod.coerce.number(),
+});
+
+/**
  * @summary Add weight record for a kid
  */
 export const AddWeightRecordParams = zod.object({

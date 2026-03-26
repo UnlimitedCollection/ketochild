@@ -46,6 +46,7 @@ type FoodFormData = {
   protein: number;
   calories: number;
   description: string;
+  imageUrl: string;
   isActive: boolean;
 };
 
@@ -59,6 +60,7 @@ const BLANK_FORM: FoodFormData = {
   protein: 0,
   calories: 0,
   description: "",
+  imageUrl: "",
   isActive: true,
 };
 
@@ -102,7 +104,7 @@ export default function FoodsPage() {
     setDialogOpen(true);
   }
 
-  function openEdit(food: { id: number; name: string; category: string; carbs: number; fat: number; protein: number; calories: number; description?: string | null; isActive?: boolean | null }) {
+  function openEdit(food: { id: number; name: string; category: string; carbs: number; fat: number; protein: number; calories: number; description?: string | null; imageUrl?: string | null; isActive?: boolean | null }) {
     setEditingId(food.id);
     setForm({
       name: food.name,
@@ -112,6 +114,7 @@ export default function FoodsPage() {
       protein: food.protein,
       calories: food.calories,
       description: food.description ?? "",
+      imageUrl: food.imageUrl ?? "",
       isActive: food.isActive !== false,
     });
     setDialogOpen(true);
@@ -157,6 +160,7 @@ export default function FoodsPage() {
         protein: Number(form.protein),
         calories: Number(form.calories),
         description: form.description,
+        imageUrl: form.imageUrl || undefined,
         isActive: form.isActive,
       };
       updateFood.mutate(
@@ -179,6 +183,7 @@ export default function FoodsPage() {
         protein: Number(form.protein),
         calories: Number(form.calories),
         description: form.description,
+        imageUrl: form.imageUrl || undefined,
       };
       createFood.mutate(
         { data: body },
@@ -484,6 +489,17 @@ export default function FoodsPage() {
                 placeholder="Brief description of the food item"
                 value={form.description}
                 onChange={(e) => handleFormChange("description", e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="food-image-url">Image URL (optional)</Label>
+              <Input
+                id="food-image-url"
+                type="url"
+                placeholder="https://example.com/image.jpg"
+                value={form.imageUrl}
+                onChange={(e) => handleFormChange("imageUrl", e.target.value)}
               />
             </div>
 
