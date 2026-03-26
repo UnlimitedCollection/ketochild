@@ -151,3 +151,20 @@ Utility scripts. Run: `pnpm --filter @workspace/scripts run seed` to seed the da
 ## Default Credentials (Dev)
 - Username: `doctor`
 - Password: `doctor123`
+
+## Required Environment Variables
+
+### Production (must be set as secrets/env vars before deploying)
+- `SESSION_SECRET` — Required in production. Set as a Replit secret. Strong random string for signing session cookies.
+- `CORS_ORIGINS` — Comma-separated list of allowed origins for CORS (e.g. `https://myapp.replit.app`). If unset in production, all browser cross-origin requests will be rejected.
+- `DATABASE_URL` — PostgreSQL connection string. Automatically provided by Replit's managed database.
+- `PORT` — Port to listen on. Automatically set by Replit's artifact runtime.
+- `NODE_ENV` — Set to `production` for production deployments.
+
+### Development
+- `SESSION_SECRET` — Optional in dev (a dev-only fallback is used if unset, but setting it is recommended).
+- `DATABASE_URL` — Required. Set automatically by Replit's managed database.
+
+### CORS behavior
+- **Development** (`NODE_ENV !== "production"`): All origins allowed (CORS is open).
+- **Production**: Only origins listed in `CORS_ORIGINS` are allowed. Requests with no `Origin` header (same-origin/server-to-server) are always allowed. If `CORS_ORIGINS` is empty in production, all browser cross-origin requests fail.
