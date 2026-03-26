@@ -60,7 +60,7 @@ export default function KidProfilePage() {
     return <div className="text-center py-20 text-slate-500">Patient not found.</div>;
   }
 
-  const { kid, medical, recentWeights, notes } = profile;
+  const { kid, medical, recentWeights } = profile;
 
   return (
     <div className="space-y-6">
@@ -170,9 +170,6 @@ export default function KidProfilePage() {
           <TabsTrigger value="compliance" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white py-2.5 px-4 flex items-center gap-2 transition-all">
             <LayoutGrid className="h-4 w-4" /> Compliance
           </TabsTrigger>
-          <TabsTrigger value="notes" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white py-2.5 px-4 flex items-center gap-2 transition-all">
-            <FileText className="h-4 w-4" /> Notes
-          </TabsTrigger>
           <TabsTrigger value="approved-foods" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white py-2.5 px-4 flex items-center gap-2 transition-all">
             <ThumbsUp className="h-4 w-4" /> Approved Foods
           </TabsTrigger>
@@ -280,10 +277,6 @@ export default function KidProfilePage() {
 
         <TabsContent value="compliance" className="focus-visible:outline-none">
           <ComplianceTab kidId={kidId} />
-        </TabsContent>
-
-        <TabsContent value="notes" className="focus-visible:outline-none">
-          <NotesTab kidId={kidId} notes={notes} />
         </TabsContent>
 
         <TabsContent value="approved-foods" className="focus-visible:outline-none">
