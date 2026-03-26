@@ -146,6 +146,12 @@ router.put("/profile", async (req, res) => {
       .where(eq(doctorsTable.id, doctorId))
       .returning();
 
+    if (!updated) {
+      req.session.destroy(() => {});
+      res.status(401).json({ error: "UNAUTHORIZED", message: "Session invalid" });
+      return;
+    }
+
     req.session.doctorName = updated.name;
 
     res.json({

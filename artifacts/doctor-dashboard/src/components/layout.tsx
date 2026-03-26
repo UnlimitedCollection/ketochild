@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useGetMe, useDoctorLogout, useGetDashboardStats } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 function IconDashboard() {
@@ -104,26 +104,19 @@ const NAV_ITEMS = [
   { title: "Recipe Visibility", url: "/foods",     icon: IconRecipe     },
 ];
 
+function isNavActive(url: string, location: string): boolean {
+  if (url === "/") return location === "/";
+  const base = url.split("?")[0];
+  return location === base || location.startsWith(base + "/");
+}
+
 function AppSidebar() {
   const [location, setLocation] = useLocation();
   const { data: user } = useGetMe();
   const logout = useDoctorLogout();
   const queryClient = useQueryClient();
-  const [activeTitle, setActiveTitle] = useState<string>("");
-
-  useEffect(() => {
-    const matched = NAV_ITEMS.find((item) => {
-      if (item.url === "/") return location === "/";
-      const base = item.url.split("?")[0];
-      return location === base || location.startsWith(base + "/");
-    });
-    if (matched && !activeTitle) {
-      setActiveTitle(matched.title);
-    }
-  }, [location]);
 
   const handleNavClick = (item: typeof NAV_ITEMS[0]) => {
-    setActiveTitle(item.title);
     setLocation(item.url);
   };
 
@@ -164,10 +157,7 @@ function AppSidebar() {
 
       <nav className="flex-1 px-3 space-y-0.5">
         {NAV_ITEMS.map((item) => {
-          const active = activeTitle === item.title ||
-            (!activeTitle && (
-              item.url === "/" ? location === "/" : location.startsWith(item.url.split("?")[0])
-            ));
+          const active = isNavActive(item.url, location);
           return (
             <button
               key={item.title}
@@ -188,9 +178,8 @@ function AppSidebar() {
       <div className="px-3 pt-4 mt-4 border-t border-slate-200 space-y-0.5">
         <Link
           href="/settings"
-          onClick={() => setActiveTitle("Settings")}
           className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium w-full text-left transition-all
-            ${location === "/settings" || activeTitle === "Settings"
+            ${isNavActive("/settings", location)
               ? "text-blue-700 font-bold border-r-4 border-blue-600 bg-blue-50"
               : "text-slate-600 hover:text-blue-600 hover:bg-slate-100"
             }`}
