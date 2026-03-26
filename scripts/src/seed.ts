@@ -77,7 +77,7 @@ async function seed() {
 
   // ── 3. Seed 60 keto-appropriate foods (canonical categories) ──────────────
   const existingFoodCount = await db.select().from(foodsTable);
-  if (existingFoodCount.length < 30) {
+  if (existingFoodCount.length < 62) {
     const foods = [
       // Vegetables
       { name: "Avocado",               category: "Vegetables", carbs: 2,    fat: 15,   protein: 2,    calories: 160, indicator: "vegi",    description: "High in healthy fats, great for keto" },
@@ -145,6 +145,11 @@ async function seed() {
       { name: "Blackberries",          category: "Fruit",      carbs: 5.1,  fat: 0.5,  protein: 1.4,  calories: 43,  indicator: "fruit",   description: "Low net carb berry option" },
       { name: "Olives",                category: "Fruit",      carbs: 3.8,  fat: 11,   protein: 0.8,  calories: 115, indicator: "fruit",   description: "High fat fruit ideal for keto" },
       { name: "Coconut Meat",          category: "Fruit",      carbs: 6,    fat: 35,   protein: 3.3,  calories: 354, indicator: "fruit",   description: "High-fat tropical fruit for keto" },
+      // Grains (keto-friendly alternatives)
+      { name: "Almond Flour",          category: "Grains",     carbs: 10,   fat: 54,   protein: 24,   calories: 576, indicator: "vegi",    description: "Low-carb flour alternative for keto baking" },
+      { name: "Coconut Flour",         category: "Grains",     carbs: 18,   fat: 9,    protein: 6,    calories: 400, indicator: "vegi",    description: "High-fiber keto baking flour, very absorbent" },
+      { name: "Psyllium Husk",         category: "Grains",     carbs: 2,    fat: 0,    protein: 0,    calories: 20,  indicator: "vegi",    description: "Keto-friendly binder and fiber supplement" },
+      { name: "Flaxseed Meal",         category: "Grains",     carbs: 2,    fat: 9,    protein: 5,    calories: 140, indicator: "vegi",    description: "Ground flaxseeds for keto bread and baking" },
     ];
 
     for (const food of foods) {

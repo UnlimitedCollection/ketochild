@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { kidsTable, weightRecordsTable, mealDaysTable, mealLogsTable, notesTable } from "@workspace/db";
-import { eq, gte, desc } from "drizzle-orm";
+import { eq, gte, desc, inArray } from "drizzle-orm";
 import { calcAgeMonths } from "../lib/utils";
 
 const router: IRouter = Router();
@@ -141,19 +141,19 @@ router.get("/recent-activity", async (req, res) => {
       return;
     }
 
-    const recentNotes = await db
+    const ownedNotes = await db
       .select()
       .from(notesTable)
+      .where(inArray(notesTable.kidId, kidIds))
       .orderBy(desc(notesTable.createdAt))
-      .limit(20);
-    const ownedNotes = recentNotes.filter((n) => n.kidId && kidIds.includes(n.kidId)).slice(0, 5);
+      .limit(5);
 
-    const recentWeights = await db
+    const ownedWeights = await db
       .select()
       .from(weightRecordsTable)
+      .where(inArray(weightRecordsTable.kidId, kidIds))
       .orderBy(desc(weightRecordsTable.createdAt))
-      .limit(20);
-    const ownedWeights = recentWeights.filter((w) => kidIds.includes(w.kidId)).slice(0, 5);
+      .limit(5);
 
     type ActivityItem = {
       type: string;
