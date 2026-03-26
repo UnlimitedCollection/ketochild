@@ -186,8 +186,9 @@ function AppSidebar() {
       </nav>
 
       <div className="px-3 pt-4 mt-4 border-t border-slate-200 space-y-0.5">
-        <button
-          onClick={() => { setActiveTitle("Settings"); setLocation("/settings"); }}
+        <Link
+          href="/settings"
+          onClick={() => setActiveTitle("Settings")}
           className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium w-full text-left transition-all
             ${location === "/settings" || activeTitle === "Settings"
               ? "text-blue-700 font-bold border-r-4 border-blue-600 bg-blue-50"
@@ -196,7 +197,7 @@ function AppSidebar() {
         >
           <IconSettings />
           <span>Settings</span>
-        </button>
+        </Link>
         <button
           onClick={handleLogout}
           className="flex items-center gap-3 px-3 py-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all text-sm font-medium w-full text-left"

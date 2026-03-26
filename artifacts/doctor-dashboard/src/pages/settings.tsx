@@ -57,7 +57,7 @@ export default function SettingsPage() {
         specialty: user.specialty ?? "",
       });
     }
-  }, [user?.id]);
+  }, [user?.id, user?.name, user?.email, user?.username, user?.specialty]);
 
   const [passwords, setPasswords] = useState({
     currentPassword: "",
