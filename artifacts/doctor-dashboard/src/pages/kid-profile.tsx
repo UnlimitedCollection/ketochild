@@ -35,7 +35,6 @@ export default function KidProfilePage() {
   const { data: profile, isLoading } = useGetKid(kidId);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const deleteKidMutation = useDeleteKid({

@@ -164,8 +164,6 @@ export default function KidsListPage() {
   const urlParams = new URLSearchParams(searchQuery);
   const initialSearch = urlParams.get("search") ?? "";
 
-  const notesMode = urlParams.get("notes") === "1";
-
   const [searchTerm, setSearchTerm] = useState(initialSearch);
   const debouncedSearch = useDebounce(searchTerm, 300);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -233,12 +231,10 @@ export default function KidsListPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-            {notesMode ? "Private Notes" : "Patient Directory"}
+            Patient Directory
           </h1>
           <p className="text-slate-500 mt-1">
-            {notesMode
-              ? "Select a patient below to view or add private notes."
-              : "Manage and monitor all children in the program."}
+            Manage and monitor all children in the program.
           </p>
         </div>
         <Button asChild className="rounded-xl shadow-sm">
