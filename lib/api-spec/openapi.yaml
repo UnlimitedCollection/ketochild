@@ -1341,12 +1341,16 @@ components:
       properties:
         name:
           type: string
+          minLength: 1
         email:
           type: string
+          format: email
         specialty:
           type: string
         username:
           type: string
+          minLength: 3
+          maxLength: 100
       required:
         - name
         - email
@@ -1357,10 +1361,13 @@ components:
       properties:
         currentPassword:
           type: string
+          minLength: 1
         newPassword:
           type: string
+          minLength: 6
         confirmPassword:
           type: string
+          minLength: 1
       required:
         - currentPassword
         - newPassword

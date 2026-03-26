@@ -38,15 +38,23 @@ export interface LoginResponse {
 }
 
 export interface UpdateDoctorProfileRequest {
+  /** @minLength 1 */
   name: string;
   email: string;
   specialty?: string;
+  /**
+   * @minLength 3
+   * @maxLength 100
+   */
   username: string;
 }
 
 export interface ChangeDoctorPasswordRequest {
+  /** @minLength 1 */
   currentPassword: string;
+  /** @minLength 6 */
   newPassword: string;
+  /** @minLength 1 */
   confirmPassword: string;
 }
 

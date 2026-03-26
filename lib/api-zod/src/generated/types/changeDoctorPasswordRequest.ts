@@ -7,7 +7,10 @@
  */
 
 export interface ChangeDoctorPasswordRequest {
+  /** @minLength 1 */
   currentPassword: string;
+  /** @minLength 6 */
   newPassword: string;
+  /** @minLength 1 */
   confirmPassword: string;
 }

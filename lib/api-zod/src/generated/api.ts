@@ -55,11 +55,18 @@ export const GetMeResponse = zod.object({
 /**
  * @summary Update doctor profile (name, email, specialty, username)
  */
+
+export const updateDoctorProfileBodyUsernameMin = 3;
+export const updateDoctorProfileBodyUsernameMax = 100;
+
 export const UpdateDoctorProfileBody = zod.object({
-  name: zod.string(),
-  email: zod.string(),
+  name: zod.string().min(1),
+  email: zod.string().email(),
   specialty: zod.string().optional(),
-  username: zod.string(),
+  username: zod
+    .string()
+    .min(updateDoctorProfileBodyUsernameMin)
+    .max(updateDoctorProfileBodyUsernameMax),
 });
 
 export const UpdateDoctorProfileResponse = zod.object({
@@ -73,10 +80,13 @@ export const UpdateDoctorProfileResponse = zod.object({
 /**
  * @summary Change doctor password (requires current password)
  */
+
+export const changeDoctorPasswordBodyNewPasswordMin = 6;
+
 export const ChangeDoctorPasswordBody = zod.object({
-  currentPassword: zod.string(),
-  newPassword: zod.string(),
-  confirmPassword: zod.string(),
+  currentPassword: zod.string().min(1),
+  newPassword: zod.string().min(changeDoctorPasswordBodyNewPasswordMin),
+  confirmPassword: zod.string().min(1),
 });
 
 export const ChangeDoctorPasswordResponse = zod.object({
