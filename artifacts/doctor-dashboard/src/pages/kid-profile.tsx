@@ -1,6 +1,6 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useParams, Link, useLocation } from "wouter";
-import { useGetKid, useAddWeightRecord, useUpdateKidMedical, useUpdateKid, useDeleteKid, useAddKidNote, useDeleteKidNote, useGetKidMealHistory, useGetKidKetoneReadings, useAddKetoneReading, useDeleteKetoneReading, useGetKidMealLogs, useAddMealLog, useDeleteMealLog, useGetKidMealLog, useGetKidAssignedMealPlan, useAssignKidMealPlan, useGetLibraryMealPlans, useGetFoods, useGetKidFoodApprovals, useUpsertKidFoodApproval, useUpdateMealLogImage, getGetKidAssignedMealPlanQueryKey, type LibraryMealPlanDetail, type LibraryMealPlanItem, type FoodApproval, type MedicalSettingsRequest, type Note, type UpdateKidRequest } from "@workspace/api-client-react";
+import { useGetKid, useAddWeightRecord, useUpdateKidMedical, useUpdateKid, useDeleteKid, useGetKidMealHistory, useGetKidKetoneReadings, useAddKetoneReading, useDeleteKetoneReading, useGetKidMealLogs, useAddMealLog, useDeleteMealLog, useGetKidMealLog, useGetKidAssignedMealPlan, useAssignKidMealPlan, useGetLibraryMealPlans, useGetFoods, useGetKidFoodApprovals, useUpsertKidFoodApproval, useUpdateMealLogImage, getGetKidAssignedMealPlanQueryKey, type LibraryMealPlanDetail, type LibraryMealPlanItem, type FoodApproval, type MedicalSettingsRequest, type UpdateKidRequest } from "@workspace/api-client-react";
 import { useUpload } from "@workspace/object-storage-web";
 import { z } from "zod";
 import { useForm, useWatch } from "react-hook-form";
@@ -321,6 +321,19 @@ function EditKidDialog({ kidId, kid, open, onOpenChange }: { kidId: number; kid:
       phase: kid.phase,
     },
   });
+
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        name: kid.name,
+        dateOfBirth: kid.dateOfBirth,
+        gender: (kid.gender ?? "male") as "male" | "female",
+        parentName: kid.parentName,
+        parentContact: kid.parentContact,
+        phase: kid.phase,
+      });
+    }
+  }, [open, kid]);
 
   const mutation = useUpdateKid({
     mutation: {
@@ -1628,99 +1641,6 @@ function ComplianceTab({ kidId }: { kidId: number }) {
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
-}
-
-function NotesTab({ kidId, notes }: { kidId: number, notes: Note[] }) {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-  const [content, setContent] = useState("");
-  
-  const addMutation = useAddKidNote({
-    mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: [`/api/kids/${kidId}`] });
-        setContent("");
-        toast({ title: "Note added" });
-      }
-    }
-  });
-
-  const deleteMutation = useDeleteKidNote({
-    mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: [`/api/kids/${kidId}`] });
-        toast({ title: "Note deleted" });
-      }
-    }
-  });
-
-  return (
-    <div className="space-y-6">
-      <Card className="rounded-2xl shadow-sm border-slate-200">
-        <CardHeader className="border-b border-slate-100 bg-slate-50/50 rounded-t-2xl pb-4">
-          <CardTitle className="text-lg">Add Clinical Note</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-4">
-          <div className="space-y-4">
-            <Textarea 
-              placeholder="Enter private observations (only visible to medical staff)..." 
-              className="resize-none min-h-[100px] rounded-xl"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-            />
-            <div className="flex justify-end">
-              <Button 
-                onClick={() => addMutation.mutate({ kidId, data: { content } })}
-                disabled={!content.trim() || addMutation.isPending}
-                className="rounded-xl shadow-md"
-              >
-                {addMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Add Note
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="space-y-4">
-        <h3 className="font-bold text-lg text-slate-800 px-1">Note History</h3>
-        {notes.length === 0 ? (
-          <p className="text-slate-500 italic px-1">No notes recorded yet.</p>
-        ) : (
-          notes.map(note => (
-            <Card key={note.id} className="rounded-2xl shadow-sm border-slate-200 bg-white hover:border-slate-300 transition-colors">
-              <CardContent className="p-5">
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
-                      {note.doctorName.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900">Dr. {note.doctorName}</p>
-                      <p className="text-xs text-slate-500">{format(parseISO(note.createdAt), 'MMM d, yyyy • h:mm a')}</p>
-                    </div>
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => {
-                      if (confirm("Delete this note?")) {
-                        deleteMutation.mutate({ kidId, noteId: note.id });
-                      }
-                    }}
-                    className="text-slate-400 hover:text-destructive hover:bg-destructive/10 rounded-lg"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-                <p className="text-slate-700 whitespace-pre-wrap pl-10 text-sm leading-relaxed">{note.content}</p>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
     </div>
   );
 }
