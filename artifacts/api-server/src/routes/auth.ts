@@ -47,7 +47,7 @@ router.post("/login", async (req, res) => {
         username: doctor.username,
         name: doctor.name,
         email: doctor.email,
-        specialty: doctor.specialty,
+        specialty: doctor.specialty ?? undefined,
       },
     });
   } catch (err) {
@@ -87,7 +87,7 @@ router.get("/me", async (req, res) => {
       username: doctor.username,
       name: doctor.name,
       email: doctor.email,
-      specialty: doctor.specialty,
+      specialty: doctor.specialty ?? undefined,
     });
   } catch (err) {
     req.log.error({ err }, "Get me error");
@@ -159,7 +159,7 @@ router.put("/profile", async (req, res) => {
       username: updated.username,
       name: updated.name,
       email: updated.email,
-      specialty: updated.specialty,
+      specialty: updated.specialty ?? undefined,
     });
   } catch (err) {
     req.log.error({ err }, "Update profile error");
