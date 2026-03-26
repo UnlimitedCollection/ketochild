@@ -25,7 +25,7 @@ export default function LoginPage() {
   const queryClient = useQueryClient();
   
   const { data: user, isLoading: isCheckingAuth } = useGetMe({
-    query: { retry: false }
+    query: { queryKey: ["/api/auth/me"], retry: false }
   });
 
   useEffect(() => {
@@ -44,7 +44,7 @@ export default function LoginPage() {
         });
         setLocation("/");
       },
-      onError: (error: any) => {
+      onError: (error: Error) => {
         toast({
           variant: "destructive",
           title: "Login failed",

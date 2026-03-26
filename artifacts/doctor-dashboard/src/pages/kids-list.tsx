@@ -26,15 +26,10 @@ export default function KidsListPage() {
 
   const [activePhase, setActivePhase] = useState<number | undefined>(undefined);
 
-  const { data: kids, isLoading } = useGetKids({
-    query: {
-      queryKey: ["/api/kids", debouncedSearch, activePhase],
-    },
-    request: {
-      // @ts-ignore - orval params typing
-      params: { search: debouncedSearch || undefined, phase: activePhase }
-    }
-  });
+  const { data: kids, isLoading } = useGetKids(
+    { search: debouncedSearch || undefined, phase: activePhase as 1 | 2 | 3 | 4 | undefined },
+    { query: { queryKey: ["/api/kids", debouncedSearch, activePhase] } }
+  );
 
   return (
     <div className="space-y-6">

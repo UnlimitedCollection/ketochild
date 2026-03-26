@@ -203,10 +203,12 @@ router.post("/", async (req, res) => {
 
   try {
     const sessionDoctorId = req.session?.doctorId ?? null;
+    const { dateOfBirth, ...rest } = parsed.data;
     const [kid] = await db
       .insert(kidsTable)
       .values({
-        ...parsed.data,
+        ...rest,
+        dateOfBirth: dateOfBirth.toISOString().split("T")[0],
         kidCode: generateKidCode(),
         doctorId: sessionDoctorId,
       })
@@ -377,9 +379,13 @@ router.put("/:kidId", async (req, res) => {
 
   const doctorId = req.session.doctorId!;
   try {
+    const { dateOfBirth, ...restData } = parsed.data;
+    const updateData = dateOfBirth
+      ? { ...restData, dateOfBirth: dateOfBirth.toISOString().split("T")[0] }
+      : restData;
     const [kid] = await db
       .update(kidsTable)
-      .set(parsed.data)
+      .set(updateData)
       .where(and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId)))
       .returning();
 
@@ -638,8 +644,8 @@ router.post("/:kidId/notes", async (req, res) => {
     return;
   }
 
-  const doctorName = ((req.session as Record<string, unknown>).doctorName as string) || "Doctor";
-  const doctorId = (req.session as Record<string, unknown>).doctorId as number | undefined;
+  const doctorName = req.session.doctorName ?? "Doctor";
+  const doctorId = req.session.doctorId;
 
   try {
     const [note] = await db
@@ -896,7 +902,7 @@ router.post("/:kidId/ketones", async (req, res) => {
         value: parsed.data.value,
         unit: parsed.data.unit ?? "mmol/L",
         readingType: parsed.data.readingType ?? "blood",
-        date: parsed.data.date,
+        date: parsed.data.date.toISOString(),
         notes: parsed.data.notes,
       })
       .returning();

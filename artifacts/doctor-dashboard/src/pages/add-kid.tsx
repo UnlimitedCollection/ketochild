@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCreateKid } from "@workspace/api-client-react";
+import { useCreateKid, type CreateKidRequestPhase } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { ChevronLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ export default function AddKidPage() {
         toast({ title: "Patient Registered", description: `${data.name} has been added to the system.` });
         setLocation(`/kids/${data.id}`);
       },
-      onError: (err: any) => {
+      onError: (err: Error) => {
         toast({ variant: "destructive", title: "Error", description: err.message || "Failed to create patient record." });
       }
     }
@@ -68,7 +68,7 @@ export default function AddKidPage() {
         </CardHeader>
         <CardContent className="pt-6">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit((d) => mutation.mutate({ data: d }))} className="space-y-6">
+            <form onSubmit={form.handleSubmit((d) => mutation.mutate({ data: { ...d, phase: d.phase as CreateKidRequestPhase } }))} className="space-y-6">
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField control={form.control} name="name" render={({ field }) => (

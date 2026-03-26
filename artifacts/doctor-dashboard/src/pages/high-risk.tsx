@@ -6,12 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 export default function HighRiskPage() {
-  const { data: kids, isLoading } = useGetKids({
-    request: {
-      // @ts-ignore
-      params: { highRisk: true }
-    }
-  });
+  const { data: kids, isLoading } = useGetKids({ highRisk: true });
 
   return (
     <div className="space-y-6">

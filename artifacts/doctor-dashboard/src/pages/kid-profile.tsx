@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef } from "react";
 import { useParams, Link } from "wouter";
-import { useGetKid, useAddWeightRecord, useUpdateKidMedical, useAddKidNote, useDeleteKidNote, useGetKidMealHistory, useGetKidKetoneReadings, useAddKetoneReading, useDeleteKetoneReading, useGetKidMealLogs, useAddMealLog, useDeleteMealLog, useGetKidMealLog, useGetKidAssignedMealPlan, useAssignKidMealPlan, useGetLibraryMealPlans, useGetFoods, useGetKidFoodApprovals, useUpsertKidFoodApproval, useUpdateMealLogImage, getGetKidAssignedMealPlanQueryKey, type LibraryMealPlanDetail, type LibraryMealPlanItem, type FoodApproval } from "@workspace/api-client-react";
+import { useGetKid, useAddWeightRecord, useUpdateKidMedical, useAddKidNote, useDeleteKidNote, useGetKidMealHistory, useGetKidKetoneReadings, useAddKetoneReading, useDeleteKetoneReading, useGetKidMealLogs, useAddMealLog, useDeleteMealLog, useGetKidMealLog, useGetKidAssignedMealPlan, useAssignKidMealPlan, useGetLibraryMealPlans, useGetFoods, useGetKidFoodApprovals, useUpsertKidFoodApproval, useUpdateMealLogImage, getGetKidAssignedMealPlanQueryKey, type LibraryMealPlanDetail, type LibraryMealPlanItem, type FoodApproval, type MedicalSettingsRequest, type Note } from "@workspace/api-client-react";
 import { useUpload } from "@workspace/object-storage-web";
 import { z } from "zod";
 import { useForm, useWatch } from "react-hook-form";
@@ -362,7 +362,18 @@ const medicalSchema = z.object({
   showAllRecipes: z.boolean(),
 });
 
-function MedicalSettingsForm({ kidId, initialData }: { kidId: number, initialData: any }) {
+type MedicalSettings = {
+  phase: number;
+  ketoRatio: number;
+  dailyCalories: number;
+  dailyCarbs: number;
+  dailyFat: number;
+  dailyProtein: number;
+  showAllFoods: boolean;
+  showAllRecipes: boolean;
+};
+
+function MedicalSettingsForm({ kidId, initialData }: { kidId: number, initialData: MedicalSettings }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
@@ -410,7 +421,7 @@ function MedicalSettingsForm({ kidId, initialData }: { kidId: number, initialDat
       </CardHeader>
       <CardContent className="pt-6">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit((d) => mutation.mutate({ kidId, data: d as any }))} className="space-y-8">
+          <form onSubmit={form.handleSubmit((d) => mutation.mutate({ kidId, data: d as MedicalSettingsRequest }))} className="space-y-8">
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Macros */}
@@ -1471,7 +1482,7 @@ function ComplianceTab({ kidId }: { kidId: number }) {
   );
 }
 
-function NotesTab({ kidId, notes }: { kidId: number, notes: any[] }) {
+function NotesTab({ kidId, notes }: { kidId: number, notes: Note[] }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [content, setContent] = useState("");
