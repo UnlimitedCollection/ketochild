@@ -253,6 +253,23 @@ export interface MedicalSettingsRequest {
   showAllRecipes?: boolean;
 }
 
+export type RecentActivityItemType =
+  (typeof RecentActivityItemType)[keyof typeof RecentActivityItemType];
+
+export const RecentActivityItemType = {
+  note: "note",
+  weight: "weight",
+} as const;
+
+export interface RecentActivityItem {
+  type: RecentActivityItemType;
+  title: string;
+  description: string;
+  kidId: number;
+  kidName: string;
+  timestamp: string;
+}
+
 export interface NoteRequest {
   content: string;
 }

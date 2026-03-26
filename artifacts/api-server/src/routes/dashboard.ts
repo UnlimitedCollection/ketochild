@@ -1,11 +1,11 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { kidsTable, weightRecordsTable, mealDaysTable, mealLogsTable } from "@workspace/db";
-import { eq, gte } from "drizzle-orm";
+import { kidsTable, weightRecordsTable, mealDaysTable, mealLogsTable, notesTable } from "@workspace/db";
+import { eq, gte, desc } from "drizzle-orm";
 
 const router: IRouter = Router();
 
-function calcAgeMonths(dateOfBirth: string): number {
+export function calcAgeMonths(dateOfBirth: string): number {
   const dob = new Date(dateOfBirth);
   const now = new Date();
   return (now.getFullYear() - dob.getFullYear()) * 12 + (now.getMonth() - dob.getMonth());
@@ -125,6 +125,83 @@ router.get("/stats", async (req, res) => {
     });
   } catch (err) {
     req.log.error({ err }, "Dashboard stats error");
+    res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
+  }
+});
+
+router.get("/recent-activity", async (req, res) => {
+  const doctorId = req.session.doctorId!;
+
+  try {
+    const allKids = await db
+      .select({ id: kidsTable.id, name: kidsTable.name, phase: kidsTable.phase })
+      .from(kidsTable)
+      .where(eq(kidsTable.doctorId, doctorId));
+
+    const kidIds = allKids.map((k) => k.id);
+    const kidMap = new Map(allKids.map((k) => [k.id, k]));
+
+    if (kidIds.length === 0) {
+      res.json([]);
+      return;
+    }
+
+    const recentNotes = await db
+      .select()
+      .from(notesTable)
+      .orderBy(desc(notesTable.createdAt))
+      .limit(20);
+    const ownedNotes = recentNotes.filter((n) => n.kidId && kidIds.includes(n.kidId)).slice(0, 5);
+
+    const recentWeights = await db
+      .select()
+      .from(weightRecordsTable)
+      .orderBy(desc(weightRecordsTable.createdAt))
+      .limit(20);
+    const ownedWeights = recentWeights.filter((w) => kidIds.includes(w.kidId)).slice(0, 5);
+
+    type ActivityItem = {
+      type: string;
+      title: string;
+      description: string;
+      kidId: number;
+      kidName: string;
+      timestamp: string;
+    };
+
+    const activity: ActivityItem[] = [];
+
+    for (const note of ownedNotes) {
+      const kid = kidMap.get(note.kidId!);
+      if (!kid) continue;
+      activity.push({
+        type: "note",
+        title: "Note added",
+        description: note.content.length > 80 ? note.content.slice(0, 80) + "…" : note.content,
+        kidId: kid.id,
+        kidName: kid.name,
+        timestamp: note.createdAt.toISOString(),
+      });
+    }
+
+    for (const w of ownedWeights) {
+      const kid = kidMap.get(w.kidId);
+      if (!kid) continue;
+      activity.push({
+        type: "weight",
+        title: "Weight recorded",
+        description: `${w.weight} kg recorded${w.note ? ` — ${w.note}` : ""}`,
+        kidId: kid.id,
+        kidName: kid.name,
+        timestamp: w.createdAt.toISOString(),
+      });
+    }
+
+    activity.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+    res.json(activity.slice(0, 8));
+  } catch (err) {
+    req.log.error({ err }, "Recent activity error");
     res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
   }
 });

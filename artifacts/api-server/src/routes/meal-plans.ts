@@ -60,6 +60,21 @@ router.post("/", async (req, res) => {
   }
 });
 
+router.get("/library", async (req, res) => {
+  const doctorId = req.session.doctorId!;
+  try {
+    const plans = await db
+      .select()
+      .from(libraryMealPlansTable)
+      .where(eq(libraryMealPlansTable.doctorId, doctorId))
+      .orderBy(desc(libraryMealPlansTable.createdAt));
+    res.json(plans);
+  } catch (err) {
+    req.log.error({ err }, "Get library meal plans error");
+    res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
+  }
+});
+
 router.get("/:planId", async (req, res) => {
   const doctorId = req.session.doctorId!;
   try {

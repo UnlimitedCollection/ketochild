@@ -69,6 +69,8 @@ export * from "./medicalSettingsRequestPhase";
 export * from "./note";
 export * from "./noteRequest";
 export * from "./phaseCount";
+export * from "./recentActivityItem";
+export * from "./recentActivityItemType";
 export * from "./successResponse";
 export * from "./updateDoctorProfileRequest";
 export * from "./updateFoodRequest";

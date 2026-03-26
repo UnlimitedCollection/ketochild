@@ -124,6 +124,21 @@ export const GetDashboardStatsResponse = zod.object({
 });
 
 /**
+ * @summary Get recent clinical activity feed
+ */
+export const GetDashboardRecentActivityResponseItem = zod.object({
+  type: zod.enum(["note", "weight"]),
+  title: zod.string(),
+  description: zod.string(),
+  kidId: zod.number(),
+  kidName: zod.string(),
+  timestamp: zod.date(),
+});
+export const GetDashboardRecentActivityResponse = zod.array(
+  GetDashboardRecentActivityResponseItem,
+);
+
+/**
  * @summary Get all kids with optional search and filter
  */
 export const GetKidsQueryParams = zod.object({

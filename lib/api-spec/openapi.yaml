@@ -175,6 +175,21 @@ paths:
               schema:
                 $ref: "#/components/schemas/DashboardStats"
 
+  /dashboard/recent-activity:
+    get:
+      operationId: getDashboardRecentActivity
+      tags: [dashboard]
+      summary: Get recent clinical activity feed
+      responses:
+        "200":
+          description: Recent activity items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RecentActivityItem"
+
   /kids:
     get:
       operationId: getKids
@@ -1709,6 +1724,31 @@ components:
         - content
         - createdAt
         - doctorName
+
+    RecentActivityItem:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [note, weight]
+        title:
+          type: string
+        description:
+          type: string
+        kidId:
+          type: integer
+        kidName:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+      required:
+        - type
+        - title
+        - description
+        - kidId
+        - kidName
+        - timestamp
 
     NoteRequest:
       type: object

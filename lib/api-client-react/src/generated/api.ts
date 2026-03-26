@@ -58,6 +58,7 @@ import type {
   MedicalSettingsRequest,
   Note,
   NoteRequest,
+  RecentActivityItem,
   SuccessResponse,
   UpdateDoctorProfileRequest,
   UpdateFoodRequest,
@@ -627,6 +628,82 @@ export function useGetDashboardStats<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetDashboardStatsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get recent clinical activity feed
+ */
+export const getGetDashboardRecentActivityUrl = () => {
+  return `/api/dashboard/recent-activity`;
+};
+
+export const getDashboardRecentActivity = async (
+  options?: RequestInit,
+): Promise<RecentActivityItem[]> => {
+  return customFetch<RecentActivityItem[]>(getGetDashboardRecentActivityUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetDashboardRecentActivityQueryKey = () => {
+  return [`/api/dashboard/recent-activity`] as const;
+};
+
+export const getGetDashboardRecentActivityQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDashboardRecentActivity>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getDashboardRecentActivity>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetDashboardRecentActivityQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getDashboardRecentActivity>>
+  > = ({ signal }) => getDashboardRecentActivity({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDashboardRecentActivity>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetDashboardRecentActivityQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDashboardRecentActivity>>
+>;
+export type GetDashboardRecentActivityQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get recent clinical activity feed
+ */
+
+export function useGetDashboardRecentActivity<
+  TData = Awaited<ReturnType<typeof getDashboardRecentActivity>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getDashboardRecentActivity>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDashboardRecentActivityQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

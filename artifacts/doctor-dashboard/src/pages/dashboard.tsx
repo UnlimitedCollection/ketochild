@@ -1,5 +1,5 @@
-import { useGetDashboardStats } from "@workspace/api-client-react";
-import { Link } from "wouter";
+import { useGetDashboardStats, useGetDashboardRecentActivity } from "@workspace/api-client-react";
+import { Link, useLocation } from "wouter";
 import { Loader2, AlertTriangle } from "lucide-react";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip,
@@ -23,18 +23,27 @@ const WEEK_DATA = [
 ];
 
 const QUICK_ACTIONS = [
-  { label: "Search Child",  icon: "🔍" },
-  { label: "Update Weight", icon: "⚖️" },
-  { label: "Add Note",      icon: "📝" },
-  { label: "Med Controls",  icon: "💊" },
+  { label: "Search Child",  icon: "🔍", href: "/kids" },
+  { label: "Update Weight", icon: "⚖️", href: "/kids" },
+  { label: "Add Note",      icon: "📝", href: "/kids" },
+  { label: "Med Controls",  icon: "💊", href: "/kids" },
 ];
 
-const RECENT_ACTIVITY = [
-  { color: BLUE,  title: "Ketone review completed", desc: "Level 3.1 mmol/L — within target",    time: "2 min ago"  },
-  { color: AMBER, title: "Meal plan updated",       desc: "Phase 1 plan assigned for this week", time: "25 min ago" },
-  { color: RED,   title: "High-risk flag raised",   desc: "Weight dropped 5% in 7 days",         time: "1 hr ago"   },
-  { color: GREEN, title: "New patient registered",  desc: "Phase 1 initiated",                   time: "3 hr ago"   },
-];
+function activityColor(type: string) {
+  if (type === "note") return BLUE;
+  if (type === "weight") return GREEN;
+  return AMBER;
+}
+
+function formatRelativeTime(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} hr ago`;
+  return `${Math.floor(hrs / 24)} days ago`;
+}
 
 function KpiCard({
   label, value, sub, icon, accent, badge,
@@ -74,7 +83,9 @@ function KpiCard({
 }
 
 export default function DashboardPage() {
+  const [, navigate] = useLocation();
   const { data: stats, isLoading, error } = useGetDashboardStats();
+  const { data: recentActivity, isLoading: activityLoading } = useGetDashboardRecentActivity();
 
   const now = new Date();
   const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -312,7 +323,11 @@ export default function DashboardPage() {
           <h2 className="font-bold text-slate-800 mb-4">Quick Actions</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {QUICK_ACTIONS.map((qa) => (
-              <button key={qa.label} className="flex flex-col items-center gap-2 group">
+              <button
+                key={qa.label}
+                className="flex flex-col items-center gap-2 group cursor-pointer"
+                onClick={() => navigate(qa.href)}
+              >
                 <div className="w-14 h-14 rounded-full bg-slate-100 group-hover:bg-blue-600 flex items-center justify-center text-2xl transition-colors">
                   {qa.icon}
                 </div>
@@ -326,21 +341,37 @@ export default function DashboardPage() {
 
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
           <h2 className="font-bold text-slate-800 mb-4">Recent Activity</h2>
-          <ul className="flex flex-col gap-4">
-            {RECENT_ACTIVITY.map((a, i) => (
-              <li key={i} className="flex items-start gap-3">
-                <span
-                  className="mt-1 w-2.5 h-2.5 rounded-full shrink-0"
-                  style={{ background: a.color }}
-                />
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-slate-800">{a.title}</p>
-                  <p className="text-xs text-slate-400">{a.desc}</p>
-                </div>
-                <span className="text-[11px] text-slate-400 whitespace-nowrap">{a.time}</span>
-              </li>
-            ))}
-          </ul>
+          {activityLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+            </div>
+          ) : !recentActivity || recentActivity.length === 0 ? (
+            <p className="text-sm text-slate-400 py-8 text-center">No recent activity</p>
+          ) : (
+            <ul className="flex flex-col gap-4">
+              {recentActivity.map((a, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <span
+                    className="mt-1 w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{ background: activityColor(a.type) }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-slate-800">{a.title}</p>
+                    <p className="text-xs text-slate-500 truncate">{a.description}</p>
+                    <Link
+                      href={`/kids/${a.kidId}`}
+                      className="text-[11px] text-blue-500 hover:underline"
+                    >
+                      {a.kidName}
+                    </Link>
+                  </div>
+                  <span className="text-[11px] text-slate-400 whitespace-nowrap shrink-0">
+                    {formatRelativeTime(a.timestamp)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
 
