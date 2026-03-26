@@ -1,0 +1,359 @@
+import { Link, useLocation } from "wouter";
+import { useGetMe, useDoctorLogout, useGetDashboardStats } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+function IconDashboard() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+    </svg>
+  );
+}
+function IconChildren() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+    </svg>
+  );
+}
+function IconAnalysis() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+    </svg>
+  );
+}
+function IconVisibility() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+    </svg>
+  );
+}
+function IconRecipe() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM9 4h2v5l-1-.75L9 9V4zm9 16H6V4h1v9l3-2.25L13 13V4h5v16z"/>
+    </svg>
+  );
+}
+function IconNotes() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+    </svg>
+  );
+}
+function IconWarning() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+    </svg>
+  );
+}
+function IconSettings() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+    </svg>
+  );
+}
+function IconLogout() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+    </svg>
+  );
+}
+function IconSearch() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+    </svg>
+  );
+}
+function IconAdd() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+    </svg>
+  );
+}
+function IconBell() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+    </svg>
+  );
+}
+function IconAccount() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+    </svg>
+  );
+}
+
+const NAV_ITEMS = [
+  { title: "Dashboard",         url: "/",          icon: IconDashboard  },
+  { title: "Children",          url: "/kids",      icon: IconChildren   },
+  { title: "Analysis",          url: "/high-risk", icon: IconAnalysis   },
+  { title: "Food Visibility",   url: "/foods",     icon: IconVisibility },
+  { title: "Recipe Visibility", url: "/foods",     icon: IconRecipe     },
+  { title: "Private Notes",     url: "/kids?notes=1", icon: IconNotes   },
+  { title: "Missing Records",   url: "/high-risk", icon: IconWarning    },
+];
+
+function AppSidebar() {
+  const [location, setLocation] = useLocation();
+  const { data: user } = useGetMe();
+  const logout = useDoctorLogout();
+  const queryClient = useQueryClient();
+  const [activeTitle, setActiveTitle] = useState<string>("");
+
+  useEffect(() => {
+    const matched = NAV_ITEMS.find((item) => {
+      if (item.url === "/") return location === "/";
+      const base = item.url.split("?")[0];
+      return location === base || location.startsWith(base + "/");
+    });
+    if (matched && !activeTitle) {
+      setActiveTitle(matched.title);
+    }
+  }, [location]);
+
+  const handleNavClick = (item: typeof NAV_ITEMS[0]) => {
+    setActiveTitle(item.title);
+    setLocation(item.url);
+  };
+
+  const handleLogout = () => {
+    logout.mutate(undefined, {
+      onSuccess: () => {
+        queryClient.clear();
+        window.location.href = "/login";
+      }
+    });
+  };
+
+  const initials = user?.name
+    ? user.name.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase()
+    : "DR";
+
+  return (
+    <aside className="fixed left-0 top-0 h-full w-64 bg-slate-50 border-r border-slate-200 flex flex-col py-6 z-50 shrink-0">
+      <div className="px-6 mb-8">
+        <h1 className="text-xl font-black text-blue-800 tracking-tighter">KetoKid Care</h1>
+      </div>
+
+      <div className="px-4 mb-8">
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-100">
+          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm shrink-0">
+            {initials}
+          </div>
+          <div className="overflow-hidden">
+            <p className="text-sm font-bold text-slate-800 truncate">
+              {user?.name ? `Dr. ${user.name.split(" ").slice(-1)[0]}` : "Dr. Smith"}
+            </p>
+            <p className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold truncate">
+              {user?.specialty || "Pediatric Neurology"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <nav className="flex-1 px-3 space-y-0.5">
+        {NAV_ITEMS.map((item) => {
+          const active = activeTitle === item.title ||
+            (!activeTitle && (
+              item.url === "/" ? location === "/" : location.startsWith(item.url.split("?")[0])
+            ));
+          return (
+            <button
+              key={item.title}
+              onClick={() => handleNavClick(item)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all text-left
+                ${active
+                  ? "text-blue-700 font-bold border-r-4 border-blue-600 bg-blue-50"
+                  : "text-slate-600 hover:text-blue-600 hover:bg-slate-100 font-medium"
+                }`}
+            >
+              <item.icon />
+              <span>{item.title}</span>
+            </button>
+          );
+        })}
+      </nav>
+
+      <div className="px-3 pt-4 mt-4 border-t border-slate-200 space-y-0.5">
+        <button
+          disabled
+          className="flex items-center gap-3 px-3 py-2 text-slate-400 rounded-lg text-sm font-medium w-full text-left cursor-not-allowed"
+          title="Settings — coming soon"
+        >
+          <IconSettings />
+          <span>Settings</span>
+        </button>
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-3 py-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all text-sm font-medium w-full text-left"
+        >
+          <IconLogout />
+          <span>Logout</span>
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+function AlertsBell() {
+  const [, setLocation] = useLocation();
+  const [open, setOpen] = useState(false);
+  const { data: stats, refetch, isFetching } = useGetDashboardStats();
+  const urgentKids = stats?.recentHighRiskKids ?? [];
+  const hasAlerts = urgentKids.length > 0;
+
+  function handleOpenChange(isOpen: boolean) {
+    setOpen(isOpen);
+    if (isOpen) refetch();
+  }
+
+  function navigateToKid(kidId: number) {
+    setOpen(false);
+    setLocation(`/kids/${kidId}`);
+  }
+
+  return (
+    <Popover open={open} onOpenChange={handleOpenChange}>
+      <PopoverTrigger asChild>
+        <button className="p-2 text-slate-500 hover:bg-slate-50 rounded-full transition-colors relative" aria-label="Alerts">
+          <IconBell />
+          {hasAlerts && (
+            <span className="absolute top-2 right-2 w-2 h-2 bg-red-600 rounded-full border-2 border-white" />
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 p-0 rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+        <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+          <p className="text-sm font-bold text-slate-800">Urgent Alerts</p>
+          <div className="flex items-center gap-2">
+            {isFetching && (
+              <svg className="h-3.5 w-3.5 animate-spin text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+              </svg>
+            )}
+            {hasAlerts && (
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                {urgentKids.length} patients
+              </span>
+            )}
+          </div>
+        </div>
+        {!hasAlerts ? (
+          <div className="px-4 py-6 text-center text-slate-400 text-sm">
+            No urgent alerts right now.
+          </div>
+        ) : (
+          <ul className="divide-y divide-slate-100 max-h-72 overflow-y-auto">
+            {urgentKids.slice(0, 5).map((kid) => (
+              <li key={kid.id}>
+                <button
+                  className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors flex items-start gap-3"
+                  onClick={() => navigateToKid(kid.id)}
+                >
+                  <span className="w-7 h-7 rounded-full bg-red-100 text-red-700 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                    {kid.name.charAt(0)}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-slate-800 truncate">{kid.name}</p>
+                    <p className="text-xs font-semibold text-red-600 mt-0.5 truncate">{kid.riskReason}</p>
+                    {kid.mealCompletionRate != null && (
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        {Math.round(kid.mealCompletionRate * 100)}% meal completion
+                      </p>
+                    )}
+                  </div>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="px-4 py-2 border-t border-slate-100 bg-slate-50">
+          <button
+            className="text-xs font-semibold text-blue-600 hover:underline"
+            onClick={() => setLocation("/high-risk")}
+          >
+            View all high-risk patients →
+          </button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function AppHeader() {
+  const [, setLocation] = useLocation();
+  const [search, setSearch] = useState("");
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    if (search.trim()) {
+      setLocation(`/kids?search=${encodeURIComponent(search.trim())}`);
+    }
+  }
+
+  return (
+    <header className="sticky top-0 w-full z-40 bg-white/90 backdrop-blur-md flex items-center gap-4 px-8 py-3 shadow-sm border-b border-slate-200">
+      <form onSubmit={handleSearch} className="flex-1">
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+            <IconSearch />
+          </span>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search patient database..."
+            className="pl-10 pr-4 py-2 bg-slate-100 border-none rounded-full text-sm w-full outline-none focus:ring-2 focus:ring-blue-200 transition-all text-slate-700 placeholder:text-slate-400"
+          />
+        </div>
+      </form>
+
+      <div className="flex items-center gap-3">
+        <Link
+          href="/kids/new"
+          className="flex items-center gap-1.5 bg-[#004ac6] text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-blue-700 active:scale-95 transition-all"
+        >
+          <IconAdd />
+          Quick Add
+        </Link>
+
+        <div className="flex items-center gap-1 border-l border-slate-200 ml-1 pl-3">
+          <AlertsBell />
+          <button className="p-2 text-slate-500 hover:bg-slate-50 rounded-full transition-colors">
+            <IconAccount />
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+export function AppLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex min-h-screen bg-[#f7f9fb]">
+      <AppSidebar />
+      <div className="flex flex-col flex-1 ml-64 min-w-0">
+        <AppHeader />
+        <main className="flex-1 overflow-auto p-8 md:p-10">
+          <div className="mx-auto max-w-7xl w-full">
+            {children}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}

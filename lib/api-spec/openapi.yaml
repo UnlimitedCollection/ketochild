@@ -1,22 +1,34 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Keto Diet Doctor Dashboard API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: dashboard
+    description: Doctor dashboard stats
+  - name: kids
+    description: Kid management
+  - name: foods
+    description: Food management
+  - name: notes
+    description: Private notes
+  - name: mealplans
+    description: Library meal plan management and assignment
+  - name: Storage
+    description: Object storage upload and serving endpoints.
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +36,1147 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login:
+    post:
+      operationId: doctorLogin
+      tags: [auth]
+      summary: Doctor login with username and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: doctorLogout
+      tags: [auth]
+      summary: Doctor logout
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current logged in doctor
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Doctor"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Get dashboard statistics
+      responses:
+        "200":
+          description: Dashboard statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /kids:
+    get:
+      operationId: getKids
+      tags: [kids]
+      summary: Get all kids with optional search and filter
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search by name, kid ID, parent name
+        - name: phase
+          in: query
+          schema:
+            type: integer
+            enum: [1, 2, 3, 4]
+          description: Filter by phase
+        - name: highRisk
+          in: query
+          schema:
+            type: boolean
+          description: Filter high-risk children only
+      responses:
+        "200":
+          description: List of kids
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Kid"
+
+    post:
+      operationId: createKid
+      tags: [kids]
+      summary: Create a new kid profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateKidRequest"
+      responses:
+        "201":
+          description: Kid created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Kid"
+
+  /kids/{kidId}:
+    get:
+      operationId: getKid
+      tags: [kids]
+      summary: Get kid profile
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Kid profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KidProfile"
+        "404":
+          description: Kid not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    put:
+      operationId: updateKid
+      tags: [kids]
+      summary: Update kid information
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateKidRequest"
+      responses:
+        "200":
+          description: Kid updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Kid"
+
+  /kids/{kidId}/weight:
+    post:
+      operationId: addWeightRecord
+      tags: [kids]
+      summary: Add weight record for a kid
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WeightRecordRequest"
+      responses:
+        "201":
+          description: Weight record added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeightRecord"
+
+    get:
+      operationId: getWeightHistory
+      tags: [kids]
+      summary: Get weight history for a kid
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Weight history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WeightRecord"
+
+  /kids/{kidId}/medical:
+    get:
+      operationId: getKidMedical
+      tags: [kids]
+      summary: Get kid medical settings
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Medical settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MedicalSettings"
+
+    put:
+      operationId: updateKidMedical
+      tags: [kids]
+      summary: Update kid medical settings
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MedicalSettingsRequest"
+      responses:
+        "200":
+          description: Medical settings updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MedicalSettings"
+
+  /kids/{kidId}/meal-history:
+    get:
+      operationId: getKidMealHistory
+      tags: [kids]
+      summary: Get meal history for a kid
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 30
+      responses:
+        "200":
+          description: Meal history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MealDay"
+
+  /kids/{kidId}/notes:
+    get:
+      operationId: getKidNotes
+      tags: [notes]
+      summary: Get private notes for a kid
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Private notes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Note"
+
+    post:
+      operationId: addKidNote
+      tags: [notes]
+      summary: Add a private note for a kid
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NoteRequest"
+      responses:
+        "201":
+          description: Note added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+
+  /kids/{kidId}/notes/{noteId}:
+    delete:
+      operationId: deleteKidNote
+      tags: [notes]
+      summary: Delete a private note
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: noteId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Note deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /kids/{kidId}/visibility:
+    put:
+      operationId: updateFoodVisibility
+      tags: [kids]
+      summary: Update food/recipe visibility for a kid
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VisibilityRequest"
+      responses:
+        "200":
+          description: Visibility updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /kids/{kidId}/meal-logs:
+    get:
+      operationId: getKidMealLogs
+      tags: [kids]
+      summary: Get per-meal log entries for a kid (optionally filtered by date)
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: Meal log entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MealLog"
+    post:
+      operationId: addMealLog
+      tags: [kids]
+      summary: Log a per-meal entry for a kid
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddMealLogRequest"
+      responses:
+        "201":
+          description: Meal log created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealLog"
+
+  /kids/{kidId}/meal-logs/{logId}:
+    delete:
+      operationId: deleteMealLog
+      tags: [kids]
+      summary: Delete a meal log entry
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: logId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Entry deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /kids/{kidId}/meal-logs/{logId}/image:
+    put:
+      operationId: updateMealLogImage
+      tags: [kids]
+      summary: Set or clear the photo image URL for a meal log entry
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: logId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMealLogImageRequest"
+      responses:
+        "200":
+          description: Image URL updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealLog"
+
+  /kids/{kidId}/food-approvals:
+    get:
+      operationId: getKidFoodApprovals
+      tags: [kids]
+      summary: Get all food approval records for a kid
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of food approval records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FoodApproval"
+
+  /kids/{kidId}/food-approvals/{foodId}:
+    put:
+      operationId: upsertKidFoodApproval
+      tags: [kids]
+      summary: Set or delete a food approval status for a kid
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: foodId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FoodApprovalRequest"
+      responses:
+        "200":
+          description: Approval updated or removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /storage/uploads/request-url:
+    post:
+      tags: [Storage]
+      operationId: requestUploadUrl
+      summary: Request a presigned URL for file upload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadUrlRequest"
+      responses:
+        "200":
+          description: Presigned upload URL generated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadUrlResponse"
+
+  /storage/objects/{objectPath}:
+    get:
+      tags: [Storage]
+      operationId: getStorageObject
+      summary: Serve an object entity from PRIVATE_OBJECT_DIR
+      parameters:
+        - name: objectPath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Object content streamed with correct Content-Type.
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+
+  /kids/{kidId}/meal-log:
+    get:
+      operationId: getKidMealLog
+      tags: [kids]
+      summary: Get per-food meal entries for a kid on a given date, grouped by meal type
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Meal entries grouped by meal type
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealLogDetail"
+
+  /kids/{kidId}/ketones:
+    get:
+      operationId: getKidKetoneReadings
+      tags: [kids]
+      summary: Get ketone readings for a kid
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 30
+      responses:
+        "200":
+          description: Ketone readings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/KetoneReading"
+    post:
+      operationId: addKetoneReading
+      tags: [kids]
+      summary: Add a ketone reading
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddKetoneReadingRequest"
+      responses:
+        "201":
+          description: Ketone reading added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KetoneReading"
+
+  /kids/{kidId}/ketones/{readingId}:
+    delete:
+      operationId: deleteKetoneReading
+      tags: [kids]
+      summary: Delete a ketone reading
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: readingId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Reading deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /meal-plans:
+    get:
+      operationId: getLibraryMealPlans
+      tags: [mealplans]
+      summary: List all library meal plans (doctor-scoped)
+      responses:
+        "200":
+          description: List of library meal plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LibraryMealPlan"
+    post:
+      operationId: createLibraryMealPlan
+      tags: [mealplans]
+      summary: Create a new library meal plan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLibraryMealPlanRequest"
+      responses:
+        "201":
+          description: Library meal plan created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LibraryMealPlan"
+
+  /meal-plans/{planId}:
+    get:
+      operationId: getLibraryMealPlan
+      tags: [mealplans]
+      summary: Get a library meal plan with its items
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Library meal plan with items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LibraryMealPlanDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: updateLibraryMealPlan
+      tags: [mealplans]
+      summary: Update a library meal plan
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLibraryMealPlanRequest"
+      responses:
+        "200":
+          description: Updated library meal plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LibraryMealPlan"
+    delete:
+      operationId: deleteLibraryMealPlan
+      tags: [mealplans]
+      summary: Delete a library meal plan
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Plan deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /meal-plans/{planId}/items:
+    post:
+      operationId: addLibraryMealPlanItem
+      tags: [mealplans]
+      summary: Add a food item to a library meal plan
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddLibraryMealPlanItemRequest"
+      responses:
+        "201":
+          description: Item added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LibraryMealPlanItem"
+
+  /meal-plans/{planId}/items/{itemId}:
+    delete:
+      operationId: deleteLibraryMealPlanItem
+      tags: [mealplans]
+      summary: Remove an item from a library meal plan
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Item removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /kids/{kidId}/meal-plan:
+    get:
+      operationId: getKidAssignedMealPlan
+      tags: [mealplans]
+      summary: Get the library meal plan assigned to a kid (or null if none)
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Assigned meal plan with items (or null)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LibraryMealPlanDetail"
+        "204":
+          description: No plan assigned
+    put:
+      operationId: assignKidMealPlan
+      tags: [mealplans]
+      summary: Assign or unassign a library meal plan to a kid
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignMealPlanRequest"
+      responses:
+        "200":
+          description: Assignment updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /foods:
+    get:
+      operationId: getFoods
+      tags: [foods]
+      summary: Get all foods
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of foods
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Food"
+    post:
+      operationId: createFood
+      tags: [foods]
+      summary: Create a new food item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFoodRequest"
+      responses:
+        "201":
+          description: Food created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Food"
+
+  /kids/{kidId}/meal-plans:
+    get:
+      operationId: getKidMealPlans
+      tags: [kids]
+      summary: Get all meal plans for a kid
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of meal plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MealPlan"
+    post:
+      operationId: createKidMealPlan
+      tags: [kids]
+      summary: Create a new meal plan for a kid
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMealPlanRequest"
+      responses:
+        "201":
+          description: Meal plan created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealPlan"
+
+  /kids/{kidId}/meal-plans/{planId}:
+    get:
+      operationId: getKidMealPlan
+      tags: [kids]
+      summary: Get a single meal plan with its items
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Meal plan with items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealPlanDetail"
+    put:
+      operationId: updateKidMealPlan
+      tags: [kids]
+      summary: Update a meal plan
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMealPlanRequest"
+      responses:
+        "200":
+          description: Updated meal plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealPlan"
+    delete:
+      operationId: deleteKidMealPlan
+      tags: [kids]
+      summary: Delete a meal plan
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Plan deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /kids/{kidId}/meal-plans/{planId}/items:
+    post:
+      operationId: addMealPlanItem
+      tags: [kids]
+      summary: Add a food item to a meal plan
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddMealPlanItemRequest"
+      responses:
+        "201":
+          description: Item added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealPlanItem"
+
+  /kids/{kidId}/meal-plans/{planId}/items/{itemId}:
+    delete:
+      operationId: deleteMealPlanItem
+      tags: [kids]
+      summary: Remove an item from a meal plan
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Item removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /foods/{foodId}:
+    get:
+      operationId: getFood
+      tags: [foods]
+      summary: Get a single food item
+      parameters:
+        - name: foodId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Food item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Food"
+    put:
+      operationId: updateFood
+      tags: [foods]
+      summary: Update a food item
+      parameters:
+        - name: foodId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFoodRequest"
+      responses:
+        "200":
+          description: Food updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Food"
+    delete:
+      operationId: deleteFood
+      tags: [foods]
+      summary: Delete a food item
+      parameters:
+        - name: foodId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Food deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +1187,1037 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required:
+        - username
+        - password
+
+    LoginResponse:
+      type: object
+      properties:
+        doctor:
+          $ref: "#/components/schemas/Doctor"
+        token:
+          type: string
+      required:
+        - doctor
+        - token
+
+    Doctor:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        specialty:
+          type: string
+      required:
+        - id
+        - username
+        - name
+        - email
+
+    DashboardStats:
+      type: object
+      properties:
+        totalChildren:
+          type: integer
+        highRiskChildren:
+          type: integer
+        unfilledMealRecords:
+          type: integer
+        last24hUnfilledMealRecords:
+          type: integer
+        averageWeightChange:
+          type: number
+        phaseDistribution:
+          type: array
+          items:
+            $ref: "#/components/schemas/PhaseCount"
+        recentHighRiskKids:
+          type: array
+          items:
+            $ref: "#/components/schemas/HighRiskKid"
+      required:
+        - totalChildren
+        - highRiskChildren
+        - unfilledMealRecords
+        - last24hUnfilledMealRecords
+        - averageWeightChange
+        - phaseDistribution
+        - recentHighRiskKids
+
+    PhaseCount:
+      type: object
+      properties:
+        phase:
+          type: integer
+        count:
+          type: integer
+        label:
+          type: string
+      required:
+        - phase
+        - count
+        - label
+
+    HighRiskKid:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        ageMonths:
+          type: integer
+        phase:
+          type: integer
+        parentContact:
+          type: string
+        riskReason:
+          type: string
+        mealCompletionRate:
+          type: number
+      required:
+        - id
+        - name
+        - ageMonths
+        - phase
+        - parentContact
+        - riskReason
+
+    Kid:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        kidCode:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        ageMonths:
+          type: integer
+        phase:
+          type: integer
+        parentName:
+          type: string
+        parentContact:
+          type: string
+        isHighRisk:
+          type: boolean
+        mealCompletionRate:
+          type: number
+        inKetoStatus:
+          type: boolean
+          description: Whether the child's avg carb intake (last 7 days) is within the prescribed daily carb limit
+        last24hCompletionRate:
+          type: number
+          description: Most recent meal day completion rate (0-1)
+        currentWeight:
+          type: number
+        lastWeightDate:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [male, female]
+      required:
+        - id
+        - name
+        - kidCode
+        - dateOfBirth
+        - ageMonths
+        - phase
+        - parentName
+        - parentContact
+        - isHighRisk
+        - mealCompletionRate
+        - inKetoStatus
+        - last24hCompletionRate
+
+    KidProfile:
+      type: object
+      properties:
+        kid:
+          $ref: "#/components/schemas/Kid"
+        medical:
+          $ref: "#/components/schemas/MedicalSettings"
+        recentWeights:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeightRecord"
+        recentMeals:
+          type: array
+          items:
+            $ref: "#/components/schemas/MealDay"
+        notes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Note"
+      required:
+        - kid
+        - medical
+        - recentWeights
+        - recentMeals
+        - notes
+
+    CreateKidRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [male, female]
+        parentName:
+          type: string
+        parentContact:
+          type: string
+        phase:
+          type: integer
+          enum: [1, 2, 3, 4]
+      required:
+        - name
+        - dateOfBirth
+        - gender
+        - parentName
+        - parentContact
+        - phase
+
+    UpdateKidRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [male, female]
+        parentName:
+          type: string
+        parentContact:
+          type: string
+        phase:
+          type: integer
+          enum: [1, 2, 3, 4]
+
+    WeightRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        kidId:
+          type: integer
+        weight:
+          type: number
+        date:
+          type: string
+          format: date
+        note:
+          type: string
+      required:
+        - id
+        - kidId
+        - weight
+        - date
+
+    WeightRecordRequest:
+      type: object
+      properties:
+        weight:
+          type: number
+        date:
+          type: string
+          format: date
+        note:
+          type: string
+      required:
+        - weight
+        - date
+
+    MedicalSettings:
+      type: object
+      properties:
+        id:
+          type: integer
+        kidId:
+          type: integer
+        phase:
+          type: integer
+          enum: [1, 2, 3, 4]
+        ketoRatio:
+          type: number
+          description: Ratio of fat to protein + carbohydrates
+        dailyCalories:
+          type: number
+        dailyCarbs:
+          type: number
+        dailyFat:
+          type: number
+        dailyProtein:
+          type: number
+        showAllFoods:
+          type: boolean
+        showAllRecipes:
+          type: boolean
+      required:
+        - id
+        - kidId
+        - phase
+        - ketoRatio
+        - dailyCalories
+        - dailyCarbs
+        - dailyFat
+        - dailyProtein
+        - showAllFoods
+        - showAllRecipes
+
+    MedicalSettingsRequest:
+      type: object
+      properties:
+        phase:
+          type: integer
+          enum: [1, 2, 3, 4]
+        ketoRatio:
+          type: number
+        dailyCalories:
+          type: number
+        dailyCarbs:
+          type: number
+        dailyFat:
+          type: number
+        dailyProtein:
+          type: number
+        showAllFoods:
+          type: boolean
+        showAllRecipes:
+          type: boolean
+
+    MealDay:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        completionRate:
+          type: number
+        totalMeals:
+          type: integer
+        completedMeals:
+          type: integer
+        missedMeals:
+          type: integer
+        isFilled:
+          type: boolean
+        totalCalories:
+          type: number
+        totalCarbs:
+          type: number
+        totalFat:
+          type: number
+        totalProtein:
+          type: number
+      required:
+        - date
+        - completionRate
+        - totalMeals
+        - completedMeals
+        - missedMeals
+        - isFilled
+
+    Note:
+      type: object
+      properties:
+        id:
+          type: integer
+        kidId:
+          type: integer
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        doctorName:
+          type: string
+      required:
+        - id
+        - kidId
+        - content
+        - createdAt
+        - doctorName
+
+    NoteRequest:
+      type: object
+      properties:
+        content:
+          type: string
+      required:
+        - content
+
+    VisibilityRequest:
+      type: object
+      properties:
+        showAllFoods:
+          type: boolean
+        showAllRecipes:
+          type: boolean
+        applyToAll:
+          type: boolean
+      required:
+        - showAllFoods
+        - showAllRecipes
+
+    MealLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        kidId:
+          type: integer
+        date:
+          type: string
+          format: date
+        mealType:
+          type: string
+          enum: [breakfast, lunch, dinner, snack]
+        isCompleted:
+          type: boolean
+        calories:
+          type: number
+        carbs:
+          type: number
+        fat:
+          type: number
+        protein:
+          type: number
+        notes:
+          type: string
+        imageUrl:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - kidId
+        - date
+        - mealType
+        - isCompleted
+        - createdAt
+
+    UpdateMealLogImageRequest:
+      type: object
+      properties:
+        imageUrl:
+          type: string
+          nullable: true
+          description: Object storage path or null to clear
+
+    FoodApproval:
+      type: object
+      properties:
+        id:
+          type: integer
+        kidId:
+          type: integer
+        foodId:
+          type: integer
+        status:
+          type: string
+          enum: [approved, avoid]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - kidId
+        - foodId
+        - status
+        - createdAt
+        - updatedAt
+
+    FoodApprovalRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [approved, avoid, none]
+          description: Use "none" to delete the approval record
+      required:
+        - status
+
+    UploadUrlRequest:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        size:
+          type: integer
+          minimum: 1
+        contentType:
+          type: string
+          minLength: 1
+
+    UploadUrlResponse:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL:
+          type: string
+          format: uri
+        objectPath:
+          type: string
+
+    AddMealLogRequest:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        mealType:
+          type: string
+          enum: [breakfast, lunch, dinner, snack]
+        isCompleted:
+          type: boolean
+          default: true
+        calories:
+          type: number
+        carbs:
+          type: number
+        fat:
+          type: number
+        protein:
+          type: number
+        notes:
+          type: string
+      required:
+        - date
+        - mealType
+
+    MealEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        kidId:
+          type: integer
+        date:
+          type: string
+          format: date
+        mealType:
+          type: string
+          enum: [breakfast, lunch, dinner, snack]
+        foodName:
+          type: string
+        quantity:
+          type: number
+        unit:
+          type: string
+        calories:
+          type: number
+        carbs:
+          type: number
+        fat:
+          type: number
+        protein:
+          type: number
+      required:
+        - id
+        - kidId
+        - date
+        - mealType
+        - foodName
+        - quantity
+        - unit
+
+    MealLogDetail:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        breakfast:
+          type: array
+          items:
+            $ref: "#/components/schemas/MealEntry"
+        lunch:
+          type: array
+          items:
+            $ref: "#/components/schemas/MealEntry"
+        dinner:
+          type: array
+          items:
+            $ref: "#/components/schemas/MealEntry"
+        snack:
+          type: array
+          items:
+            $ref: "#/components/schemas/MealEntry"
+      required:
+        - date
+        - breakfast
+        - lunch
+        - dinner
+        - snack
+
+    KetoneReading:
+      type: object
+      properties:
+        id:
+          type: integer
+        kidId:
+          type: integer
+        value:
+          type: number
+        unit:
+          type: string
+        readingType:
+          type: string
+          enum: [blood, urine]
+        date:
+          type: string
+          format: date
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - kidId
+        - value
+        - unit
+        - readingType
+        - date
+        - createdAt
+
+    AddKetoneReadingRequest:
+      type: object
+      properties:
+        value:
+          type: number
+        unit:
+          type: string
+          default: mmol/L
+        readingType:
+          type: string
+          enum: [blood, urine]
+          default: blood
+        date:
+          type: string
+          format: date
+        notes:
+          type: string
+      required:
+        - value
+        - date
+
+    Food:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        category:
+          type: string
+        carbs:
+          type: number
+        fat:
+          type: number
+        protein:
+          type: number
+        calories:
+          type: number
+        imageUrl:
+          type: string
+        description:
+          type: string
+        indicator:
+          type: string
+          enum: [vegi, fruit, non-vegi, recipe]
+        isActive:
+          type: boolean
+      required:
+        - id
+        - name
+        - category
+        - carbs
+        - fat
+        - protein
+        - calories
+        - isActive
+
+    CreateFoodRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+        carbs:
+          type: number
+        fat:
+          type: number
+        protein:
+          type: number
+        calories:
+          type: number
+        imageUrl:
+          type: string
+        description:
+          type: string
+        indicator:
+          type: string
+          enum: [vegi, fruit, non-vegi, recipe]
+      required:
+        - name
+        - category
+        - carbs
+        - fat
+        - protein
+        - calories
+
+    UpdateFoodRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+        carbs:
+          type: number
+        fat:
+          type: number
+        protein:
+          type: number
+        calories:
+          type: number
+        imageUrl:
+          type: string
+        description:
+          type: string
+        indicator:
+          type: string
+          enum: [vegi, fruit, non-vegi, recipe]
+        isActive:
+          type: boolean
+
+    LibraryMealPlan:
+      type: object
+      properties:
+        id:
+          type: integer
+        doctorId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        targetPhase:
+          type: integer
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - name
+
+    LibraryMealPlanItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        planId:
+          type: integer
+        mealType:
+          type: string
+          enum: [breakfast, lunch, dinner, snack]
+        foodName:
+          type: string
+        portionGrams:
+          type: number
+        unit:
+          type: string
+        calories:
+          type: number
+        carbs:
+          type: number
+        fat:
+          type: number
+        protein:
+          type: number
+        notes:
+          type: string
+      required:
+        - id
+        - planId
+        - mealType
+        - foodName
+        - portionGrams
+        - unit
+
+    LibraryMealPlanDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        doctorId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        targetPhase:
+          type: integer
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/LibraryMealPlanItem"
+      required:
+        - id
+        - name
+        - items
+
+    CreateLibraryMealPlanRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        targetPhase:
+          type: integer
+      required:
+        - name
+
+    UpdateLibraryMealPlanRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        targetPhase:
+          type: integer
+
+    AddLibraryMealPlanItemRequest:
+      type: object
+      properties:
+        mealType:
+          type: string
+          enum: [breakfast, lunch, dinner, snack]
+        foodName:
+          type: string
+        portionGrams:
+          type: number
+        unit:
+          type: string
+          default: g
+        calories:
+          type: number
+        carbs:
+          type: number
+        fat:
+          type: number
+        protein:
+          type: number
+        notes:
+          type: string
+      required:
+        - mealType
+        - foodName
+        - portionGrams
+
+    AssignMealPlanRequest:
+      type: object
+      properties:
+        planId:
+          type: integer
+          nullable: true
+      required:
+        - planId
+
+    MealPlanItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        planId:
+          type: integer
+        mealType:
+          type: string
+          enum: [breakfast, lunch, dinner, snack]
+        foodId:
+          type: integer
+        foodName:
+          type: string
+        portionGrams:
+          type: number
+        calories:
+          type: number
+        carbs:
+          type: number
+        fat:
+          type: number
+        protein:
+          type: number
+        notes:
+          type: string
+      required:
+        - id
+        - planId
+        - mealType
+        - foodId
+        - foodName
+        - portionGrams
+
+    MealPlan:
+      type: object
+      properties:
+        id:
+          type: integer
+        kidId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - kidId
+        - name
+        - isActive
+
+    MealPlanDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        kidId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MealPlanItem"
+      required:
+        - id
+        - kidId
+        - name
+        - isActive
+        - items
+
+    CreateMealPlanRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        isActive:
+          type: boolean
+      required:
+        - name
+
+    UpdateMealPlanRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        isActive:
+          type: boolean
+
+    AddMealPlanItemRequest:
+      type: object
+      properties:
+        mealType:
+          type: string
+          enum: [breakfast, lunch, dinner, snack]
+        foodId:
+          type: integer
+        foodName:
+          type: string
+        portionGrams:
+          type: number
+        calories:
+          type: number
+        carbs:
+          type: number
+        fat:
+          type: number
+        protein:
+          type: number
+        notes:
+          type: string
+      required:
+        - mealType
+        - foodId
+        - foodName
+        - portionGrams

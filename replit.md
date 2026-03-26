@@ -3,6 +3,7 @@
 ## Overview
 
 pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+Keto Doctor Dashboard - a web dashboard for doctors managing children on ketogenic diets.
 
 ## Stack
 
@@ -15,20 +16,23 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
+- **Frontend**: React + Vite, TanStack Query, Wouter, Recharts, Framer Motion
 
 ## Structure
 
 ```text
 artifacts-monorepo/
 ├── artifacts/              # Deployable applications
-│   └── api-server/         # Express API server
+│   ├── api-server/         # Express API server
+│   └── doctor-dashboard/   # React doctor web dashboard
 ├── lib/                    # Shared libraries
 │   ├── api-spec/           # OpenAPI spec + Orval codegen config
 │   ├── api-client-react/   # Generated React Query hooks
 │   ├── api-zod/            # Generated Zod schemas from OpenAPI
 │   └── db/                 # Drizzle ORM schema + DB connection
 ├── scripts/                # Utility scripts (single workspace package)
-│   └── src/                # Individual .ts scripts, run via `pnpm --filter @workspace/scripts run <script>`
+│   └── src/                # Individual .ts scripts
+│       └── seed.ts         # Database seed script
 ├── pnpm-workspace.yaml     # pnpm workspace (artifacts/*, lib/*, lib/integrations/*, scripts)
 ├── tsconfig.base.json      # Shared TS options (composite, bundler resolution, es2022)
 ├── tsconfig.json           # Root TS project references
@@ -52,45 +56,98 @@ Every package extends `tsconfig.base.json` which sets `composite: true`. The roo
 
 ### `artifacts/api-server` (`@workspace/api-server`)
 
-Express 5 API server. Routes live in `src/routes/` and use `@workspace/api-zod` for request and response validation and `@workspace/db` for persistence.
+Express 5 API server with express-session for doctor authentication.
 
-- Entry: `src/index.ts` — reads `PORT`, starts Express
-- App setup: `src/app.ts` — mounts CORS, JSON/urlencoded parsing, routes at `/api`
-- Routes: `src/routes/index.ts` mounts sub-routers; `src/routes/health.ts` exposes `GET /health` (full path: `/api/health`)
-- Depends on: `@workspace/db`, `@workspace/api-zod`
-- `pnpm --filter @workspace/api-server run dev` — run the dev server
-- `pnpm --filter @workspace/api-server run build` — production esbuild bundle (`dist/index.cjs`)
-- Build bundles an allowlist of deps (express, cors, pg, drizzle-orm, zod, etc.) and externalizes the rest
+Routes:
+- `GET /api/healthz` — health check
+- `POST /api/auth/login` — doctor login (username/password)
+- `POST /api/auth/logout` — logout
+- `GET /api/auth/me` — get current doctor session
+- `GET /api/dashboard/stats` — KPI stats for doctor dashboard
+- `GET /api/kids` — list kids (with search and phase filter)
+- `POST /api/kids` — create kid
+- `GET /api/kids/:id` — kid profile with medical, weights, meals, notes
+- `PUT /api/kids/:id` — update kid info
+- `POST /api/kids/:id/weight` — add weight record
+- `GET /api/kids/:id/weight` — weight history
+- `GET/PUT /api/kids/:id/medical` — medical settings
+- `GET /api/kids/:id/meal-history` — meal history
+- `GET/POST /api/kids/:id/notes` — private notes
+- `DELETE /api/kids/:id/notes/:noteId` — delete note
+- `PUT /api/kids/:id/visibility` — food/recipe visibility settings
+- `GET/POST/PUT/DELETE /api/kids/:id/meal-plans` — per-kid meal plans CRUD
+- `GET/POST/DELETE /api/kids/:id/meal-plans/:planId/items` — meal plan food items
+- `GET /api/foods` — list foods
+- `POST /api/foods` — create food
+- `PUT/DELETE /api/foods/:id` — update/delete food
+- `GET/POST/DELETE /api/kids/:id/ketones` — ketone readings
+- `GET/POST/DELETE /api/kids/:id/meal-logs` — per-meal log entries
+- `GET /api/meal-plans` — list library meal plans (doctor-scoped)
+- `POST /api/meal-plans` — create library meal plan
+- `GET/PUT/DELETE /api/meal-plans/:planId` — get/update/delete library meal plan
+- `POST /api/meal-plans/:planId/items` — add food item to library plan
+- `DELETE /api/meal-plans/:planId/items/:itemId` — remove food item
+- `GET /api/kids/:kidId/meal-plan` — get kid's currently assigned library plan (204 if none)
+- `PUT /api/kids/:kidId/meal-plan` — assign or unassign a library plan to a kid
+
+### `artifacts/doctor-dashboard` (`@workspace/doctor-dashboard`)
+
+React + Vite web dashboard for doctors. Branded as **KetoKid Care** (rebranded from KetoCare in Task 6).
+
+**Design system (Task 6 redesign):**
+- Font: Inter (all weights), replacing Outfit/DM Sans
+- Primary: #004ac6 (deep blue); Secondary: #855300 (amber); Destructive/alert: #ae0010 (red)
+- Background: #f7f9fb; sidebar: fixed 256px `<aside>`, no shadcn Sidebar component
+- Layout: custom fixed sidebar + sticky header, all inline SVG icons (Material-style)
+- Sidebar: "KetoKid Care" wordmark, doctor profile card, 7 nav items with right-border active accent, Settings + Logout footer
+- Header: rounded search input, "Quick Add" pill button, notification bell (red dot), profile icon
+- Dashboard: "Clinical Overview" heading + subtitle, 4 KPI cards, Phase Distribution donut + Compliance/Weight Trend line charts, High-Risk table with severity badges (Critical/Moderate), Missing Records panel, Quick Actions grid, Recent Activity timeline
+
+Pages:
+- `/login` — Doctor login page
+- `/` — Dashboard with KPI cards, phase distribution chart, high-risk kids
+- `/kids` — Kids list with search and phase filter
+- `/kids/new` — Add new kid form
+- `/kids/:id` — Kid profile with tabs (Overview, Medical Controls, Meal History, Ketones, Meal Plan, Private Notes)
+- `/high-risk` — High-risk children monitoring
+- `/foods` — Food & recipe management (add/edit/deactivate foods)
+- `/meal-plans` — Meal Plans Library: create/edit/delete reusable library plans with per-meal food items; assign plans to kids from their profile
 
 ### `lib/db` (`@workspace/db`)
 
-Database layer using Drizzle ORM with PostgreSQL. Exports a Drizzle client instance and schema models.
+Database layer using Drizzle ORM with PostgreSQL.
 
-- `src/index.ts` — creates a `Pool` + Drizzle instance, exports schema
-- `src/schema/index.ts` — barrel re-export of all models
-- `src/schema/<modelname>.ts` — table definitions with `drizzle-zod` insert schemas (no models definitions exist right now)
-- `drizzle.config.ts` — Drizzle Kit config (requires `DATABASE_URL`, automatically provided by Replit)
-- Exports: `.` (pool, db, schema), `./schema` (schema only)
+Tables:
+- `doctors` — Doctor accounts (username, password, name, email, specialty)
+- `kids` — Kid profiles (name, dob, gender, parent info, phase, currentMealPlanId)
+- `medical_settings` — Medical settings per kid (keto ratio, calories, phase, visibility)
+- `weight_records` — Weight measurements over time
+- `meal_days` — Daily meal completion records
+- `notes` — Private doctor notes per kid
+- `library_meal_plans` — Doctor-scoped reusable meal plan library (name, description, targetPhase). Intentionally named `library_*` to distinguish from legacy per-kid `meal_plans` table. Each plan belongs to one doctor (doctorId FK) and can be assigned to multiple kids.
+- `library_meal_plan_items` — Food items per library meal plan (mealType, foodName, portionGrams, macros). Companion table for `library_meal_plans`.
 
-Production migrations are handled by Replit when publishing. In development, we just use `pnpm --filter @workspace/db run push`, and we fallback to `pnpm --filter @workspace/db run push-force`.
+**Table naming note**: the legacy per-kid `meal_plans` / `meal_plan_items` tables still exist for backwards compatibility with the original per-kid meal tracking. The new `library_*` tables implement the reusable doctor-level plan library feature added in Task 5.
 
 ### `lib/api-spec` (`@workspace/api-spec`)
 
-Owns the OpenAPI 3.1 spec (`openapi.yaml`) and the Orval config (`orval.config.ts`). Running codegen produces output into two sibling packages:
-
-1. `lib/api-client-react/src/generated/` — React Query hooks + fetch client
-2. `lib/api-zod/src/generated/` — Zod schemas
+Owns the OpenAPI 3.1 spec (`openapi.yaml`) and the Orval config (`orval.config.ts`).
 
 Run codegen: `pnpm --filter @workspace/api-spec run codegen`
 
 ### `lib/api-zod` (`@workspace/api-zod`)
 
-Generated Zod schemas from the OpenAPI spec (e.g. `HealthCheckResponse`). Used by `api-server` for response validation.
+Generated Zod schemas from the OpenAPI spec.
 
 ### `lib/api-client-react` (`@workspace/api-client-react`)
 
-Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHealthCheck`, `healthCheck`).
+Generated React Query hooks and fetch client from the OpenAPI spec.
+Custom fetch configured with `credentials: 'include'` for session cookie support.
 
 ### `scripts` (`@workspace/scripts`)
 
-Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
+Utility scripts. Run: `pnpm --filter @workspace/scripts run seed` to seed the database.
+
+## Default Credentials (Dev)
+- Username: `doctor`
+- Password: `doctor123`

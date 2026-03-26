@@ -1,0 +1,613 @@
+import { useState, useMemo } from "react";
+import { useGetFoods, useCreateFood, useUpdateFood, useDeleteFood } from "@workspace/api-client-react";
+import type { CreateFoodRequest, UpdateFoodRequest } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { getGetFoodsQueryKey } from "@workspace/api-client-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Loader2, Plus, Search, Pencil, Trash2, Flame, Wheat, Beef, Apple, EyeOff } from "lucide-react";
+
+type FoodIndicator = "vegi" | "fruit" | "non-vegi" | "recipe";
+type FoodFormData = {
+  name: string;
+  category: string;
+  carbs: number;
+  fat: number;
+  protein: number;
+  calories: number;
+  description: string;
+  indicator: FoodIndicator;
+  isActive: boolean;
+};
+
+const CATEGORIES = ["Vegetables", "Fruits", "Meat", "Fish", "Dairy", "Nuts", "Oils", "Grains", "Other"];
+const INDICATORS: { value: FoodIndicator; label: string; color: string }[] = [
+  { value: "vegi", label: "Vegetarian", color: "bg-green-100 text-green-700" },
+  { value: "fruit", label: "Fruit", color: "bg-orange-100 text-orange-700" },
+  { value: "non-vegi", label: "Non-Veg", color: "bg-red-100 text-red-700" },
+  { value: "recipe", label: "Recipe", color: "bg-purple-100 text-purple-700" },
+];
+
+const BLANK_FORM: FoodFormData = {
+  name: "",
+  category: "Vegetables",
+  carbs: 0,
+  fat: 0,
+  protein: 0,
+  calories: 0,
+  description: "",
+  indicator: "vegi",
+  isActive: true,
+};
+
+function getIndicatorStyle(indicator?: string | null) {
+  return INDICATORS.find((i) => i.value === indicator) ?? INDICATORS[0];
+}
+
+function IndicatorBadge({ indicator }: { indicator?: string | null }) {
+  const info = getIndicatorStyle(indicator);
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${info.color}`}>
+      {info.label}
+    </span>
+  );
+}
+
+export default function FoodsPage() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [showInactive, setShowInactive] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [form, setForm] = useState<FoodFormData>(BLANK_FORM);
+  const [togglingId, setTogglingId] = useState<number | null>(null);
+
+  const { data: foods, isLoading } = useGetFoods();
+  const createFood = useCreateFood();
+  const updateFood = useUpdateFood();
+  const deleteFood = useDeleteFood();
+
+  const filteredFoods = useMemo(() => {
+    if (!foods) return [];
+    return foods.filter((f) => {
+      const matchesSearch = !search || f.name.toLowerCase().includes(search.toLowerCase());
+      const matchesCategory = categoryFilter === "all" || f.category === categoryFilter;
+      const matchesActive = showInactive ? true : f.isActive !== false;
+      return matchesSearch && matchesCategory && matchesActive;
+    });
+  }, [foods, search, categoryFilter, showInactive]);
+
+  const categories = useMemo(() => {
+    if (!foods) return CATEGORIES;
+    const cats = [...new Set(foods.map((f) => f.category))].sort();
+    return cats;
+  }, [foods]);
+
+  const inactiveCount = useMemo(() => {
+    if (!foods) return 0;
+    return foods.filter((f) => f.isActive === false).length;
+  }, [foods]);
+
+  function openAdd() {
+    setEditingId(null);
+    setForm(BLANK_FORM);
+    setDialogOpen(true);
+  }
+
+  function openEdit(food: { id: number; name: string; category: string; carbs: number; fat: number; protein: number; calories: number; description?: string | null; indicator?: string | null; isActive?: boolean | null }) {
+    setEditingId(food.id);
+    setForm({
+      name: food.name,
+      category: food.category,
+      carbs: food.carbs,
+      fat: food.fat,
+      protein: food.protein,
+      calories: food.calories,
+      description: food.description ?? "",
+      indicator: (food.indicator as FoodIndicator) ?? "vegi",
+      isActive: food.isActive !== false,
+    });
+    setDialogOpen(true);
+  }
+
+  function openDelete(id: number) {
+    setDeletingId(id);
+    setDeleteDialogOpen(true);
+  }
+
+  function handleFormChange(field: keyof FoodFormData, value: string | number | boolean) {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function handleToggleActive(food: { id: number; isActive?: boolean | null }) {
+    const newActive = food.isActive === false ? true : false;
+    setTogglingId(food.id);
+    updateFood.mutate(
+      { foodId: food.id, data: { isActive: newActive } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetFoodsQueryKey() });
+          toast({ title: newActive ? "Food marked as active" : "Food marked as inactive" });
+        },
+        onError: () => toast({ title: "Failed to update food status", variant: "destructive" }),
+        onSettled: () => setTogglingId(null),
+      }
+    );
+  }
+
+  function handleSubmit() {
+    if (!form.name.trim()) {
+      toast({ title: "Name required", variant: "destructive" });
+      return;
+    }
+
+    if (editingId !== null) {
+      const body: UpdateFoodRequest = {
+        name: form.name,
+        category: form.category,
+        carbs: Number(form.carbs),
+        fat: Number(form.fat),
+        protein: Number(form.protein),
+        calories: Number(form.calories),
+        description: form.description,
+        indicator: form.indicator,
+        isActive: form.isActive,
+      };
+      updateFood.mutate(
+        { foodId: editingId, data: body },
+        {
+          onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: getGetFoodsQueryKey() });
+            toast({ title: "Food updated successfully" });
+            setDialogOpen(false);
+          },
+          onError: () => toast({ title: "Failed to update food", variant: "destructive" }),
+        }
+      );
+    } else {
+      const body: CreateFoodRequest = {
+        name: form.name,
+        category: form.category,
+        carbs: Number(form.carbs),
+        fat: Number(form.fat),
+        protein: Number(form.protein),
+        calories: Number(form.calories),
+        description: form.description,
+        indicator: form.indicator,
+      };
+      createFood.mutate(
+        { data: body },
+        {
+          onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: getGetFoodsQueryKey() });
+            toast({ title: "Food added successfully" });
+            setDialogOpen(false);
+          },
+          onError: () => toast({ title: "Failed to add food", variant: "destructive" }),
+        }
+      );
+    }
+  }
+
+  function handleDelete() {
+    if (deletingId === null) return;
+    deleteFood.mutate(
+      { foodId: deletingId },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetFoodsQueryKey() });
+          toast({ title: "Food deleted" });
+          setDeleteDialogOpen(false);
+          setDeletingId(null);
+        },
+        onError: () => toast({ title: "Failed to delete food", variant: "destructive" }),
+      }
+    );
+  }
+
+  const isMutating = createFood.isPending || updateFood.isPending;
+
+  return (
+    <div className="space-y-6 p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Food Library</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Manage the approved food database used in keto meal planning
+          </p>
+        </div>
+        <Button onClick={openAdd} className="gap-2">
+          <Plus className="h-4 w-4" />
+          Add Food
+        </Button>
+      </div>
+
+      {/* Stats Row */}
+      {foods && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <Card className="border-0 shadow-sm">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Apple className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-900">{foods.filter(f => f.isActive !== false).length}</p>
+                  <p className="text-xs text-slate-500">Active Foods</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-0 shadow-sm">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-100 text-green-600">
+                  <Wheat className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-900">{foods.filter((f) => f.indicator === "vegi").length}</p>
+                  <p className="text-xs text-slate-500">Vegetarian</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-0 shadow-sm">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-100 text-red-600">
+                  <Beef className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-900">{foods.filter((f) => f.indicator === "non-vegi").length}</p>
+                  <p className="text-xs text-slate-500">Non-Veg</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-0 shadow-sm">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+                  <Flame className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-900">{categories.length}</p>
+                  <p className="text-xs text-slate-500">Categories</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Filters */}
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">Food Library</CardTitle>
+            {inactiveCount > 0 && (
+              <button
+                onClick={() => setShowInactive(!showInactive)}
+                className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-colors ${showInactive ? "bg-slate-700 text-white border-slate-700" : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"}`}
+              >
+                <EyeOff className="h-3.5 w-3.5" />
+                {showInactive ? `Hide inactive (${inactiveCount})` : `Show ${inactiveCount} inactive`}
+              </button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Search foods..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : filteredFoods.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+              <Apple className="h-12 w-12 mb-3 opacity-30" />
+              <p className="text-sm">No foods found</p>
+              {search && <p className="text-xs mt-1">Try adjusting your search</p>}
+            </div>
+          ) : (
+            <div className="rounded-md border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50">
+                    <TableHead className="font-semibold">Name</TableHead>
+                    <TableHead className="font-semibold">Category</TableHead>
+                    <TableHead className="font-semibold">Type</TableHead>
+                    <TableHead className="font-semibold text-right">Cal</TableHead>
+                    <TableHead className="font-semibold text-right">Carbs (g)</TableHead>
+                    <TableHead className="font-semibold text-right">Fat (g)</TableHead>
+                    <TableHead className="font-semibold text-right">Protein (g)</TableHead>
+                    <TableHead className="font-semibold text-center">Active</TableHead>
+                    <TableHead className="w-20"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredFoods.map((food) => {
+                    const isInactive = food.isActive === false;
+                    return (
+                      <TableRow
+                        key={food.id}
+                        className={`hover:bg-slate-50/50 transition-colors ${isInactive ? "opacity-50" : ""}`}
+                      >
+                        <TableCell>
+                          <div>
+                            <p className={`font-medium ${isInactive ? "text-slate-400 line-through" : "text-slate-900"}`}>{food.name}</p>
+                            {food.description && (
+                              <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{food.description}</p>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">
+                            {food.category}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <IndicatorBadge indicator={food.indicator} />
+                        </TableCell>
+                        <TableCell className="text-right font-medium">{Math.round(food.calories)}</TableCell>
+                        <TableCell className="text-right text-slate-600">{food.carbs.toFixed(1)}</TableCell>
+                        <TableCell className="text-right text-slate-600">{food.fat.toFixed(1)}</TableCell>
+                        <TableCell className="text-right text-slate-600">{food.protein.toFixed(1)}</TableCell>
+                        <TableCell className="text-center">
+                          {togglingId === food.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin mx-auto text-slate-400" />
+                          ) : (
+                            <Switch
+                              checked={food.isActive !== false}
+                              onCheckedChange={() => handleToggleActive(food)}
+                              aria-label={`Toggle ${food.name} active status`}
+                              className="data-[state=checked]:bg-green-500"
+                            />
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-slate-500 hover:text-primary"
+                              onClick={() => openEdit(food)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-slate-500 hover:text-destructive"
+                              onClick={() => openDelete(food.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+          {filteredFoods.length > 0 && (
+            <p className="text-xs text-slate-400 mt-2">
+              Showing {filteredFoods.length} of {foods?.length ?? 0} foods
+              {!showInactive && inactiveCount > 0 && ` (${inactiveCount} inactive hidden)`}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Add / Edit Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editingId !== null ? "Edit Food" : "Add New Food"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2 space-y-1.5">
+                <Label htmlFor="food-name">Food Name *</Label>
+                <Input
+                  id="food-name"
+                  placeholder="e.g. Avocado"
+                  value={form.name}
+                  onChange={(e) => handleFormChange("name", e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Category</Label>
+                <Select value={form.category} onValueChange={(v) => handleFormChange("category", v)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORIES.map((cat) => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Type</Label>
+                <Select value={form.indicator} onValueChange={(v) => handleFormChange("indicator", v as FoodIndicator)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {INDICATORS.map((ind) => (
+                      <SelectItem key={ind.value} value={ind.value}>{ind.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="food-calories">Calories (kcal)</Label>
+                <Input
+                  id="food-calories"
+                  type="number"
+                  min={0}
+                  value={form.calories}
+                  onChange={(e) => handleFormChange("calories", parseFloat(e.target.value) || 0)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="food-carbs">Carbs (g per 100g)</Label>
+                <Input
+                  id="food-carbs"
+                  type="number"
+                  min={0}
+                  step={0.1}
+                  value={form.carbs}
+                  onChange={(e) => handleFormChange("carbs", parseFloat(e.target.value) || 0)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="food-fat">Fat (g per 100g)</Label>
+                <Input
+                  id="food-fat"
+                  type="number"
+                  min={0}
+                  step={0.1}
+                  value={form.fat}
+                  onChange={(e) => handleFormChange("fat", parseFloat(e.target.value) || 0)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="food-protein">Protein (g per 100g)</Label>
+                <Input
+                  id="food-protein"
+                  type="number"
+                  min={0}
+                  step={0.1}
+                  value={form.protein}
+                  onChange={(e) => handleFormChange("protein", parseFloat(e.target.value) || 0)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="food-desc">Description</Label>
+              <Input
+                id="food-desc"
+                placeholder="Brief description of the food item"
+                value={form.description}
+                onChange={(e) => handleFormChange("description", e.target.value)}
+              />
+            </div>
+
+            {editingId !== null && (
+              <div className="flex items-center justify-between rounded-lg border border-slate-200 px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium text-slate-800">Active in Food Library</p>
+                  <p className="text-xs text-slate-500">Inactive foods are hidden from meal planning</p>
+                </div>
+                <Switch
+                  checked={form.isActive}
+                  onCheckedChange={(v) => handleFormChange("isActive", v)}
+                  className="data-[state=checked]:bg-green-500"
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmit} disabled={isMutating}>
+              {isMutating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {editingId !== null ? "Save Changes" : "Add Food"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirm */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Food Item</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove this food from the database. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteFood.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
