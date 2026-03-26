@@ -2,14 +2,9 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { kidsTable, weightRecordsTable, mealDaysTable, mealLogsTable, notesTable } from "@workspace/db";
 import { eq, gte, desc } from "drizzle-orm";
+import { calcAgeMonths } from "../lib/utils";
 
 const router: IRouter = Router();
-
-export function calcAgeMonths(dateOfBirth: string): number {
-  const dob = new Date(dateOfBirth);
-  const now = new Date();
-  return (now.getFullYear() - dob.getFullYear()) * 12 + (now.getMonth() - dob.getMonth());
-}
 
 router.get("/stats", async (req, res) => {
   const doctorId = req.session.doctorId!;
@@ -199,7 +194,7 @@ router.get("/recent-activity", async (req, res) => {
 
     activity.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-    res.json(activity.slice(0, 8));
+    res.json(activity.slice(0, 5));
   } catch (err) {
     req.log.error({ err }, "Recent activity error");
     res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });

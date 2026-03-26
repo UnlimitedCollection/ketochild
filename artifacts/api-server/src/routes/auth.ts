@@ -29,9 +29,7 @@ router.post("/login", async (req, res) => {
       return;
     }
 
-    const passwordValid = doctor.password.startsWith("$2")
-      ? await bcrypt.compare(password, doctor.password)
-      : doctor.password === password;
+    const passwordValid = await bcrypt.compare(password, doctor.password);
 
     if (!passwordValid) {
       res.status(401).json({ error: "UNAUTHORIZED", message: "Invalid username or password" });

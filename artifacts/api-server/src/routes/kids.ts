@@ -16,6 +16,7 @@ import {
   kidFoodApprovalsTable,
 } from "@workspace/db";
 import { eq, and, desc, asc, gte, sql } from "drizzle-orm";
+import { calcAgeMonths } from "../lib/utils";
 import {
   CreateKidBody,
   UpdateKidBody,
@@ -38,12 +39,6 @@ import {
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
-
-function calcAgeMonths(dateOfBirth: string): number {
-  const dob = new Date(dateOfBirth);
-  const now = new Date();
-  return (now.getFullYear() - dob.getFullYear()) * 12 + (now.getMonth() - dob.getMonth());
-}
 
 function generateKidCode(): string {
   return "KID-" + Math.random().toString(36).substring(2, 8).toUpperCase();

@@ -23,7 +23,7 @@ const WEEK_DATA = [
 ];
 
 const QUICK_ACTIONS = [
-  { label: "Search Child",  icon: "🔍", href: "/kids" },
+  { label: "Search Child",  icon: "🔍", href: "/kids?search=" },
   { label: "Update Weight", icon: "⚖️", href: "/kids" },
   { label: "Add Note",      icon: "📝", href: "/kids" },
   { label: "Med Controls",  icon: "💊", href: "/kids" },
