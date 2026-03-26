@@ -94,6 +94,74 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /auth/profile:
+    put:
+      operationId: updateDoctorProfile
+      tags: [auth]
+      summary: Update doctor profile (name, email, specialty, username)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDoctorProfileRequest"
+      responses:
+        "200":
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Doctor"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Username or email already taken
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/password:
+    put:
+      operationId: changeDoctorPassword
+      tags: [auth]
+      summary: Change doctor password (requires current password)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangeDoctorPasswordRequest"
+      responses:
+        "200":
+          description: Password changed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          description: Validation error or wrong current password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /dashboard/stats:
     get:
       operationId: getDashboardStats
@@ -1267,6 +1335,36 @@ components:
         - username
         - name
         - email
+
+    UpdateDoctorProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        specialty:
+          type: string
+        username:
+          type: string
+      required:
+        - name
+        - email
+        - username
+
+    ChangeDoctorPasswordRequest:
+      type: object
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+        confirmPassword:
+          type: string
+      required:
+        - currentPassword
+        - newPassword
+        - confirmPassword
 
     DashboardStats:
       type: object

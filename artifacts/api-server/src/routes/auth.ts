@@ -1,9 +1,10 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { doctorsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import { DoctorLoginBody } from "@workspace/api-zod";
 import bcrypt from "bcryptjs";
+import { z } from "zod";
 
 const router: IRouter = Router();
 
@@ -90,6 +91,122 @@ router.get("/me", async (req, res) => {
     });
   } catch (err) {
     req.log.error({ err }, "Get me error");
+    res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
+  }
+});
+
+const UpdateProfileBody = z.object({
+  name: z.string().min(1),
+  email: z.string().email(),
+  username: z.string().min(3).max(100),
+  specialty: z.string().optional(),
+});
+
+const ChangePasswordBody = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(6, "New password must be at least 6 characters"),
+  confirmPassword: z.string().min(1),
+});
+
+router.put("/profile", async (req, res) => {
+  const doctorId = req.session.doctorId;
+  if (!doctorId) {
+    res.status(401).json({ error: "UNAUTHORIZED", message: "Not authenticated" });
+    return;
+  }
+
+  const parsed = UpdateProfileBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "VALIDATION_ERROR", message: "Invalid request body" });
+    return;
+  }
+
+  const { name, email, username, specialty } = parsed.data;
+
+  try {
+    const [existing] = await db
+      .select({ id: doctorsTable.id })
+      .from(doctorsTable)
+      .where(or(eq(doctorsTable.username, username), eq(doctorsTable.email, email)))
+      .limit(1);
+
+    if (existing && existing.id !== doctorId) {
+      res.status(409).json({ error: "CONFLICT", message: "Username or email already taken" });
+      return;
+    }
+
+    const [updated] = await db
+      .update(doctorsTable)
+      .set({ name, email, username, specialty: specialty ?? null })
+      .where(eq(doctorsTable.id, doctorId))
+      .returning();
+
+    req.session.doctorName = updated.name;
+
+    res.json({
+      id: updated.id,
+      username: updated.username,
+      name: updated.name,
+      email: updated.email,
+      specialty: updated.specialty,
+    });
+  } catch (err) {
+    req.log.error({ err }, "Update profile error");
+    res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
+  }
+});
+
+router.put("/password", async (req, res) => {
+  const doctorId = req.session.doctorId;
+  if (!doctorId) {
+    res.status(401).json({ error: "UNAUTHORIZED", message: "Not authenticated" });
+    return;
+  }
+
+  const parsed = ChangePasswordBody.safeParse(req.body);
+  if (!parsed.success) {
+    const firstIssue = parsed.error.issues[0];
+    res.status(400).json({ error: "VALIDATION_ERROR", message: firstIssue?.message ?? "Invalid request body" });
+    return;
+  }
+
+  const { currentPassword, newPassword, confirmPassword } = parsed.data;
+
+  if (newPassword !== confirmPassword) {
+    res.status(400).json({ error: "VALIDATION_ERROR", message: "New passwords do not match" });
+    return;
+  }
+
+  try {
+    const [doctor] = await db
+      .select()
+      .from(doctorsTable)
+      .where(eq(doctorsTable.id, doctorId))
+      .limit(1);
+
+    if (!doctor) {
+      res.status(401).json({ error: "UNAUTHORIZED", message: "Session invalid" });
+      return;
+    }
+
+    const passwordValid = doctor.password.startsWith("$2")
+      ? await bcrypt.compare(currentPassword, doctor.password)
+      : doctor.password === currentPassword;
+
+    if (!passwordValid) {
+      res.status(400).json({ error: "INVALID_PASSWORD", message: "Current password is incorrect" });
+      return;
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 12);
+    await db
+      .update(doctorsTable)
+      .set({ password: hashed })
+      .where(eq(doctorsTable.id, doctorId));
+
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error({ err }, "Change password error");
     res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
   }
 });

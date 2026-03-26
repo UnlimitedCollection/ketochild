@@ -148,6 +148,13 @@ Custom fetch configured with `credentials: 'include'` for session cookie support
 
 Utility scripts. Run: `pnpm --filter @workspace/scripts run seed` to seed the database.
 
+## Doctor Settings
+
+The `/settings` page (accessible via the sidebar Settings link) provides:
+- **Profile editing**: update name, email, username, specialty (PUT `/api/auth/profile`)
+- **Password change**: current password verification + new password (PUT `/api/auth/password`)
+- The sidebar Settings button is a real nav link with active-state highlighting (not disabled)
+
 ## Default Credentials (Dev)
 - Username: `doctor`
 - Password: `doctor123`

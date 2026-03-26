@@ -19,6 +19,7 @@ import KidProfilePage from "@/pages/kid-profile";
 import AddKidPage from "@/pages/add-kid";
 import FoodsPage from "@/pages/foods";
 import MealPlansPage from "@/pages/meal-plans";
+import SettingsPage from "@/pages/settings";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -67,6 +68,7 @@ function Router() {
       <Route path="/high-risk" component={() => <ProtectedRoute component={HighRiskPage} />} />
       <Route path="/foods" component={() => <ProtectedRoute component={FoodsPage} />} />
       <Route path="/meal-plans" component={() => <ProtectedRoute component={MealPlansPage} />} />
+      <Route path="/settings" component={() => <ProtectedRoute component={SettingsPage} />} />
       <Route component={NotFound} />
     </Switch>
   );

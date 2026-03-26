@@ -37,6 +37,19 @@ export interface LoginResponse {
   token: string;
 }
 
+export interface UpdateDoctorProfileRequest {
+  name: string;
+  email: string;
+  specialty?: string;
+  username: string;
+}
+
+export interface ChangeDoctorPasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
 export interface PhaseCount {
   phase: number;
   count: number;

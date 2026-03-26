@@ -53,6 +53,38 @@ export const GetMeResponse = zod.object({
 });
 
 /**
+ * @summary Update doctor profile (name, email, specialty, username)
+ */
+export const UpdateDoctorProfileBody = zod.object({
+  name: zod.string(),
+  email: zod.string(),
+  specialty: zod.string().optional(),
+  username: zod.string(),
+});
+
+export const UpdateDoctorProfileResponse = zod.object({
+  id: zod.number(),
+  username: zod.string(),
+  name: zod.string(),
+  email: zod.string(),
+  specialty: zod.string().optional(),
+});
+
+/**
+ * @summary Change doctor password (requires current password)
+ */
+export const ChangeDoctorPasswordBody = zod.object({
+  currentPassword: zod.string(),
+  newPassword: zod.string(),
+  confirmPassword: zod.string(),
+});
+
+export const ChangeDoctorPasswordResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string().optional(),
+});
+
+/**
  * @summary Get dashboard statistics
  */
 export const GetDashboardStatsResponse = zod.object({

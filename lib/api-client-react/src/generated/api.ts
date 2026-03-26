@@ -22,6 +22,7 @@ import type {
   AddMealLogRequest,
   AddMealPlanItemRequest,
   AssignMealPlanRequest,
+  ChangeDoctorPasswordRequest,
   CreateFoodRequest,
   CreateKidRequest,
   CreateLibraryMealPlanRequest,
@@ -58,6 +59,7 @@ import type {
   Note,
   NoteRequest,
   SuccessResponse,
+  UpdateDoctorProfileRequest,
   UpdateFoodRequest,
   UpdateKidRequest,
   UpdateLibraryMealPlanRequest,
@@ -383,6 +385,180 @@ export function useGetMe<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Update doctor profile (name, email, specialty, username)
+ */
+export const getUpdateDoctorProfileUrl = () => {
+  return `/api/auth/profile`;
+};
+
+export const updateDoctorProfile = async (
+  updateDoctorProfileRequest: UpdateDoctorProfileRequest,
+  options?: RequestInit,
+): Promise<Doctor> => {
+  return customFetch<Doctor>(getUpdateDoctorProfileUrl(), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateDoctorProfileRequest),
+  });
+};
+
+export const getUpdateDoctorProfileMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateDoctorProfile>>,
+    TError,
+    { data: BodyType<UpdateDoctorProfileRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateDoctorProfile>>,
+  TError,
+  { data: BodyType<UpdateDoctorProfileRequest> },
+  TContext
+> => {
+  const mutationKey = ["updateDoctorProfile"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateDoctorProfile>>,
+    { data: BodyType<UpdateDoctorProfileRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return updateDoctorProfile(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateDoctorProfileMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateDoctorProfile>>
+>;
+export type UpdateDoctorProfileMutationBody =
+  BodyType<UpdateDoctorProfileRequest>;
+export type UpdateDoctorProfileMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Update doctor profile (name, email, specialty, username)
+ */
+export const useUpdateDoctorProfile = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateDoctorProfile>>,
+    TError,
+    { data: BodyType<UpdateDoctorProfileRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateDoctorProfile>>,
+  TError,
+  { data: BodyType<UpdateDoctorProfileRequest> },
+  TContext
+> => {
+  return useMutation(getUpdateDoctorProfileMutationOptions(options));
+};
+
+/**
+ * @summary Change doctor password (requires current password)
+ */
+export const getChangeDoctorPasswordUrl = () => {
+  return `/api/auth/password`;
+};
+
+export const changeDoctorPassword = async (
+  changeDoctorPasswordRequest: ChangeDoctorPasswordRequest,
+  options?: RequestInit,
+): Promise<SuccessResponse> => {
+  return customFetch<SuccessResponse>(getChangeDoctorPasswordUrl(), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(changeDoctorPasswordRequest),
+  });
+};
+
+export const getChangeDoctorPasswordMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof changeDoctorPassword>>,
+    TError,
+    { data: BodyType<ChangeDoctorPasswordRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof changeDoctorPassword>>,
+  TError,
+  { data: BodyType<ChangeDoctorPasswordRequest> },
+  TContext
+> => {
+  const mutationKey = ["changeDoctorPassword"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof changeDoctorPassword>>,
+    { data: BodyType<ChangeDoctorPasswordRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return changeDoctorPassword(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ChangeDoctorPasswordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof changeDoctorPassword>>
+>;
+export type ChangeDoctorPasswordMutationBody =
+  BodyType<ChangeDoctorPasswordRequest>;
+export type ChangeDoctorPasswordMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Change doctor password (requires current password)
+ */
+export const useChangeDoctorPassword = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof changeDoctorPassword>>,
+    TError,
+    { data: BodyType<ChangeDoctorPasswordRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof changeDoctorPassword>>,
+  TError,
+  { data: BodyType<ChangeDoctorPasswordRequest> },
+  TContext
+> => {
+  return useMutation(getChangeDoctorPasswordMutationOptions(options));
+};
 
 /**
  * @summary Get dashboard statistics
