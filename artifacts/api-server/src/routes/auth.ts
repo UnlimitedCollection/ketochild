@@ -162,6 +162,11 @@ router.put("/profile", async (req, res) => {
       specialty: updated.specialty ?? undefined,
     });
   } catch (err) {
+    const dbErr = err as { code?: string; constraint?: string };
+    if (dbErr?.code === "23505") {
+      res.status(409).json({ error: "CONFLICT", message: "Username or email already taken" });
+      return;
+    }
     req.log.error({ err }, "Update profile error");
     res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
   }
