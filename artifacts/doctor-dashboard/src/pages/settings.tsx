@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useGetMe, useUpdateDoctorProfile, useChangeDoctorPassword, getGetMeQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -47,17 +47,17 @@ export default function SettingsPage() {
     username: "",
     specialty: "",
   });
-  const [profileInitialized, setProfileInitialized] = useState(false);
 
-  if (user && !profileInitialized) {
-    setProfile({
-      name: user.name ?? "",
-      email: user.email ?? "",
-      username: user.username ?? "",
-      specialty: user.specialty ?? "",
-    });
-    setProfileInitialized(true);
-  }
+  useEffect(() => {
+    if (user) {
+      setProfile({
+        name: user.name ?? "",
+        email: user.email ?? "",
+        username: user.username ?? "",
+        specialty: user.specialty ?? "",
+      });
+    }
+  }, [user?.id]);
 
   const [passwords, setPasswords] = useState({
     currentPassword: "",

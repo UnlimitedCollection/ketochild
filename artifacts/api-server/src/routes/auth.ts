@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { doctorsTable } from "@workspace/db";
-import { eq, or } from "drizzle-orm";
+import { eq, or, and, ne } from "drizzle-orm";
 import { DoctorLoginBody } from "@workspace/api-zod";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
@@ -127,10 +127,15 @@ router.put("/profile", async (req, res) => {
     const [existing] = await db
       .select({ id: doctorsTable.id })
       .from(doctorsTable)
-      .where(or(eq(doctorsTable.username, username), eq(doctorsTable.email, email)))
+      .where(
+        and(
+          ne(doctorsTable.id, doctorId),
+          or(eq(doctorsTable.username, username), eq(doctorsTable.email, email))
+        )
+      )
       .limit(1);
 
-    if (existing && existing.id !== doctorId) {
+    if (existing) {
       res.status(409).json({ error: "CONFLICT", message: "Username or email already taken" });
       return;
     }
