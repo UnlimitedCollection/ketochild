@@ -36,9 +36,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2, Plus, Search, Pencil, Trash2, Flame, Wheat, Beef, Apple, EyeOff } from "lucide-react";
+import { Loader2, Plus, Search, Pencil, Trash2, Flame, Apple, EyeOff } from "lucide-react";
 
-type FoodIndicator = "vegi" | "fruit" | "non-vegi" | "recipe";
 type FoodFormData = {
   name: string;
   category: string;
@@ -47,42 +46,21 @@ type FoodFormData = {
   protein: number;
   calories: number;
   description: string;
-  indicator: FoodIndicator;
   isActive: boolean;
 };
 
-const CATEGORIES = ["Vegetables", "Fruits", "Meat", "Fish", "Dairy", "Nuts", "Oils", "Grains", "Other"];
-const INDICATORS: { value: FoodIndicator; label: string; color: string }[] = [
-  { value: "vegi", label: "Vegetarian", color: "bg-green-100 text-green-700" },
-  { value: "fruit", label: "Fruit", color: "bg-orange-100 text-orange-700" },
-  { value: "non-vegi", label: "Non-Veg", color: "bg-red-100 text-red-700" },
-  { value: "recipe", label: "Recipe", color: "bg-purple-100 text-purple-700" },
-];
+const CATEGORIES = ["Carb", "Fat", "Protein", "Calories"];
 
 const BLANK_FORM: FoodFormData = {
   name: "",
-  category: "Vegetables",
+  category: "Carb",
   carbs: 0,
   fat: 0,
   protein: 0,
   calories: 0,
   description: "",
-  indicator: "vegi",
   isActive: true,
 };
-
-function getIndicatorStyle(indicator?: string | null) {
-  return INDICATORS.find((i) => i.value === indicator) ?? INDICATORS[0];
-}
-
-function IndicatorBadge({ indicator }: { indicator?: string | null }) {
-  const info = getIndicatorStyle(indicator);
-  return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${info.color}`}>
-      {info.label}
-    </span>
-  );
-}
 
 export default function FoodsPage() {
   const queryClient = useQueryClient();
@@ -113,12 +91,6 @@ export default function FoodsPage() {
     });
   }, [foods, search, categoryFilter, showInactive]);
 
-  const categories = useMemo(() => {
-    if (!foods) return CATEGORIES;
-    const cats = [...new Set(foods.map((f) => f.category))].sort();
-    return cats;
-  }, [foods]);
-
   const inactiveCount = useMemo(() => {
     if (!foods) return 0;
     return foods.filter((f) => f.isActive === false).length;
@@ -130,7 +102,7 @@ export default function FoodsPage() {
     setDialogOpen(true);
   }
 
-  function openEdit(food: { id: number; name: string; category: string; carbs: number; fat: number; protein: number; calories: number; description?: string | null; indicator?: string | null; isActive?: boolean | null }) {
+  function openEdit(food: { id: number; name: string; category: string; carbs: number; fat: number; protein: number; calories: number; description?: string | null; isActive?: boolean | null }) {
     setEditingId(food.id);
     setForm({
       name: food.name,
@@ -140,7 +112,6 @@ export default function FoodsPage() {
       protein: food.protein,
       calories: food.calories,
       description: food.description ?? "",
-      indicator: (food.indicator as FoodIndicator) ?? "vegi",
       isActive: food.isActive !== false,
     });
     setDialogOpen(true);
@@ -186,7 +157,6 @@ export default function FoodsPage() {
         protein: Number(form.protein),
         calories: Number(form.calories),
         description: form.description,
-        indicator: form.indicator,
         isActive: form.isActive,
       };
       updateFood.mutate(
@@ -209,7 +179,6 @@ export default function FoodsPage() {
         protein: Number(form.protein),
         calories: Number(form.calories),
         description: form.description,
-        indicator: form.indicator,
       };
       createFood.mutate(
         { data: body },
@@ -260,7 +229,7 @@ export default function FoodsPage() {
 
       {/* Stats Row */}
       {foods && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
           <Card className="border-0 shadow-sm">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center gap-3">
@@ -277,37 +246,11 @@ export default function FoodsPage() {
           <Card className="border-0 shadow-sm">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-100 text-green-600">
-                  <Wheat className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-slate-900">{foods.filter((f) => f.indicator === "vegi").length}</p>
-                  <p className="text-xs text-slate-500">Vegetarian</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-sm">
-            <CardContent className="pt-4 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-100 text-red-600">
-                  <Beef className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-slate-900">{foods.filter((f) => f.indicator === "non-vegi").length}</p>
-                  <p className="text-xs text-slate-500">Non-Veg</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-sm">
-            <CardContent className="pt-4 pb-4">
-              <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
                   <Flame className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-slate-900">{categories.length}</p>
+                  <p className="text-2xl font-bold text-slate-900">{CATEGORIES.length}</p>
                   <p className="text-xs text-slate-500">Categories</p>
                 </div>
               </div>
@@ -349,7 +292,7 @@ export default function FoodsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
-                {categories.map((cat) => (
+                {CATEGORIES.map((cat) => (
                   <SelectItem key={cat} value={cat}>
                     {cat}
                   </SelectItem>
@@ -375,7 +318,6 @@ export default function FoodsPage() {
                   <TableRow className="bg-slate-50">
                     <TableHead className="font-semibold">Name</TableHead>
                     <TableHead className="font-semibold">Category</TableHead>
-                    <TableHead className="font-semibold">Type</TableHead>
                     <TableHead className="font-semibold text-right">Cal</TableHead>
                     <TableHead className="font-semibold text-right">Carbs (g)</TableHead>
                     <TableHead className="font-semibold text-right">Fat (g)</TableHead>
@@ -404,9 +346,6 @@ export default function FoodsPage() {
                           <Badge variant="outline" className="text-xs">
                             {food.category}
                           </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <IndicatorBadge indicator={food.indicator} />
                         </TableCell>
                         <TableCell className="text-right font-medium">{Math.round(food.calories)}</TableCell>
                         <TableCell className="text-right text-slate-600">{food.carbs.toFixed(1)}</TableCell>
@@ -477,7 +416,7 @@ export default function FoodsPage() {
                   onChange={(e) => handleFormChange("name", e.target.value)}
                 />
               </div>
-              <div className="space-y-1.5">
+              <div className="col-span-2 space-y-1.5">
                 <Label>Category</Label>
                 <Select value={form.category} onValueChange={(v) => handleFormChange("category", v)}>
                   <SelectTrigger>
@@ -486,19 +425,6 @@ export default function FoodsPage() {
                   <SelectContent>
                     {CATEGORIES.map((cat) => (
                       <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Type</Label>
-                <Select value={form.indicator} onValueChange={(v) => handleFormChange("indicator", v as FoodIndicator)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {INDICATORS.map((ind) => (
-                      <SelectItem key={ind.value} value={ind.value}>{ind.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
