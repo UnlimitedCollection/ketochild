@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useCanWrite } from "@/hooks/useRole";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useForm } from "react-hook-form";
@@ -176,6 +177,7 @@ export default function KidsListPage() {
     setSearchTerm(urlParams.get("search") ?? "");
   }, [searchQuery]);
 
+  const canWrite = useCanWrite();
   const [activePhase, setActivePhase] = useState<number | undefined>(undefined);
 
   const { data: kids, isLoading } = useGetKids(
@@ -237,9 +239,11 @@ export default function KidsListPage() {
             Manage and monitor all children in the program.
           </p>
         </div>
-        <Button asChild className="rounded-xl shadow-sm">
-          <Link href="/kids/new">Register New Patient</Link>
-        </Button>
+        {canWrite && (
+          <Button asChild className="rounded-xl shadow-sm">
+            <Link href="/kids/new">Register New Patient</Link>
+          </Button>
+        )}
       </div>
 
       <Card className="rounded-2xl p-4 shadow-sm border-slate-200 bg-white">
@@ -378,35 +382,39 @@ export default function KidsListPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10"
-                          onClick={() => setEditingKid({
-                            id: kid.id,
-                            name: kid.name,
-                            dateOfBirth: kid.dateOfBirth,
-                            gender: kid.gender,
-                            parentName: kid.parentName,
-                            parentContact: kid.parentContact,
-                            phase: kid.phase,
-                          })}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
+                        {canWrite && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10"
+                            onClick={() => setEditingKid({
+                              id: kid.id,
+                              name: kid.name,
+                              dateOfBirth: kid.dateOfBirth,
+                              gender: kid.gender,
+                              parentName: kid.parentName,
+                              parentContact: kid.parentContact,
+                              phase: kid.phase,
+                            })}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button size="sm" variant="ghost" asChild className="rounded-lg text-primary hover:text-primary hover:bg-primary/10">
                           <Link href={`/kids/${kid.id}`}>
                             View <ChevronRight className="h-4 w-4 ml-1" />
                           </Link>
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="rounded-lg text-slate-400 hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => { setDeletingKid({ id: kid.id, name: kid.name }); setDeleteDialogOpen(true); }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {canWrite && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="rounded-lg text-slate-400 hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => { setDeletingKid({ id: kid.id, name: kid.name }); setDeleteDialogOpen(true); }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

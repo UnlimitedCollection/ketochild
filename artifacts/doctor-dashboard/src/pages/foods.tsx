@@ -28,6 +28,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useCanWrite } from "@/hooks/useRole";
 import {
   Table,
   TableBody,
@@ -216,6 +217,7 @@ export default function FoodsPage() {
   }
 
   const isMutating = createFood.isPending || updateFood.isPending;
+  const canWrite = useCanWrite();
 
   return (
     <div className="space-y-6 p-6">
@@ -226,10 +228,12 @@ export default function FoodsPage() {
             Manage the approved food database used in keto meal planning
           </p>
         </div>
-        <Button onClick={openAdd} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Add Food
-        </Button>
+        {canWrite && (
+          <Button onClick={openAdd} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Add Food
+          </Button>
+        )}
       </div>
 
       {/* Stats Row */}
@@ -362,31 +366,34 @@ export default function FoodsPage() {
                           ) : (
                             <Switch
                               checked={food.isActive !== false}
-                              onCheckedChange={() => handleToggleActive(food)}
+                              onCheckedChange={canWrite ? () => handleToggleActive(food) : undefined}
+                              disabled={!canWrite}
                               aria-label={`Toggle ${food.name} active status`}
                               className="data-[state=checked]:bg-green-500"
                             />
                           )}
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-slate-500 hover:text-primary"
-                              onClick={() => openEdit(food)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-slate-500 hover:text-destructive"
-                              onClick={() => openDelete(food.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                          {canWrite && (
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-slate-500 hover:text-primary"
+                                onClick={() => openEdit(food)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-slate-500 hover:text-destructive"
+                                onClick={() => openDelete(food.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
                         </TableCell>
                       </TableRow>
                     );

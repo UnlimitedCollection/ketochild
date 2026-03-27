@@ -24,6 +24,7 @@ import {
   Info,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useCanWrite } from "@/hooks/useRole";
 
 const BLUE  = "#004ac6";
 const GREEN = "#0a7c42";
@@ -416,10 +417,12 @@ function RecipeDetailPanel({
   recipeId,
   onClose,
   onEdit,
+  canWrite,
 }: {
   recipeId: number;
   onClose: () => void;
   onEdit: () => void;
+  canWrite: boolean;
 }) {
   const { data: recipe, isLoading } = useGetRecipe(recipeId);
 
@@ -442,12 +445,14 @@ function RecipeDetailPanel({
             )}
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={onEdit}
-              className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
-            >
-              <Pencil className="h-4 w-4" />
-            </button>
+            {canWrite && (
+              <button
+                onClick={onEdit}
+                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+            )}
             <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
               <X className="h-5 w-5" />
             </button>
@@ -516,6 +521,8 @@ export default function RecipesPage() {
     query: { enabled: editId !== null },
   });
 
+  const canWrite = useCanWrite();
+
   const invalidate = () => queryClient.invalidateQueries({ queryKey: getListRecipesQueryKey() });
 
   const handleDelete = (id: number) => {
@@ -554,13 +561,15 @@ export default function RecipesPage() {
             Build and manage your keto-friendly recipe collection — macros auto-calculated from the food database
           </p>
         </div>
-        <button
-          onClick={() => { setEditId(null); setShowForm(true); }}
-          className="flex items-center gap-2 bg-[#004ac6] text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-blue-700 transition-all active:scale-95"
-        >
-          <Plus className="h-4 w-4" />
-          New Recipe
-        </button>
+        {canWrite && (
+          <button
+            onClick={() => { setEditId(null); setShowForm(true); }}
+            className="flex items-center gap-2 bg-[#004ac6] text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-blue-700 transition-all active:scale-95"
+          >
+            <Plus className="h-4 w-4" />
+            New Recipe
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -657,20 +666,24 @@ export default function RecipesPage() {
                     <span style={{ color: GREEN }}>{(r as RecipeDetail).totalFat?.toFixed(1) ?? "–"}g fat</span>
                   </div>
 
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setEditId(r.id); setShowForm(true); }}
-                    className="p-1.5 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg opacity-0 group-hover:opacity-100 transition"
-                    title="Edit"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setConfirmDelete(r.id); }}
-                    className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition"
-                    title="Delete"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  {canWrite && (
+                    <>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setEditId(r.id); setShowForm(true); }}
+                        className="p-1.5 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg opacity-0 group-hover:opacity-100 transition"
+                        title="Edit"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setConfirmDelete(r.id); }}
+                        className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition"
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </>
+                  )}
                   <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-slate-500 transition" />
                 </div>
               </div>
@@ -693,6 +706,7 @@ export default function RecipesPage() {
           recipeId={viewId}
           onClose={() => setViewId(null)}
           onEdit={() => { setEditId(viewId); setViewId(null); setShowForm(true); }}
+          canWrite={canWrite}
         />
       )}
 

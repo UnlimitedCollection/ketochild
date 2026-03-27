@@ -3,7 +3,7 @@ import { useGetMe, useDoctorLogout, useGetDashboardStats } from "@workspace/api-
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useIsAdmin } from "@/hooks/useRole";
+import { useIsAdmin, useIsModerator } from "@/hooks/useRole";
 
 function IconDashboard() {
   return (
@@ -139,6 +139,7 @@ function AppSidebar() {
   const logout = useDoctorLogout();
   const queryClient = useQueryClient();
   const isAdmin = useIsAdmin();
+  const isModerator = useIsModerator();
 
   const navItems = isAdmin ? ADMIN_NAV_ITEMS : BASE_NAV_ITEMS;
 
@@ -181,12 +182,12 @@ function AppSidebar() {
                 {user?.specialty || "Pediatric Neurology"}
               </p>
               {role && (
-                <span className={`shrink-0 text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-full
+                <span className={`shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full
                   ${role === "admin"
-                    ? "bg-blue-100 text-blue-700"
+                    ? "bg-blue-100 text-blue-700 uppercase tracking-wider"
                     : "bg-amber-100 text-amber-700"
                   }`}>
-                  {role}
+                  {role === "admin" ? "Admin" : "Moderator – View Only"}
                 </span>
               )}
             </div>
@@ -215,17 +216,19 @@ function AppSidebar() {
       </nav>
 
       <div className="px-3 pt-4 mt-4 border-t border-slate-200 space-y-0.5">
-        <Link
-          href="/settings"
-          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium w-full text-left transition-all
-            ${isNavActive("/settings", location)
-              ? "text-blue-700 font-bold border-r-4 border-blue-600 bg-blue-50"
-              : "text-slate-600 hover:text-blue-600 hover:bg-slate-100"
-            }`}
-        >
-          <IconSettings />
-          <span>Settings</span>
-        </Link>
+        {!isModerator && (
+          <Link
+            href="/settings"
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium w-full text-left transition-all
+              ${isNavActive("/settings", location)
+                ? "text-blue-700 font-bold border-r-4 border-blue-600 bg-blue-50"
+                : "text-slate-600 hover:text-blue-600 hover:bg-slate-100"
+              }`}
+          >
+            <IconSettings />
+            <span>Settings</span>
+          </Link>
+        )}
         <button
           onClick={handleLogout}
           className="flex items-center gap-3 px-3 py-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all text-sm font-medium w-full text-left"

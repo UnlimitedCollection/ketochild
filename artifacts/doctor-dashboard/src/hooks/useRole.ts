@@ -13,3 +13,7 @@ export function useIsAdmin(): boolean {
 export function useIsModerator(): boolean {
   return useRole() === "moderator";
 }
+
+export function useCanWrite(): boolean {
+  return useRole() === "admin";
+}

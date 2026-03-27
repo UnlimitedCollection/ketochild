@@ -5,6 +5,7 @@ import type { ParentToken } from "@workspace/api-client-react";
 import { Loader2, Key, RefreshCw, Trash2, Plus, Copy, CheckCheck, Eye, EyeOff } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getListTokensQueryKey } from "@workspace/api-client-react";
+import { useCanWrite } from "@/hooks/useRole";
 
 const BLUE  = "#004ac6";
 const GREEN = "#0a7c42";
@@ -174,6 +175,7 @@ export default function TokensPage() {
   const resetToken = useResetToken();
   const revokeToken = useRevokeToken();
 
+  const canWrite = useCanWrite();
   const [showDialog, setShowDialog] = useState(false);
   const [confirmRevoke, setConfirmRevoke] = useState<number | null>(null);
 
@@ -211,13 +213,15 @@ export default function TokensPage() {
             Generate secure login tokens for parents to access their child's meal records
           </p>
         </div>
-        <button
-          onClick={() => setShowDialog(true)}
-          className="flex items-center gap-2 bg-[#004ac6] text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-blue-700 transition-all active:scale-95"
-        >
-          <Plus className="h-4 w-4" />
-          Generate Token
-        </button>
+        {canWrite && (
+          <button
+            onClick={() => setShowDialog(true)}
+            className="flex items-center gap-2 bg-[#004ac6] text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-blue-700 transition-all active:scale-95"
+          >
+            <Plus className="h-4 w-4" />
+            Generate Token
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -292,23 +296,25 @@ export default function TokensPage() {
                     <td className="px-4 py-3 text-slate-500 text-xs">{formatDate(t.createdAt)}</td>
                     <td className="px-4 py-3 text-slate-500 text-xs">{formatDate(t.expiresAt)}</td>
                     <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleReset(t.id)}
-                          disabled={resetToken.isPending}
-                          title="Reset token"
-                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        >
-                          <RefreshCw className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => setConfirmRevoke(t.id)}
-                          title="Revoke token"
-                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
+                      {canWrite && (
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleReset(t.id)}
+                            disabled={resetToken.isPending}
+                            title="Reset token"
+                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => setConfirmRevoke(t.id)}
+                            title="Revoke token"
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}

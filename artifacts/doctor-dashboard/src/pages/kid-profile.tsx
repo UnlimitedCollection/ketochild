@@ -25,6 +25,7 @@ import { Slider } from "@/components/ui/slider";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { useCanWrite } from "@/hooks/useRole";
 import { Activity, User, Scale, Calendar, FileText, Trash2, Settings, Plus, Loader2, BarChart2, TrendingUp, Flame, FlaskConical, AlertTriangle, ClipboardList, CheckCircle2, Circle, ChevronDown, ChevronUp, Coffee, Sun, Moon, Apple as AppleIcon, LayoutGrid, Camera, ThumbsUp, ThumbsDown, Minus, ImageIcon, X, Search, Pencil } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
@@ -37,6 +38,8 @@ export default function KidProfilePage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const canWrite = useCanWrite();
 
   const deleteKidMutation = useDeleteKid({
     mutation: {
@@ -109,12 +112,16 @@ export default function KidProfilePage() {
                   </div>
                 </div>
                 <div className="flex items-start gap-2">
-                  <Button size="sm" variant="outline" className="rounded-lg gap-1.5" onClick={() => setEditOpen(true)}>
-                    <Pencil className="h-3.5 w-3.5" /> Edit
-                  </Button>
-                  <Button size="sm" variant="outline" className="rounded-lg gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setDeleteOpen(true)}>
-                    <Trash2 className="h-3.5 w-3.5" /> Delete
-                  </Button>
+                  {canWrite && (
+                    <>
+                      <Button size="sm" variant="outline" className="rounded-lg gap-1.5" onClick={() => setEditOpen(true)}>
+                        <Pencil className="h-3.5 w-3.5" /> Edit
+                      </Button>
+                      <Button size="sm" variant="outline" className="rounded-lg gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setDeleteOpen(true)}>
+                        <Trash2 className="h-3.5 w-3.5" /> Delete
+                      </Button>
+                    </>
+                  )}
                   <div className="flex flex-col items-end gap-2 ml-2">
                     <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 text-sm py-1 px-3">
                       Phase {kid.phase}
@@ -184,7 +191,7 @@ export default function KidProfilePage() {
                   <CardTitle className="text-lg">Weight History</CardTitle>
                   <CardDescription>Track patient's weight trajectory over time</CardDescription>
                 </div>
-                <AddWeightDialog kidId={kidId} />
+                {canWrite && <AddWeightDialog kidId={kidId} />}
               </CardHeader>
               <CardContent className="pt-4">
                 {recentWeights.length < 2 ? (
@@ -541,6 +548,7 @@ type MedicalSettings = {
 function MedicalSettingsForm({ kidId, initialData }: { kidId: number, initialData: MedicalSettings }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const canWrite = useCanWrite();
   
   const form = useForm<z.infer<typeof medicalSchema>>({
     resolver: zodResolver(medicalSchema),
@@ -736,12 +744,14 @@ function MedicalSettingsForm({ kidId, initialData }: { kidId: number, initialDat
               </div>
             </div>
 
-            <div className="flex justify-end pt-4 border-t border-slate-100">
-              <Button type="submit" disabled={mutation.isPending} className="rounded-xl px-8 shadow-md">
-                {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Medical Controls
-              </Button>
-            </div>
+            {canWrite && (
+              <div className="flex justify-end pt-4 border-t border-slate-100">
+                <Button type="submit" disabled={mutation.isPending} className="rounded-xl px-8 shadow-md">
+                  {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Save Medical Controls
+                </Button>
+              </div>
+            )}
           </form>
         </Form>
       </CardContent>
@@ -772,6 +782,7 @@ const ketoneFormSchema = z.object({
 function KetoneTab({ kidId }: { kidId: number }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const canWrite = useCanWrite();
   const { data: readings, isLoading } = useGetKidKetoneReadings(kidId);
   const addReading = useAddKetoneReading();
   const deleteReading = useDeleteKetoneReading();
@@ -905,7 +916,8 @@ function KetoneTab({ kidId }: { kidId: number }) {
         </Card>
 
         {/* Add Reading Form */}
-        <Card className="rounded-2xl border-slate-200 shadow-sm bg-white">
+        {canWrite && (
+          <Card className="rounded-2xl border-slate-200 shadow-sm bg-white">
           <CardHeader className="border-b border-slate-100 pb-3">
             <CardTitle className="text-base flex items-center gap-2"><Plus className="h-4 w-4" /> Log Reading</CardTitle>
           </CardHeader>
@@ -963,6 +975,7 @@ function KetoneTab({ kidId }: { kidId: number }) {
             </Form>
           </CardContent>
         </Card>
+        )}
       </div>
 
       {/* Readings Table */}
@@ -1004,9 +1017,11 @@ function KetoneTab({ kidId }: { kidId: number }) {
                       </TableCell>
                       <TableCell className="text-sm text-slate-500">{r.notes || "—"}</TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-destructive" onClick={() => onDelete(r.id)} disabled={deleteReading.isPending}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {canWrite && (
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-destructive" onClick={() => onDelete(r.id)} disabled={deleteReading.isPending}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
@@ -1105,6 +1120,7 @@ function MealPhotoUpload({ kidId, log }: { kidId: number; log: { id: number; ima
 function MealDayDetailDialog({ kidId, date, onClose }: { kidId: number; date: string; onClose: () => void }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const canWrite = useCanWrite();
   const { data: logs, isLoading } = useGetKidMealLogs(kidId, { date });
   const addLog = useAddMealLog();
   const deleteLog = useDeleteMealLog();
@@ -1190,7 +1206,7 @@ function MealDayDetailDialog({ kidId, date, onClose }: { kidId: number; date: st
                         ) : null}
                         {entry?.notes && <div className="text-xs text-slate-400 mt-0.5 italic">{entry.notes}</div>}
                       </div>
-                      {entry && (
+                      {entry && canWrite && (
                         <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-destructive" onClick={() => handleDelete(entry.id)} disabled={deleteLog.isPending}>
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -1204,7 +1220,7 @@ function MealDayDetailDialog({ kidId, date, onClose }: { kidId: number; date: st
           )}
 
           {/* Add meal log form */}
-          <div className="border-t border-slate-200 pt-4">
+          {canWrite && <div className="border-t border-slate-200 pt-4">
             <p className="text-sm font-semibold text-slate-700 mb-3">Log a Meal</p>
             <div className="grid grid-cols-2 gap-2 mb-3">
               <div>
@@ -1253,7 +1269,7 @@ function MealDayDetailDialog({ kidId, date, onClose }: { kidId: number; date: st
             <Button onClick={handleAdd} className="w-full" size="sm" disabled={addLog.isPending}>
               {addLog.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null} Save Meal Log
             </Button>
-          </div>
+          </div>}
         </div>
       </DialogContent>
     </Dialog>
@@ -1662,6 +1678,7 @@ type MealType = typeof MEAL_TYPE_CONFIG[number]["value"];
 function MealPlanTab({ kidId }: { kidId: number }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const canWrite = useCanWrite();
   const [expandedMeal, setExpandedMeal] = useState<MealType | null>("breakfast");
   const [pendingPlanId, setPendingPlanId] = useState<string>("");
 
@@ -1737,37 +1754,39 @@ function MealPlanTab({ kidId }: { kidId: number }) {
                 </Link>
               </p>
             </div>
-            <div className="flex items-center gap-2 min-w-[240px]">
-              <Select
-                value={assignPlan.isPending ? pendingPlanId : (currentPlanId?.toString() ?? "none")}
-                onValueChange={handleAssign}
-                disabled={assignPlan.isPending || libraryLoading || assignedLoading}
-              >
-                <SelectTrigger className="rounded-xl flex-1">
-                  <SelectValue placeholder={assignedLoading ? "Loading…" : "No plan assigned"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No plan assigned</SelectItem>
-                  {(libraryPlans ?? []).map((p) => (
-                    <SelectItem key={p.id} value={String(p.id)}>
-                      {p.name}{p.targetPhase ? ` (Phase ${p.targetPhase})` : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {currentPlanId && !assignPlan.isPending && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="rounded-xl shrink-0 text-red-600 border-red-200 hover:bg-red-50"
-                  onClick={() => handleAssign("none")}
-                  title="Unassign plan"
+            {canWrite && (
+              <div className="flex items-center gap-2 min-w-[240px]">
+                <Select
+                  value={assignPlan.isPending ? pendingPlanId : (currentPlanId?.toString() ?? "none")}
+                  onValueChange={handleAssign}
+                  disabled={assignPlan.isPending || libraryLoading || assignedLoading}
                 >
-                  Unassign
-                </Button>
-              )}
-              {assignPlan.isPending && <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />}
-            </div>
+                  <SelectTrigger className="rounded-xl flex-1">
+                    <SelectValue placeholder={assignedLoading ? "Loading…" : "No plan assigned"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No plan assigned</SelectItem>
+                    {(libraryPlans ?? []).map((p) => (
+                      <SelectItem key={p.id} value={String(p.id)}>
+                        {p.name}{p.targetPhase ? ` (Phase ${p.targetPhase})` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {currentPlanId && !assignPlan.isPending && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-xl shrink-0 text-red-600 border-red-200 hover:bg-red-50"
+                    onClick={() => handleAssign("none")}
+                    title="Unassign plan"
+                  >
+                    Unassign
+                  </Button>
+                )}
+                {assignPlan.isPending && <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -1922,6 +1941,7 @@ function MealPlanTab({ kidId }: { kidId: number }) {
 function ApprovedFoodsTab({ kidId }: { kidId: number }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const canWrite = useCanWrite();
   const [search, setSearch] = useState("");
   const { data: foods, isLoading: foodsLoading } = useGetFoods({ search: search || undefined });
   const { data: approvals, isLoading: approvalsLoading } = useGetKidFoodApprovals(kidId);
@@ -1990,9 +2010,9 @@ function ApprovedFoodsTab({ kidId }: { kidId: number }) {
                 return (
                   <button
                     key={food.id}
-                    onClick={() => handleToggle(food.id, status)}
-                    disabled={upsert.isPending}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all text-left ${
+                    onClick={() => canWrite ? handleToggle(food.id, status) : undefined}
+                    disabled={upsert.isPending || !canWrite}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all text-left ${!canWrite ? "cursor-default " : ""}${
                       isApproved
                         ? "border-green-200 bg-green-50 hover:bg-green-100"
                         : isAvoid

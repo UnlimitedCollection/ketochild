@@ -95,11 +95,14 @@ async function getLast24hCompletionRate(kidId: number): Promise<number> {
   return completed / logs.length;
 }
 
-async function resolveOwnedKid(kidId: number, doctorId: number) {
+async function resolveOwnedKid(kidId: number, doctorId: number, isModerator: boolean) {
+  const whereClause = isModerator
+    ? eq(kidsTable.id, kidId)
+    : and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId));
   const [kid] = await db
     .select()
     .from(kidsTable)
-    .where(and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId)))
+    .where(whereClause)
     .limit(1);
   return kid ?? null;
 }
@@ -111,7 +114,8 @@ router.param("kidId", async (req, res, next, kidIdStr) => {
     return;
   }
   const doctorId = req.session.doctorId!;
-  const kid = await resolveOwnedKid(kidId, doctorId);
+  const isModerator = req.session.doctorRole === "moderator";
+  const kid = await resolveOwnedKid(kidId, doctorId, isModerator);
   if (!kid) {
     res.status(404).json({ error: "NOT_FOUND", message: "Kid not found" });
     return;
@@ -121,6 +125,7 @@ router.param("kidId", async (req, res, next, kidIdStr) => {
 
 router.get("/", async (req, res) => {
   const doctorId = req.session.doctorId!;
+  const isModerator = req.session.doctorRole === "moderator";
   const query = GetKidsQueryParams.safeParse(req.query);
   const search = query.success ? query.data.search : undefined;
   const phase = query.success ? query.data.phase : undefined;
@@ -129,9 +134,11 @@ router.get("/", async (req, res) => {
   try {
     let kidsQuery = db.select().from(kidsTable).$dynamic();
 
-    const conditions = [eq(kidsTable.doctorId, doctorId)];
+    const conditions = isModerator ? [] : [eq(kidsTable.doctorId, doctorId)];
     if (phase) conditions.push(eq(kidsTable.phase, phase));
-    kidsQuery = kidsQuery.where(and(...conditions));
+    if (conditions.length > 0) {
+      kidsQuery = kidsQuery.where(and(...conditions));
+    }
 
     const kids = await kidsQuery.orderBy(asc(kidsTable.name));
 
@@ -244,6 +251,7 @@ router.post("/", async (req, res) => {
 
 router.get("/:kidId", async (req, res) => {
   const doctorId = req.session.doctorId!;
+  const isModerator = req.session.doctorRole === "moderator";
   const kidId = parseInt(req.params.kidId);
   if (isNaN(kidId)) {
     res.status(400).json({ error: "BAD_REQUEST", message: "Invalid kid ID" });
@@ -251,10 +259,13 @@ router.get("/:kidId", async (req, res) => {
   }
 
   try {
+    const kidWhereClause = isModerator
+      ? eq(kidsTable.id, kidId)
+      : and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId));
     const [kid] = await db
       .select()
       .from(kidsTable)
-      .where(and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId)))
+      .where(kidWhereClause)
       .limit(1);
     if (!kid) {
       res.status(404).json({ error: "NOT_FOUND", message: "Kid not found" });

@@ -13,6 +13,7 @@ import {
 import type { LibraryMealPlan, LibraryMealPlanItem } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useCanWrite } from "@/hooks/useRole";
 import {
   Card, CardContent, CardHeader, CardTitle, CardDescription,
 } from "@/components/ui/card";
@@ -159,6 +160,8 @@ export default function MealPlansPage() {
     );
   }
 
+  const canWrite = useCanWrite();
+
   const getMealItems = (mt: MealType): LibraryMealPlanItem[] =>
     planDetail?.items?.filter((i) => i.mealType === mt) ?? [];
 
@@ -188,10 +191,12 @@ export default function MealPlansPage() {
             Create and manage reusable meal plans — assign them to patients from their profile
           </p>
         </div>
-        <Button onClick={() => setCreateOpen(true)} className="gap-2 shadow-sm">
-          <Plus className="h-4 w-4" />
-          New Plan
-        </Button>
+        {canWrite && (
+          <Button onClick={() => setCreateOpen(true)} className="gap-2 shadow-sm">
+            <Plus className="h-4 w-4" />
+            New Plan
+          </Button>
+        )}
       </div>
 
       {/* Stats Row */}
@@ -278,24 +283,26 @@ export default function MealPlansPage() {
                           <Badge variant="outline" className="mt-1.5 text-xs">Phase {plan.targetPhase}</Badge>
                         )}
                       </div>
-                      <div className="flex gap-1 shrink-0">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-slate-400 hover:text-primary"
-                          onClick={(e) => { e.stopPropagation(); setEditPlan(plan); }}
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-slate-400 hover:text-destructive"
-                          onClick={(e) => { e.stopPropagation(); setDeletePlanId(plan.id); }}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
+                      {canWrite && (
+                        <div className="flex gap-1 shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-slate-400 hover:text-primary"
+                            onClick={(e) => { e.stopPropagation(); setEditPlan(plan); }}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-slate-400 hover:text-destructive"
+                            onClick={(e) => { e.stopPropagation(); setDeletePlanId(plan.id); }}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -377,14 +384,16 @@ export default function MealPlansPage() {
                             {isExpanded ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
                           </div>
                         </button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-xs gap-1"
-                          onClick={() => { setAddItemMeal(mealType); setExpandedMeal(mealType); }}
-                        >
-                          <Plus className="h-3 w-3" />Add Food
-                        </Button>
+                        {canWrite && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs gap-1"
+                            onClick={() => { setAddItemMeal(mealType); setExpandedMeal(mealType); }}
+                          >
+                            <Plus className="h-3 w-3" />Add Food
+                          </Button>
+                        )}
                       </div>
                     </CardHeader>
                     {isExpanded && (
@@ -410,14 +419,16 @@ export default function MealPlansPage() {
                                     {" · "}C:{(item.carbs ?? 0).toFixed(1)}g · F:{(item.fat ?? 0).toFixed(1)}g · P:{(item.protein ?? 0).toFixed(1)}g
                                   </p>
                                 </div>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7 text-slate-400 hover:text-destructive"
-                                  onClick={() => handleDeleteItem(item.id)}
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
+                                {canWrite && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-slate-400 hover:text-destructive"
+                                    onClick={() => handleDeleteItem(item.id)}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
                               </div>
                             ))}
                           </div>
