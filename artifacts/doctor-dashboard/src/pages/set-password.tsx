@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { useGetMe, getGetMeQueryKey } from "@workspace/api-client-react";
+import { useGetMe, getGetMeQueryKey, useChangeDoctorPassword } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Stethoscope, Loader2, Lock } from "lucide-react";
@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { customFetch } from "@workspace/api-client-react";
 
 export default function SetPasswordPage() {
   const [, setLocation] = useLocation();
@@ -17,10 +16,12 @@ export default function SetPasswordPage() {
   const queryClient = useQueryClient();
   const { data: user, isLoading } = useGetMe({ query: { retry: false } });
 
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [isPending, setIsPending] = useState(false);
+
+  const changePassword = useChangeDoctorPassword();
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -46,35 +47,35 @@ export default function SetPasswordPage() {
     e.preventDefault();
     setError(null);
 
+    if (!currentPassword) {
+      setError("Current password is required.");
+      return;
+    }
     if (newPassword.length < 6) {
-      setError("Password must be at least 6 characters.");
+      setError("New password must be at least 6 characters.");
       return;
     }
     if (newPassword !== confirmPassword) {
-      setError("Passwords do not match.");
+      setError("New passwords do not match.");
       return;
     }
 
-    setIsPending(true);
-    try {
-      await customFetch("/api/auth/force-change", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ newPassword, confirmPassword }),
-      });
-
-      queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
-      toast({
-        title: "Password set",
-        description: "Your new password has been saved. Welcome!",
-      });
-      setLocation("/");
-    } catch (err: unknown) {
-      const apiErr = err as { data?: { message?: string }; message?: string };
-      setError(apiErr?.data?.message ?? apiErr?.message ?? "Failed to set password. Please try again.");
-    } finally {
-      setIsPending(false);
-    }
+    changePassword.mutate(
+      { data: { currentPassword, newPassword, confirmPassword } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
+          toast({
+            title: "Password changed",
+            description: "Your new password has been saved. Welcome!",
+          });
+          setLocation("/");
+        },
+        onError: (err: Error) => {
+          setError(err.message ?? "Failed to set password. Please try again.");
+        },
+      }
+    );
   }
 
   return (
@@ -102,14 +103,25 @@ export default function SetPasswordPage() {
               <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center">
                 <Lock className="h-4 w-4 text-amber-600" />
               </div>
-              <CardTitle className="text-2xl font-bold">Set Your Password</CardTitle>
+              <CardTitle className="text-2xl font-bold">Change Your Password</CardTitle>
             </div>
             <CardDescription className="text-base">
-              Welcome, {user.name}! Your account requires a new password before you can access the system.
+              Welcome, {user.name}! For security, you must set a new password before accessing the system.
             </CardDescription>
           </CardHeader>
           <CardContent className="px-8 pb-8">
             <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-2">
+                <Label className="text-slate-700 font-semibold">Current (Temporary) Password</Label>
+                <Input
+                  type="password"
+                  placeholder="Your temporary password"
+                  value={currentPassword}
+                  onChange={(e) => { setCurrentPassword(e.target.value); setError(null); }}
+                  className="h-12 rounded-xl bg-slate-50 border-slate-200 focus:bg-white transition-colors"
+                  required
+                />
+              </div>
               <div className="space-y-2">
                 <Label className="text-slate-700 font-semibold">New Password</Label>
                 <Input
@@ -122,7 +134,7 @@ export default function SetPasswordPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-slate-700 font-semibold">Confirm Password</Label>
+                <Label className="text-slate-700 font-semibold">Confirm New Password</Label>
                 <Input
                   type="password"
                   placeholder="Repeat your new password"
@@ -142,9 +154,9 @@ export default function SetPasswordPage() {
               <Button
                 type="submit"
                 className="w-full h-12 rounded-xl text-base font-semibold bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all active:scale-[0.98]"
-                disabled={isPending}
+                disabled={changePassword.isPending}
               >
-                {isPending ? (
+                {changePassword.isPending ? (
                   <span className="flex items-center gap-2">
                     <Loader2 className="h-5 w-5 animate-spin" /> Saving...
                   </span>

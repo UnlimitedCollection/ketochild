@@ -30,19 +30,27 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (user) {
-      setLocation("/");
+      if (user.mustChangePassword) {
+        setLocation("/set-password");
+      } else {
+        setLocation("/");
+      }
     }
   }, [user, setLocation]);
 
   const loginMutation = useDoctorLogin({
     mutation: {
-      onSuccess: () => {
+      onSuccess: (data) => {
         queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-        toast({
-          title: "Welcome back",
-          description: "Successfully logged in to the dashboard.",
-        });
-        setLocation("/");
+        if (data?.doctor?.mustChangePassword) {
+          setLocation("/set-password");
+        } else {
+          toast({
+            title: "Welcome back",
+            description: "Successfully logged in to the dashboard.",
+          });
+          setLocation("/");
+        }
       },
       onError: (error: Error) => {
         toast({
