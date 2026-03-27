@@ -113,11 +113,12 @@ function IconUsers() {
 }
 
 const BASE_NAV_ITEMS = [
-  { title: "Dashboard",   url: "/",         icon: IconDashboard  },
-  { title: "Children",    url: "/kids",     icon: IconChildren   },
-  { title: "Foods",       url: "/foods",    icon: IconVisibility },
-  { title: "Meal Plans",  url: "/meal-plans", icon: IconRecipe   },
-  { title: "Recipes",     url: "/recipes",  icon: IconRecipe     },
+  { title: "Dashboard",   url: "/",           icon: IconDashboard  },
+  { title: "Children",    url: "/kids",       icon: IconChildren   },
+  { title: "Analytics",   url: "/analytics",  icon: IconAnalysis   },
+  { title: "Foods",       url: "/foods",      icon: IconVisibility },
+  { title: "Meal Plans",  url: "/meal-plans", icon: IconRecipe     },
+  { title: "Recipes",     url: "/recipes",    icon: IconRecipe     },
 ];
 
 const ADMIN_NAV_ITEMS = [

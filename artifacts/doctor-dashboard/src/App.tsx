@@ -25,6 +25,7 @@ import RecipesPage from "@/pages/recipes";
 import SettingsPage from "@/pages/settings";
 import UsersPage from "@/pages/users";
 import SetPasswordPage from "@/pages/set-password";
+import AnalyticsPage from "@/pages/analytics";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -110,6 +111,7 @@ function Router() {
       <Route path="/tokens" component={() => <ProtectedRoute component={TokensPage} />} />
       <Route path="/recipes" component={() => <ProtectedRoute component={RecipesPage} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={SettingsPage} />} />
+      <Route path="/analytics" component={() => <ProtectedRoute component={AnalyticsPage} />} />
       <Route path="/users" component={() => <AdminRoute component={UsersPage} />} />
       <Route path="/set-password" component={SetPasswordPage} />
       <Route component={NotFound} />

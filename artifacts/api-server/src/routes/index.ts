@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import healthRouter from "./health";
 import authRouter from "./auth";
 import dashboardRouter from "./dashboard";
+import analyticsRouter from "./analytics";
 import kidsRouter from "./kids";
 import foodsRouter from "./foods";
 import mealPlansRouter from "./meal-plans";
@@ -22,6 +23,7 @@ router.use(requireAuth);
 router.use(restrictWriteForModerator);
 
 router.use("/dashboard", dashboardRouter);
+router.use("/analytics", analyticsRouter);
 router.use("/kids", kidsRouter);
 router.use("/foods", foodsRouter);
 router.use("/meal-plans", mealPlansRouter);
