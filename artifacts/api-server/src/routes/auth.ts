@@ -264,6 +264,22 @@ router.put("/force-change", async (req, res) => {
   }
 
   try {
+    const [doctor] = await db
+      .select({ mustChangePassword: doctorsTable.mustChangePassword })
+      .from(doctorsTable)
+      .where(eq(doctorsTable.id, doctorId))
+      .limit(1);
+
+    if (!doctor) {
+      res.status(401).json({ error: "UNAUTHORIZED", message: "Session invalid" });
+      return;
+    }
+
+    if (!doctor.mustChangePassword) {
+      res.status(403).json({ error: "FORBIDDEN", message: "Password change not required for this account" });
+      return;
+    }
+
     const hashed = await bcrypt.hash(newPassword, 12);
     await db
       .update(doctorsTable)
