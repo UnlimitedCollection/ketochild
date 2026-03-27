@@ -111,7 +111,7 @@ export default function LoginPage() {
                       <Label className="text-slate-700 font-semibold">Username</Label>
                       <FormControl>
                         <Input 
-                          placeholder="doctor.name" 
+                          placeholder="admin" 
                           className="h-12 rounded-xl bg-slate-50 border-slate-200 focus:bg-white transition-colors" 
                           {...field} 
                         />

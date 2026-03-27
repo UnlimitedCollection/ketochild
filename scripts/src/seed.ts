@@ -22,49 +22,32 @@ import bcrypt from "bcryptjs";
 async function seed() {
   console.log("Seeding database...");
 
-  // ── 1. Remove admin account ────────────────────────────────────────────────
-  const adminAccounts = await db.select().from(doctorsTable).where(eq(doctorsTable.username, "admin"));
-  for (const admin of adminAccounts) {
-    const adminKids = await db.select({ id: kidsTable.id }).from(kidsTable).where(eq(kidsTable.doctorId, admin.id));
-    if (adminKids.length > 0) {
-      const adminKidIds = adminKids.map((k) => k.id);
-      await db.delete(mealEntriesTable).where(inArray(mealEntriesTable.kidId, adminKidIds));
-      await db.delete(ketoneReadingsTable).where(inArray(ketoneReadingsTable.kidId, adminKidIds));
-      await db.delete(mealLogsTable).where(inArray(mealLogsTable.kidId, adminKidIds));
-      await db.delete(kidFoodApprovalsTable).where(inArray(kidFoodApprovalsTable.kidId, adminKidIds));
-      const adminPlans = await db.select({ id: mealPlansTable.id }).from(mealPlansTable).where(inArray(mealPlansTable.kidId, adminKidIds));
-      if (adminPlans.length > 0) {
-        await db.delete(mealPlanItemsTable).where(inArray(mealPlanItemsTable.planId, adminPlans.map((p) => p.id)));
-        await db.delete(mealPlansTable).where(inArray(mealPlansTable.kidId, adminKidIds));
-      }
-      await db.delete(notesTable).where(inArray(notesTable.kidId, adminKidIds));
-      await db.delete(mealDaysTable).where(inArray(mealDaysTable.kidId, adminKidIds));
-      await db.delete(weightRecordsTable).where(inArray(weightRecordsTable.kidId, adminKidIds));
-      await db.delete(medicalSettingsTable).where(inArray(medicalSettingsTable.kidId, adminKidIds));
-      await db.delete(kidsTable).where(inArray(kidsTable.id, adminKidIds));
-    }
-    await db.delete(doctorsTable).where(eq(doctorsTable.id, admin.id));
-    console.log(`Admin account (id=${admin.id}) removed.`);
+  // ── 1. Migrate legacy "doctor" username → "admin" (one-time rename) ─────────
+  const legacyDoctors = await db.select().from(doctorsTable).where(eq(doctorsTable.username, "doctor"));
+  if (legacyDoctors.length > 0) {
+    await db.update(doctorsTable)
+      .set({ username: "admin" })
+      .where(eq(doctorsTable.username, "doctor"));
+    console.log("Migrated legacy 'doctor' account → username='admin'");
   }
-  if (adminAccounts.length === 0) console.log("No admin account found, skipping.");
 
-  // ── 2. Upsert doctor with bcrypt password ──────────────────────────────────
-  const hashedPassword = await bcrypt.hash("doctor123", 12);
+  // ── 2. Upsert admin account with bcrypt password ───────────────────────────
+  const hashedPassword = await bcrypt.hash("admin123", 12);
 
-  const existingDoctors = await db.select().from(doctorsTable).where(eq(doctorsTable.username, "doctor"));
+  const existingAdmins = await db.select().from(doctorsTable).where(eq(doctorsTable.username, "admin"));
   let doctorId: number;
 
-  if (existingDoctors.length > 0) {
+  if (existingAdmins.length > 0) {
     await db.update(doctorsTable)
       .set({ password: hashedPassword })
-      .where(eq(doctorsTable.username, "doctor"));
-    doctorId = existingDoctors[0].id;
-    console.log("Doctor password updated with bcrypt hash:", doctorId);
+      .where(eq(doctorsTable.username, "admin"));
+    doctorId = existingAdmins[0].id;
+    console.log("Admin password updated with bcrypt hash:", doctorId);
   } else {
     const [doctor] = await db
       .insert(doctorsTable)
       .values({
-        username: "doctor",
+        username: "admin",
         password: hashedPassword,
         name: "Dr. Sarah Johnson",
         email: "sarah.johnson@ketokidcare.com",
@@ -72,7 +55,7 @@ async function seed() {
       })
       .returning();
     doctorId = doctor.id;
-    console.log("Doctor created:", doctorId);
+    console.log("Admin account created:", doctorId);
   }
 
   // ── 3. Seed 60 keto-appropriate foods (canonical categories) ──────────────
