@@ -5,6 +5,7 @@ import { eq, or, and, ne } from "drizzle-orm";
 import { DoctorLoginBody } from "@workspace/api-zod";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { restrictWriteForModerator } from "../middleware/restrictWriteForModerator";
 
 const router: IRouter = Router();
 
@@ -109,7 +110,7 @@ const ChangePasswordBody = z.object({
   confirmPassword: z.string().min(1),
 });
 
-router.put("/profile", async (req, res) => {
+router.put("/profile", restrictWriteForModerator, async (req, res) => {
   const doctorId = req.session.doctorId;
   if (!doctorId) {
     res.status(401).json({ error: "UNAUTHORIZED", message: "Not authenticated" });
@@ -174,7 +175,7 @@ router.put("/profile", async (req, res) => {
   }
 });
 
-router.put("/password", async (req, res) => {
+router.put("/password", restrictWriteForModerator, async (req, res) => {
   const doctorId = req.session.doctorId;
   if (!doctorId) {
     res.status(401).json({ error: "UNAUTHORIZED", message: "Not authenticated" });
