@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useSearch } from "wouter";
-import { useGetKids, useDeleteKid, useUpdateKid } from "@workspace/api-client-react";
-import { Search, Filter, Loader2, User, ChevronRight, Flame, Clock, Trash2, Pencil } from "lucide-react";
+import { useGetKids, useGetKid, useGetKidKetoneReadings, useDeleteKid, useUpdateKid } from "@workspace/api-client-react";
+import { Search, Filter, Loader2, User, ChevronRight, Flame, Clock, Trash2, Pencil, Scale, FlaskConical } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +20,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { UpdateKidRequest } from "@workspace/api-client-react";
+import { format, parseISO } from "date-fns";
 
 type KidRow = {
   id: number;
@@ -160,6 +161,133 @@ function EditKidDialog({ kid, open, onOpenChange }: { kid: KidRow; open: boolean
   );
 }
 
+function KidViewDialog({ kidId, open, onOpenChange }: { kidId: number | null; open: boolean; onOpenChange: (v: boolean) => void }) {
+  const enabled = open && kidId !== null;
+  const { data: profile, isLoading, isError } = useGetKid(kidId ?? 0, { query: { enabled } });
+  const { data: ketoneReadings } = useGetKidKetoneReadings(
+    kidId ?? 0,
+    { limit: 1 },
+    { query: { enabled } }
+  );
+
+  const kid = profile?.kid;
+  const recentWeights = profile?.recentWeights ?? [];
+
+  const latestWeight = recentWeights[0];
+  const latestKetone = ketoneReadings?.[0];
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg rounded-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <User className="h-5 w-5 text-primary" />
+            Patient Overview
+          </DialogTitle>
+        </DialogHeader>
+
+        {isLoading ? (
+          <div className="h-40 flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : isError || !kid ? (
+          <div className="h-40 flex flex-col items-center justify-center text-slate-500 gap-2">
+            <p className="text-sm">Failed to load patient details.</p>
+            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} className="rounded-xl">Close</Button>
+          </div>
+        ) : (
+          <div className="space-y-5 pt-1">
+            {/* Name & IDs */}
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">{kid.name}</h2>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-600">{kid.kidCode}</span>
+                  <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">Phase {kid.phase}</Badge>
+                </div>
+              </div>
+            </div>
+
+            {/* Core info grid */}
+            <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+              <div>
+                <p className="text-slate-500 font-medium text-xs uppercase tracking-wide">Age</p>
+                <p className="font-semibold text-slate-800">{kid.ageMonths} months</p>
+              </div>
+              <div>
+                <p className="text-slate-500 font-medium text-xs uppercase tracking-wide">Gender</p>
+                <p className="font-semibold text-slate-800 capitalize">{kid.gender ?? '—'}</p>
+              </div>
+              <div>
+                <p className="text-slate-500 font-medium text-xs uppercase tracking-wide">Date of Birth</p>
+                <p className="font-semibold text-slate-800">{format(parseISO(kid.dateOfBirth), 'MMM d, yyyy')}</p>
+              </div>
+              <div>
+                <p className="text-slate-500 font-medium text-xs uppercase tracking-wide">Health Status</p>
+                {kid.isHighRisk ? (
+                  <Badge variant="destructive" className="bg-destructive/10 text-destructive border border-destructive/20 text-xs mt-0.5">High Risk</Badge>
+                ) : (
+                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs mt-0.5">Stable</Badge>
+                )}
+              </div>
+              <div>
+                <p className="text-slate-500 font-medium text-xs uppercase tracking-wide">Parent / Guardian</p>
+                <p className="font-semibold text-slate-800">{kid.parentName}</p>
+              </div>
+              <div>
+                <p className="text-slate-500 font-medium text-xs uppercase tracking-wide">Parent Contact</p>
+                <p className="font-semibold text-slate-800">{kid.parentContact}</p>
+              </div>
+            </div>
+
+            {/* Status & readings */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 flex flex-col gap-1">
+                <div className="flex items-center gap-1 text-slate-500 text-xs">
+                  <Flame className="h-3.5 w-3.5" /> Keto Status
+                </div>
+                {kid.inKetoStatus ? (
+                  <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 w-fit gap-1 text-xs">In Keto</Badge>
+                ) : (
+                  <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 w-fit text-xs">Not in Keto</Badge>
+                )}
+              </div>
+              <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 flex flex-col gap-1">
+                <div className="flex items-center gap-1 text-slate-500 text-xs">
+                  <Scale className="h-3.5 w-3.5" /> Latest Weight
+                </div>
+                <p className="font-bold text-slate-800 text-sm">
+                  {latestWeight ? `${latestWeight.weight} kg` : kid.currentWeight ? `${kid.currentWeight} kg` : '—'}
+                </p>
+                {latestWeight && (
+                  <p className="text-xs text-slate-400">{format(parseISO(latestWeight.date), 'MMM d')}</p>
+                )}
+              </div>
+              <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 flex flex-col gap-1">
+                <div className="flex items-center gap-1 text-slate-500 text-xs">
+                  <FlaskConical className="h-3.5 w-3.5" /> Last Ketone
+                </div>
+                <p className="font-bold text-slate-800 text-sm">
+                  {latestKetone ? `${latestKetone.value} ${latestKetone.unit}` : '—'}
+                </p>
+                {latestKetone && (
+                  <p className="text-xs text-slate-400">{format(parseISO(latestKetone.date), 'MMM d')}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-1">
+              <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl">
+                Close
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function KidsListPage() {
   const searchQuery = useSearch();
   const urlParams = new URLSearchParams(searchQuery);
@@ -170,6 +298,7 @@ export default function KidsListPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingKid, setDeletingKid] = useState<{ id: number; name: string } | null>(null);
   const [editingKid, setEditingKid] = useState<KidRow | null>(null);
+  const [viewingKidId, setViewingKidId] = useState<number | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -229,6 +358,13 @@ export default function KidsListPage() {
           onOpenChange={(v) => { if (!v) setEditingKid(null); }}
         />
       )}
+
+      {/* View Dialog */}
+      <KidViewDialog
+        kidId={viewingKidId}
+        open={viewingKidId !== null}
+        onOpenChange={(v) => { if (!v) setViewingKidId(null); }}
+      />
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -400,10 +536,13 @@ export default function KidsListPage() {
                             <Pencil className="h-4 w-4" />
                           </Button>
                         )}
-                        <Button size="sm" variant="ghost" asChild className="rounded-lg text-primary hover:text-primary hover:bg-primary/10">
-                          <Link href={`/kids/${kid.id}`}>
-                            View <ChevronRight className="h-4 w-4 ml-1" />
-                          </Link>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="rounded-lg text-primary hover:text-primary hover:bg-primary/10"
+                          onClick={() => setViewingKidId(kid.id)}
+                        >
+                          View <ChevronRight className="h-4 w-4 ml-1" />
                         </Button>
                         {canWrite && (
                           <Button
