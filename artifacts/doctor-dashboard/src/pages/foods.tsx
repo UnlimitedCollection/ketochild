@@ -326,8 +326,8 @@ export default function FoodsPage() {
                 <TableHeader>
                   <TableRow className="bg-slate-50">
                     <TableHead className="font-semibold">Name</TableHead>
-                    <TableHead className="font-semibold">Category</TableHead>
-                    <TableHead className="font-semibold text-right">Cal</TableHead>
+                    <TableHead className="font-semibold">Macro Type</TableHead>
+                    <TableHead className="font-semibold text-right">Calories</TableHead>
                     <TableHead className="font-semibold text-right">Carbs (g)</TableHead>
                     <TableHead className="font-semibold text-right">Fat (g)</TableHead>
                     <TableHead className="font-semibold text-right">Protein (g)</TableHead>
@@ -338,6 +338,12 @@ export default function FoodsPage() {
                 <TableBody>
                   {filteredFoods.map((food) => {
                     const isInactive = food.isActive === false;
+                    const categoryStyle: Record<string, string> = {
+                      Carb:     "bg-green-50 text-green-700 border-green-200",
+                      Fat:      "bg-amber-50 text-amber-700 border-amber-200",
+                      Protein:  "bg-rose-50 text-rose-700 border-rose-200",
+                      Calories: "bg-purple-50 text-purple-700 border-purple-200",
+                    };
                     return (
                       <TableRow
                         key={food.id}
@@ -352,7 +358,7 @@ export default function FoodsPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className={`text-xs font-semibold border ${categoryStyle[food.category] ?? "bg-slate-50 text-slate-600 border-slate-200"}`}>
                             {food.category}
                           </Badge>
                         </TableCell>
