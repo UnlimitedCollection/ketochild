@@ -72,6 +72,8 @@ function AdminRoute({ component: Component }: { component: React.ComponentType }
   useEffect(() => {
     if (!isLoading && (error || !user)) {
       setLocation("/login");
+    } else if (!isLoading && user && user.mustChangePassword) {
+      setLocation("/set-password");
     } else if (!isLoading && user && !isAdmin) {
       setLocation("/");
     }
@@ -85,7 +87,7 @@ function AdminRoute({ component: Component }: { component: React.ComponentType }
     );
   }
 
-  if (!user || !isAdmin) return null;
+  if (!user || user.mustChangePassword || !isAdmin) return null;
 
   return (
     <AppLayout>
