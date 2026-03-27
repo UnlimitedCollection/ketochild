@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Link, useSearch } from "wouter";
-import { useGetKids, useGetKid, useGetKidKetoneReadings, useDeleteKid, useUpdateKid } from "@workspace/api-client-react";
+import { Link, useSearch, useLocation } from "wouter";
+import { useGetKids, useGetKid, useGetKidKetoneReadings, useDeleteKid } from "@workspace/api-client-react";
 import { Search, Filter, Loader2, User, ChevronRight, Flame, Clock, Trash2, Pencil, Scale, FlaskConical } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,156 +10,11 @@ import { Card } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useCanWrite } from "@/hooks/useRole";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/use-debounce";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import type { UpdateKidRequest } from "@workspace/api-client-react";
 import { format, parseISO } from "date-fns";
-
-type KidRow = {
-  id: number;
-  name: string;
-  dateOfBirth: string;
-  gender?: string;
-  parentName: string;
-  parentContact: string;
-  phase: number;
-};
-
-const editKidSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  dateOfBirth: z.string().min(1, "Date of birth is required"),
-  gender: z.enum(["male", "female"]),
-  parentName: z.string().min(1, "Parent name is required"),
-  parentContact: z.string().min(1, "Contact is required"),
-  phase: z.coerce.number().min(1).max(4),
-});
-
-function EditKidDialog({ kid, open, onOpenChange }: { kid: KidRow; open: boolean; onOpenChange: (v: boolean) => void }) {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-
-  const form = useForm<z.infer<typeof editKidSchema>>({
-    resolver: zodResolver(editKidSchema),
-    defaultValues: {
-      name: kid.name,
-      dateOfBirth: kid.dateOfBirth,
-      gender: (kid.gender ?? "male") as "male" | "female",
-      parentName: kid.parentName,
-      parentContact: kid.parentContact,
-      phase: kid.phase,
-    },
-  });
-
-  useEffect(() => {
-    form.reset({
-      name: kid.name,
-      dateOfBirth: kid.dateOfBirth,
-      gender: (kid.gender ?? "male") as "male" | "female",
-      parentName: kid.parentName,
-      parentContact: kid.parentContact,
-      phase: kid.phase,
-    });
-  }, [kid.id]);
-
-  const mutation = useUpdateKid({
-    mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["/api/kids"] });
-        queryClient.invalidateQueries({ queryKey: [`/api/kids/${kid.id}`] });
-        onOpenChange(false);
-        toast({ title: "Patient updated", description: "Patient information has been saved." });
-      },
-      onError: () => toast({ title: "Failed to update patient", variant: "destructive" }),
-    }
-  });
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg rounded-2xl">
-        <DialogHeader>
-          <DialogTitle>Edit Patient Information</DialogTitle>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit((d) => mutation.mutate({ kidId: kid.id, data: d as UpdateKidRequest }))} className="space-y-4 pt-2">
-            <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="name" render={({ field }) => (
-                <FormItem className="col-span-2">
-                  <FormLabel>Full Name</FormLabel>
-                  <FormControl><Input className="rounded-xl" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="dateOfBirth" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Date of Birth</FormLabel>
-                  <FormControl><Input type="date" className="rounded-xl" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="gender" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Gender</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="phase" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Phase</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value.toString()}>
-                    <FormControl>
-                      <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {[1, 2, 3, 4].map(p => <SelectItem key={p} value={p.toString()}>Phase {p}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="parentName" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Parent/Guardian Name</FormLabel>
-                  <FormControl><Input className="rounded-xl" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="parentContact" render={({ field }) => (
-                <FormItem className="col-span-2">
-                  <FormLabel>Parent Contact</FormLabel>
-                  <FormControl><Input className="rounded-xl" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="ghost" className="rounded-xl" onClick={() => onOpenChange(false)}>Cancel</Button>
-              <Button type="submit" className="rounded-xl" disabled={mutation.isPending}>
-                {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Changes
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 function KidViewDialog({ kidId, open, onOpenChange }: { kidId: number | null; open: boolean; onOpenChange: (v: boolean) => void }) {
   const enabled = open && kidId !== null;
@@ -290,6 +145,7 @@ function KidViewDialog({ kidId, open, onOpenChange }: { kidId: number | null; op
 
 export default function KidsListPage() {
   const searchQuery = useSearch();
+  const [, navigate] = useLocation();
   const urlParams = new URLSearchParams(searchQuery);
   const initialSearch = urlParams.get("search") ?? "";
 
@@ -297,7 +153,6 @@ export default function KidsListPage() {
   const debouncedSearch = useDebounce(searchTerm, 300);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingKid, setDeletingKid] = useState<{ id: number; name: string } | null>(null);
-  const [editingKid, setEditingKid] = useState<KidRow | null>(null);
   const [viewingKidId, setViewingKidId] = useState<number | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -349,15 +204,6 @@ export default function KidsListPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Edit Dialog */}
-      {editingKid && (
-        <EditKidDialog
-          kid={editingKid}
-          open={!!editingKid}
-          onOpenChange={(v) => { if (!v) setEditingKid(null); }}
-        />
-      )}
 
       {/* View Dialog */}
       <KidViewDialog
@@ -523,15 +369,7 @@ export default function KidsListPage() {
                             size="sm"
                             variant="ghost"
                             className="rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10"
-                            onClick={() => setEditingKid({
-                              id: kid.id,
-                              name: kid.name,
-                              dateOfBirth: kid.dateOfBirth,
-                              gender: kid.gender,
-                              parentName: kid.parentName,
-                              parentContact: kid.parentContact,
-                              phase: kid.phase,
-                            })}
+                            onClick={() => navigate(`/kids/${kid.id}`)}
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
