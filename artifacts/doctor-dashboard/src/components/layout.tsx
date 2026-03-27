@@ -115,7 +115,6 @@ function IconUsers() {
 const BASE_NAV_ITEMS = [
   { title: "Dashboard",   url: "/",         icon: IconDashboard  },
   { title: "Children",    url: "/kids",     icon: IconChildren   },
-  { title: "Analysis",    url: "/high-risk",icon: IconAnalysis   },
   { title: "Foods",       url: "/foods",    icon: IconVisibility },
   { title: "Meal Plans",  url: "/meal-plans", icon: IconRecipe   },
   { title: "Recipes",     url: "/recipes",  icon: IconRecipe     },
