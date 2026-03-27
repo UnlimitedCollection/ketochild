@@ -38,6 +38,7 @@ router.post("/login", async (req, res) => {
 
     req.session.doctorId = doctor.id;
     req.session.doctorName = doctor.name;
+    req.session.doctorRole = doctor.role;
 
     res.json({
       doctor: {
@@ -46,6 +47,7 @@ router.post("/login", async (req, res) => {
         name: doctor.name,
         email: doctor.email,
         specialty: doctor.specialty ?? undefined,
+        role: doctor.role,
       },
     });
   } catch (err) {
@@ -86,6 +88,7 @@ router.get("/me", async (req, res) => {
       name: doctor.name,
       email: doctor.email,
       specialty: doctor.specialty ?? undefined,
+      role: doctor.role,
     });
   } catch (err) {
     req.log.error({ err }, "Get me error");
@@ -158,6 +161,7 @@ router.put("/profile", async (req, res) => {
       name: updated.name,
       email: updated.email,
       specialty: updated.specialty ?? undefined,
+      role: updated.role,
     });
   } catch (err) {
     const dbErr = err as { code?: string; constraint?: string };

@@ -9,6 +9,7 @@ declare module "express-session" {
   interface SessionData {
     doctorId?: number;
     doctorName?: string;
+    doctorRole?: string;
   }
 }
 

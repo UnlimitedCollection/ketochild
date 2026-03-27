@@ -24,12 +24,20 @@ export interface LoginRequest {
   password: string;
 }
 
+export type DoctorRole = (typeof DoctorRole)[keyof typeof DoctorRole];
+
+export const DoctorRole = {
+  admin: "admin",
+  moderator: "moderator",
+} as const;
+
 export interface Doctor {
   id: number;
   username: string;
   name: string;
   email: string;
   specialty?: string;
+  role: DoctorRole;
 }
 
 export interface LoginResponse {
@@ -774,6 +782,70 @@ export interface UpdateRecipeRequest {
   description?: string;
   category?: string;
   ingredients?: RecipeIngredientRequest[];
+}
+
+export type UserResponseRole =
+  (typeof UserResponseRole)[keyof typeof UserResponseRole];
+
+export const UserResponseRole = {
+  admin: "admin",
+  moderator: "moderator",
+} as const;
+
+export interface UserResponse {
+  id: number;
+  username: string;
+  name: string;
+  email: string;
+  specialty?: string;
+  role: UserResponseRole;
+  createdAt: string;
+}
+
+export type CreateUserRequestRole =
+  (typeof CreateUserRequestRole)[keyof typeof CreateUserRequestRole];
+
+export const CreateUserRequestRole = {
+  admin: "admin",
+  moderator: "moderator",
+} as const;
+
+export interface CreateUserRequest {
+  /**
+   * @minLength 3
+   * @maxLength 100
+   */
+  username: string;
+  /** @minLength 6 */
+  password: string;
+  /** @minLength 1 */
+  name: string;
+  email: string;
+  specialty?: string;
+  role: CreateUserRequestRole;
+}
+
+export type UpdateUserRequestRole =
+  (typeof UpdateUserRequestRole)[keyof typeof UpdateUserRequestRole];
+
+export const UpdateUserRequestRole = {
+  admin: "admin",
+  moderator: "moderator",
+} as const;
+
+export interface UpdateUserRequest {
+  /**
+   * @minLength 3
+   * @maxLength 100
+   */
+  username?: string;
+  /** @minLength 6 */
+  password?: string;
+  /** @minLength 1 */
+  name?: string;
+  email?: string;
+  specialty?: string;
+  role?: UpdateUserRequestRole;
 }
 
 export type GetKidsParams = {

@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useGetMe } from "@workspace/api-client-react";
 import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
+import { useIsAdmin } from "@/hooks/useRole";
 
 // Components
 import { AppLayout } from "@/components/layout";
@@ -22,6 +23,7 @@ import MealPlansPage from "@/pages/meal-plans";
 import TokensPage from "@/pages/tokens";
 import RecipesPage from "@/pages/recipes";
 import SettingsPage from "@/pages/settings";
+import UsersPage from "@/pages/users";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -59,6 +61,36 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   );
 }
 
+function AdminRoute({ component: Component }: { component: React.ComponentType }) {
+  const [, setLocation] = useLocation();
+  const { data: user, isLoading, error } = useGetMe();
+  const isAdmin = useIsAdmin();
+
+  useEffect(() => {
+    if (!isLoading && (error || !user)) {
+      setLocation("/login");
+    } else if (!isLoading && user && !isAdmin) {
+      setLocation("/");
+    }
+  }, [user, isLoading, error, isAdmin, setLocation]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user || !isAdmin) return null;
+
+  return (
+    <AppLayout>
+      <Component />
+    </AppLayout>
+  );
+}
+
 function Router() {
   return (
     <Switch>
@@ -73,6 +105,7 @@ function Router() {
       <Route path="/tokens" component={() => <ProtectedRoute component={TokensPage} />} />
       <Route path="/recipes" component={() => <ProtectedRoute component={RecipesPage} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={SettingsPage} />} />
+      <Route path="/users" component={() => <AdminRoute component={UsersPage} />} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -9,6 +9,7 @@ export const doctorsTable = pgTable("doctors", {
   name: varchar("name", { length: 200 }).notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   specialty: varchar("specialty", { length: 200 }),
+  role: varchar("role", { length: 20 }).notNull().default("admin"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

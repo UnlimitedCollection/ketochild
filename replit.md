@@ -118,7 +118,7 @@ Pages:
 Database layer using Drizzle ORM with PostgreSQL.
 
 Tables:
-- `doctors` — Doctor accounts (username, password, name, email, specialty)
+- `doctors` — Doctor accounts (username, password, name, email, specialty, role)
 - `kids` — Kid profiles (name, dob, gender, parent info, phase, currentMealPlanId)
 - `medical_settings` — Medical settings per kid (keto ratio, calories, phase, visibility)
 - `weight_records` — Weight measurements over time
@@ -156,8 +156,26 @@ The `/settings` page (accessible via the sidebar Settings link) provides:
 - The sidebar Settings button is a real nav link with active-state highlighting (not disabled)
 
 ## Default Credentials (Dev)
-- Username: `doctor`
-- Password: `doctor123`
+
+| Role      | Username | Password   |
+|-----------|----------|------------|
+| admin     | admin    | admin123   |
+| moderator | admin1   | admin1234  |
+
+## RBAC (Role-Based Access Control)
+
+Two roles are supported:
+
+- **admin** — Full CRUD access to all resources. Can manage users at `/users`. "Quick Add" and all write actions are available.
+- **moderator** — Read-only access. All POST/PUT/DELETE API calls return 403. The `/users` page and "Quick Add" button are hidden in the UI. Attempting to navigate to `/users` redirects to the dashboard.
+
+### Implementation Details
+- `role` column on `doctorsTable` (varchar 20, default "admin")
+- Session stores `doctorRole` alongside `doctorId`
+- Middleware: `restrictWriteForModerator` (global after auth) blocks non-GET requests for moderators
+- Middleware: `requireAdmin` (applied to `/users` router) blocks non-admins
+- Frontend: `useRole()` / `useIsAdmin()` / `useIsModerator()` hooks in `src/hooks/useRole.ts`
+- `AdminRoute` component in App.tsx redirects non-admins away from admin-only pages
 
 ## Required Environment Variables
 

@@ -8,7 +8,10 @@ import mealPlansRouter from "./meal-plans";
 import storageRouter from "./storage";
 import tokensRouter from "./tokens";
 import recipesRouter from "./recipes";
+import usersRouter from "./users";
 import { requireAuth } from "../middleware/requireAuth";
+import { requireAdmin } from "../middleware/requireAdmin";
+import { restrictWriteForModerator } from "../middleware/restrictWriteForModerator";
 
 const router: IRouter = Router();
 
@@ -16,6 +19,7 @@ router.use(healthRouter);
 router.use("/auth", authRouter);
 
 router.use(requireAuth);
+router.use(restrictWriteForModerator);
 
 router.use("/dashboard", dashboardRouter);
 router.use("/kids", kidsRouter);
@@ -24,5 +28,7 @@ router.use("/meal-plans", mealPlansRouter);
 router.use("/tokens", tokensRouter);
 router.use("/recipes", recipesRouter);
 router.use(storageRouter);
+
+router.use("/users", requireAdmin, usersRouter);
 
 export default router;

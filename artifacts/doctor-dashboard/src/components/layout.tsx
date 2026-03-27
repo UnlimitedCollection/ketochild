@@ -3,6 +3,7 @@ import { useGetMe, useDoctorLogout, useGetDashboardStats } from "@workspace/api-
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useIsAdmin } from "@/hooks/useRole";
 
 function IconDashboard() {
   return (
@@ -103,8 +104,15 @@ function IconKey() {
     </svg>
   );
 }
+function IconUsers() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+    </svg>
+  );
+}
 
-const NAV_ITEMS = [
+const BASE_NAV_ITEMS = [
   { title: "Dashboard",   url: "/",         icon: IconDashboard  },
   { title: "Children",    url: "/kids",     icon: IconChildren   },
   { title: "Analysis",    url: "/high-risk",icon: IconAnalysis   },
@@ -112,6 +120,11 @@ const NAV_ITEMS = [
   { title: "Meal Plans",  url: "/meal-plans", icon: IconRecipe   },
   { title: "Recipes",     url: "/recipes",  icon: IconRecipe     },
   { title: "Tokens",      url: "/tokens",   icon: IconKey        },
+];
+
+const ADMIN_NAV_ITEMS = [
+  ...BASE_NAV_ITEMS,
+  { title: "User Management", url: "/users", icon: IconUsers },
 ];
 
 function isNavActive(url: string, location: string): boolean {
@@ -125,8 +138,11 @@ function AppSidebar() {
   const { data: user } = useGetMe();
   const logout = useDoctorLogout();
   const queryClient = useQueryClient();
+  const isAdmin = useIsAdmin();
 
-  const handleNavClick = (item: typeof NAV_ITEMS[0]) => {
+  const navItems = isAdmin ? ADMIN_NAV_ITEMS : BASE_NAV_ITEMS;
+
+  const handleNavClick = (item: typeof BASE_NAV_ITEMS[0]) => {
     setLocation(item.url);
   };
 
@@ -143,6 +159,8 @@ function AppSidebar() {
     ? user.name.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase()
     : "DR";
 
+  const role = user?.role as string | undefined;
+
   return (
     <aside className="fixed left-0 top-0 h-full w-64 bg-slate-50 border-r border-slate-200 flex flex-col py-6 z-50 shrink-0">
       <div className="px-6 mb-8">
@@ -154,19 +172,30 @@ function AppSidebar() {
           <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm shrink-0">
             {initials}
           </div>
-          <div className="overflow-hidden">
+          <div className="overflow-hidden flex-1 min-w-0">
             <p className="text-sm font-bold text-slate-800 truncate">
               {user?.name ? `Dr. ${user.name.split(" ").slice(-1)[0]}` : "Dr. Smith"}
             </p>
-            <p className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold truncate">
-              {user?.specialty || "Pediatric Neurology"}
-            </p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <p className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold truncate">
+                {user?.specialty || "Pediatric Neurology"}
+              </p>
+              {role && (
+                <span className={`shrink-0 text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-full
+                  ${role === "admin"
+                    ? "bg-blue-100 text-blue-700"
+                    : "bg-amber-100 text-amber-700"
+                  }`}>
+                  {role}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       <nav className="flex-1 px-3 space-y-0.5">
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const active = isNavActive(item.url, location);
           return (
             <button
@@ -298,6 +327,7 @@ function AlertsBell() {
 function AppHeader() {
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
+  const isAdmin = useIsAdmin();
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -324,13 +354,15 @@ function AppHeader() {
       </form>
 
       <div className="flex items-center gap-3">
-        <Link
-          href="/kids/new"
-          className="flex items-center gap-1.5 bg-[#004ac6] text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-blue-700 active:scale-95 transition-all"
-        >
-          <IconAdd />
-          Quick Add
-        </Link>
+        {isAdmin && (
+          <Link
+            href="/kids/new"
+            className="flex items-center gap-1.5 bg-[#004ac6] text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-blue-700 active:scale-95 transition-all"
+          >
+            <IconAdd />
+            Quick Add
+          </Link>
+        )}
 
         <div className="flex items-center gap-1 border-l border-slate-200 ml-1 pl-3">
           <AlertsBell />

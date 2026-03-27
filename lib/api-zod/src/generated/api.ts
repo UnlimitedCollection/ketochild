@@ -29,6 +29,7 @@ export const DoctorLoginResponse = zod.object({
     name: zod.string(),
     email: zod.string(),
     specialty: zod.string().optional(),
+    role: zod.enum(["admin", "moderator"]),
   }),
   token: zod.string(),
 });
@@ -50,6 +51,7 @@ export const GetMeResponse = zod.object({
   name: zod.string(),
   email: zod.string(),
   specialty: zod.string().optional(),
+  role: zod.enum(["admin", "moderator"]),
 });
 
 /**
@@ -75,6 +77,7 @@ export const UpdateDoctorProfileResponse = zod.object({
   name: zod.string(),
   email: zod.string(),
   specialty: zod.string().optional(),
+  role: zod.enum(["admin", "moderator"]),
 });
 
 /**
@@ -905,6 +908,87 @@ export const DeleteRecipeIngredientParams = zod.object({
 });
 
 export const DeleteRecipeIngredientResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string().optional(),
+});
+
+/**
+ * @summary List all users (admin only)
+ */
+export const ListUsersResponseItem = zod.object({
+  id: zod.number(),
+  username: zod.string(),
+  name: zod.string(),
+  email: zod.string(),
+  specialty: zod.string().optional(),
+  role: zod.enum(["admin", "moderator"]),
+  createdAt: zod.date(),
+});
+export const ListUsersResponse = zod.array(ListUsersResponseItem);
+
+/**
+ * @summary Create a new user (admin only)
+ */
+export const createUserBodyUsernameMin = 3;
+export const createUserBodyUsernameMax = 100;
+
+export const createUserBodyPasswordMin = 6;
+
+export const CreateUserBody = zod.object({
+  username: zod
+    .string()
+    .min(createUserBodyUsernameMin)
+    .max(createUserBodyUsernameMax),
+  password: zod.string().min(createUserBodyPasswordMin),
+  name: zod.string().min(1),
+  email: zod.string().email(),
+  specialty: zod.string().optional(),
+  role: zod.enum(["admin", "moderator"]),
+});
+
+/**
+ * @summary Update a user (admin only)
+ */
+export const UpdateUserParams = zod.object({
+  userId: zod.coerce.number(),
+});
+
+export const updateUserBodyUsernameMin = 3;
+export const updateUserBodyUsernameMax = 100;
+
+export const updateUserBodyPasswordMin = 6;
+
+export const UpdateUserBody = zod.object({
+  username: zod
+    .string()
+    .min(updateUserBodyUsernameMin)
+    .max(updateUserBodyUsernameMax)
+    .optional(),
+  password: zod.string().min(updateUserBodyPasswordMin).optional(),
+  name: zod.string().min(1).optional(),
+  email: zod.string().email().optional(),
+  specialty: zod.string().optional(),
+  role: zod.enum(["admin", "moderator"]).optional(),
+});
+
+export const UpdateUserResponse = zod.object({
+  id: zod.number(),
+  username: zod.string(),
+  name: zod.string(),
+  email: zod.string(),
+  specialty: zod.string().optional(),
+  role: zod.enum(["admin", "moderator"]),
+  createdAt: zod.date(),
+});
+
+/**
+ * @summary Delete a user (admin only)
+ */
+export const DeleteUserParams = zod.object({
+  userId: zod.coerce.number(),
+});
+
+export const DeleteUserResponse = zod.object({
   success: zod.boolean(),
   message: zod.string().optional(),
 });

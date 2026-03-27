@@ -39,10 +39,10 @@ async function seed() {
 
   if (existingAdmins.length > 0) {
     await db.update(doctorsTable)
-      .set({ password: hashedPassword })
+      .set({ password: hashedPassword, role: "admin" })
       .where(eq(doctorsTable.username, "admin"));
     doctorId = existingAdmins[0].id;
-    console.log("Admin password updated with bcrypt hash:", doctorId);
+    console.log("Admin account updated (password + role):", doctorId);
   } else {
     const [doctor] = await db
       .insert(doctorsTable)
@@ -52,10 +52,35 @@ async function seed() {
         name: "Dr. Sarah Johnson",
         email: "sarah.johnson@ketokidcare.com",
         specialty: "Pediatric Neurology",
+        role: "admin",
       })
       .returning();
     doctorId = doctor.id;
     console.log("Admin account created:", doctorId);
+  }
+
+  // ── 2b. Upsert moderator account ─────────────────────────────────────────
+  const moderatorPassword = await bcrypt.hash("admin1234", 12);
+  const existingMods = await db.select().from(doctorsTable).where(eq(doctorsTable.username, "admin1"));
+
+  if (existingMods.length > 0) {
+    await db.update(doctorsTable)
+      .set({ password: moderatorPassword, role: "moderator" })
+      .where(eq(doctorsTable.username, "admin1"));
+    console.log("Moderator account updated:", existingMods[0].id);
+  } else {
+    const [mod] = await db
+      .insert(doctorsTable)
+      .values({
+        username: "admin1",
+        password: moderatorPassword,
+        name: "Dr. Alex Moderator",
+        email: "alex.moderator@ketokidcare.com",
+        specialty: "Pediatric Neurology",
+        role: "moderator",
+      })
+      .returning();
+    console.log("Moderator account created:", mod.id);
   }
 
   // ── 3. Seed 60 keto-appropriate foods (canonical categories) ──────────────

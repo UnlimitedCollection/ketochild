@@ -5,13 +5,14 @@
  * Keto Diet Doctor Dashboard API
  * OpenAPI spec version: 0.1.0
  */
-import type { DoctorRole } from "./doctorRole";
+import type { UserResponseRole } from "./userResponseRole";
 
-export interface Doctor {
+export interface UserResponse {
   id: number;
   username: string;
   name: string;
   email: string;
   specialty?: string;
-  role: DoctorRole;
+  role: UserResponseRole;
+  createdAt: Date;
 }
