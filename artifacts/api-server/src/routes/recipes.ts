@@ -10,6 +10,12 @@ type IngredientInput = {
   portionGrams: number;
 };
 
+function validatePortion(portionGrams: unknown): number | null {
+  const v = Number(portionGrams);
+  if (isNaN(v) || v <= 0 || v > 10000) return null;
+  return v;
+}
+
 async function computeMacros(foodName: string, portionGrams: number) {
   const [food] = await db
     .select()
@@ -97,13 +103,14 @@ router.post("/", async (req, res) => {
     if (ingredients && ingredients.length > 0) {
       for (const ing of ingredients) {
         if (!ing.foodName?.trim()) continue;
-        const macros = await computeMacros(ing.foodName, ing.portionGrams ?? 100);
+        const portion = validatePortion(ing.portionGrams) ?? 100;
+        const macros = await computeMacros(ing.foodName, portion);
         const [inserted] = await db
           .insert(recipeIngredientsTable)
           .values({
             recipeId: recipe.id,
             foodName: ing.foodName.trim(),
-            portionGrams: ing.portionGrams ?? 100,
+            portionGrams: portion,
             unit: "g",
             ...macros,
           })
@@ -195,11 +202,12 @@ router.put("/:recipeId", async (req, res) => {
       await db.delete(recipeIngredientsTable).where(eq(recipeIngredientsTable.recipeId, recipeId));
       for (const ing of ingredients) {
         if (!ing.foodName?.trim()) continue;
-        const macros = await computeMacros(ing.foodName, ing.portionGrams ?? 100);
+        const portion = validatePortion(ing.portionGrams) ?? 100;
+        const macros = await computeMacros(ing.foodName, portion);
         await db.insert(recipeIngredientsTable).values({
           recipeId,
           foodName: ing.foodName.trim(),
-          portionGrams: ing.portionGrams ?? 100,
+          portionGrams: portion,
           unit: "g",
           ...macros,
         });

@@ -60,6 +60,12 @@ router.post("/", async (req, res) => {
     return;
   }
 
+  const days = Number(expiresInDays);
+  if (!Number.isInteger(days) || days < 1 || days > 365) {
+    res.status(400).json({ error: "BAD_REQUEST", message: "expiresInDays must be between 1 and 365" });
+    return;
+  }
+
   try {
     const [kid] = await db
       .select()
@@ -72,7 +78,7 @@ router.post("/", async (req, res) => {
     }
 
     const tokenStr = crypto.randomBytes(16).toString("hex");
-    const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
 
     const existing = await db
       .select()
@@ -176,10 +182,14 @@ router.delete("/:tokenId", async (req, res) => {
       return;
     }
 
-    await db.delete(parentTokensTable).where(eq(parentTokensTable.id, tokenId));
+    await db
+      .update(parentTokensTable)
+      .set({ status: "revoked", revokedAt: new Date() })
+      .where(eq(parentTokensTable.id, tokenId));
+
     res.json({ success: true, message: "Token revoked" });
   } catch (err) {
-    req.log.error({ err }, "Delete token error");
+    req.log.error({ err }, "Revoke token error");
     res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
   }
 });
