@@ -68,16 +68,30 @@ function generateSecurePassword(): string {
   const digits = "23456789";
   const special = "@#$%!";
   const all = upper + lower + digits + special;
-  let password = [
-    upper[Math.floor(Math.random() * upper.length)],
-    lower[Math.floor(Math.random() * lower.length)],
-    digits[Math.floor(Math.random() * digits.length)],
-    special[Math.floor(Math.random() * special.length)],
+
+  function randomIndex(max: number): number {
+    const array = new Uint32Array(1);
+    crypto.getRandomValues(array);
+    return array[0] % max;
+  }
+
+  const password = [
+    upper[randomIndex(upper.length)],
+    lower[randomIndex(lower.length)],
+    digits[randomIndex(digits.length)],
+    special[randomIndex(special.length)],
   ];
   for (let i = 0; i < 8; i++) {
-    password.push(all[Math.floor(Math.random() * all.length)]);
+    password.push(all[randomIndex(all.length)]);
   }
-  return password.sort(() => Math.random() - 0.5).join("");
+
+  const shuffle = new Uint32Array(password.length);
+  crypto.getRandomValues(shuffle);
+  return password
+    .map((char, i) => ({ char, sort: shuffle[i] }))
+    .sort((a, b) => a.sort - b.sort)
+    .map((x) => x.char)
+    .join("");
 }
 
 export default function UsersPage() {
