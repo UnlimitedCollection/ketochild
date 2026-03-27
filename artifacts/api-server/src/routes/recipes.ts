@@ -50,11 +50,11 @@ function calcTotals(ingredients: typeof recipeIngredientsTable.$inferSelect[]) {
 
 router.get("/", async (req, res) => {
   const doctorId = req.session.doctorId!;
+  const isPrivileged = req.session.doctorRole === "moderator" || req.session.doctorRole === "admin";
   try {
-    const recipes = await db
-      .select()
-      .from(recipesTable)
-      .where(eq(recipesTable.doctorId, doctorId));
+    const recipes = isPrivileged
+      ? await db.select().from(recipesTable)
+      : await db.select().from(recipesTable).where(eq(recipesTable.doctorId, doctorId));
 
     const result = await Promise.all(
       recipes.map(async (r) => {
@@ -129,6 +129,7 @@ router.post("/", async (req, res) => {
 
 router.get("/:recipeId", async (req, res) => {
   const doctorId = req.session.doctorId!;
+  const isPrivileged = req.session.doctorRole === "moderator" || req.session.doctorRole === "admin";
   const recipeId = parseInt(req.params.recipeId);
 
   if (isNaN(recipeId)) {
@@ -137,10 +138,13 @@ router.get("/:recipeId", async (req, res) => {
   }
 
   try {
+    const recipeWhere = isPrivileged
+      ? eq(recipesTable.id, recipeId)
+      : and(eq(recipesTable.id, recipeId), eq(recipesTable.doctorId, doctorId));
     const [recipe] = await db
       .select()
       .from(recipesTable)
-      .where(and(eq(recipesTable.id, recipeId), eq(recipesTable.doctorId, doctorId)));
+      .where(recipeWhere);
 
     if (!recipe) {
       res.status(404).json({ error: "NOT_FOUND", message: "Recipe not found" });
@@ -162,6 +166,7 @@ router.get("/:recipeId", async (req, res) => {
 
 router.put("/:recipeId", async (req, res) => {
   const doctorId = req.session.doctorId!;
+  const isAdmin = req.session.doctorRole === "admin";
   const recipeId = parseInt(req.params.recipeId);
 
   if (isNaN(recipeId)) {
@@ -177,10 +182,13 @@ router.put("/:recipeId", async (req, res) => {
   };
 
   try {
+    const recipeWhere = isAdmin
+      ? eq(recipesTable.id, recipeId)
+      : and(eq(recipesTable.id, recipeId), eq(recipesTable.doctorId, doctorId));
     const [existing] = await db
       .select()
       .from(recipesTable)
-      .where(and(eq(recipesTable.id, recipeId), eq(recipesTable.doctorId, doctorId)));
+      .where(recipeWhere);
 
     if (!existing) {
       res.status(404).json({ error: "NOT_FOUND", message: "Recipe not found" });
@@ -229,6 +237,7 @@ router.put("/:recipeId", async (req, res) => {
 
 router.delete("/:recipeId", async (req, res) => {
   const doctorId = req.session.doctorId!;
+  const isAdmin = req.session.doctorRole === "admin";
   const recipeId = parseInt(req.params.recipeId);
 
   if (isNaN(recipeId)) {
@@ -237,10 +246,13 @@ router.delete("/:recipeId", async (req, res) => {
   }
 
   try {
+    const recipeWhere = isAdmin
+      ? eq(recipesTable.id, recipeId)
+      : and(eq(recipesTable.id, recipeId), eq(recipesTable.doctorId, doctorId));
     const [existing] = await db
       .select()
       .from(recipesTable)
-      .where(and(eq(recipesTable.id, recipeId), eq(recipesTable.doctorId, doctorId)));
+      .where(recipeWhere);
 
     if (!existing) {
       res.status(404).json({ error: "NOT_FOUND", message: "Recipe not found" });
@@ -258,6 +270,7 @@ router.delete("/:recipeId", async (req, res) => {
 
 router.post("/:recipeId/ingredients", async (req, res) => {
   const doctorId = req.session.doctorId!;
+  const isAdmin = req.session.doctorRole === "admin";
   const recipeId = parseInt(req.params.recipeId);
 
   if (isNaN(recipeId)) {
@@ -273,10 +286,13 @@ router.post("/:recipeId/ingredients", async (req, res) => {
   }
 
   try {
+    const recipeWhere = isAdmin
+      ? eq(recipesTable.id, recipeId)
+      : and(eq(recipesTable.id, recipeId), eq(recipesTable.doctorId, doctorId));
     const [recipe] = await db
       .select()
       .from(recipesTable)
-      .where(and(eq(recipesTable.id, recipeId), eq(recipesTable.doctorId, doctorId)));
+      .where(recipeWhere);
 
     if (!recipe) {
       res.status(404).json({ error: "NOT_FOUND", message: "Recipe not found" });
@@ -304,6 +320,7 @@ router.post("/:recipeId/ingredients", async (req, res) => {
 
 router.delete("/:recipeId/ingredients/:ingId", async (req, res) => {
   const doctorId = req.session.doctorId!;
+  const isAdmin = req.session.doctorRole === "admin";
   const recipeId = parseInt(req.params.recipeId);
   const ingId = parseInt(req.params.ingId);
 
@@ -313,10 +330,13 @@ router.delete("/:recipeId/ingredients/:ingId", async (req, res) => {
   }
 
   try {
+    const recipeWhere = isAdmin
+      ? eq(recipesTable.id, recipeId)
+      : and(eq(recipesTable.id, recipeId), eq(recipesTable.doctorId, doctorId));
     const [recipe] = await db
       .select()
       .from(recipesTable)
-      .where(and(eq(recipesTable.id, recipeId), eq(recipesTable.doctorId, doctorId)));
+      .where(recipeWhere);
 
     if (!recipe) {
       res.status(404).json({ error: "NOT_FOUND", message: "Recipe not found" });

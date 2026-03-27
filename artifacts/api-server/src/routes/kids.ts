@@ -95,8 +95,8 @@ async function getLast24hCompletionRate(kidId: number): Promise<number> {
   return completed / logs.length;
 }
 
-async function resolveOwnedKid(kidId: number, doctorId: number, isModerator: boolean) {
-  const whereClause = isModerator
+async function resolveOwnedKid(kidId: number, doctorId: number, isPrivileged: boolean) {
+  const whereClause = isPrivileged
     ? eq(kidsTable.id, kidId)
     : and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId));
   const [kid] = await db
@@ -114,8 +114,8 @@ router.param("kidId", async (req, res, next, kidIdStr) => {
     return;
   }
   const doctorId = req.session.doctorId!;
-  const isModerator = req.session.doctorRole === "moderator";
-  const kid = await resolveOwnedKid(kidId, doctorId, isModerator);
+  const isPrivileged = req.session.doctorRole === "moderator" || req.session.doctorRole === "admin";
+  const kid = await resolveOwnedKid(kidId, doctorId, isPrivileged);
   if (!kid) {
     res.status(404).json({ error: "NOT_FOUND", message: "Kid not found" });
     return;
@@ -125,7 +125,7 @@ router.param("kidId", async (req, res, next, kidIdStr) => {
 
 router.get("/", async (req, res) => {
   const doctorId = req.session.doctorId!;
-  const isModerator = req.session.doctorRole === "moderator";
+  const isPrivileged = req.session.doctorRole === "moderator" || req.session.doctorRole === "admin";
   const query = GetKidsQueryParams.safeParse(req.query);
   const search = query.success ? query.data.search : undefined;
   const phase = query.success ? query.data.phase : undefined;
@@ -134,7 +134,7 @@ router.get("/", async (req, res) => {
   try {
     let kidsQuery = db.select().from(kidsTable).$dynamic();
 
-    const conditions = isModerator ? [] : [eq(kidsTable.doctorId, doctorId)];
+    const conditions = isPrivileged ? [] : [eq(kidsTable.doctorId, doctorId)];
     if (phase) conditions.push(eq(kidsTable.phase, phase));
     if (conditions.length > 0) {
       kidsQuery = kidsQuery.where(and(...conditions));
@@ -251,7 +251,7 @@ router.post("/", async (req, res) => {
 
 router.get("/:kidId", async (req, res) => {
   const doctorId = req.session.doctorId!;
-  const isModerator = req.session.doctorRole === "moderator";
+  const isPrivileged = req.session.doctorRole === "moderator" || req.session.doctorRole === "admin";
   const kidId = parseInt(req.params.kidId);
   if (isNaN(kidId)) {
     res.status(400).json({ error: "BAD_REQUEST", message: "Invalid kid ID" });
@@ -259,7 +259,7 @@ router.get("/:kidId", async (req, res) => {
   }
 
   try {
-    const kidWhereClause = isModerator
+    const kidWhereClause = isPrivileged
       ? eq(kidsTable.id, kidId)
       : and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId));
     const [kid] = await db
@@ -392,15 +392,19 @@ router.put("/:kidId", async (req, res) => {
   }
 
   const doctorId = req.session.doctorId!;
+  const isAdmin = req.session.doctorRole === "admin";
   try {
     const { dateOfBirth, ...restData } = parsed.data;
     const updateData = dateOfBirth
       ? { ...restData, dateOfBirth: dateOfBirth.toISOString().split("T")[0] }
       : restData;
+    const updateWhere = isAdmin
+      ? eq(kidsTable.id, kidId)
+      : and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId));
     const [kid] = await db
       .update(kidsTable)
       .set(updateData)
-      .where(and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId)))
+      .where(updateWhere)
       .returning();
 
     if (!kid) {
@@ -441,6 +445,7 @@ router.put("/:kidId", async (req, res) => {
 router.delete("/:kidId", async (req, res) => {
   const kidId = parseInt(req.params.kidId);
   const doctorId = req.session.doctorId!;
+  const isAdmin = req.session.doctorRole === "admin";
   try {
     await db.transaction(async (tx) => {
       await tx.delete(kidFoodApprovalsTable).where(eq(kidFoodApprovalsTable.kidId, kidId));
@@ -458,7 +463,10 @@ router.delete("/:kidId", async (req, res) => {
       await tx.delete(mealLogsTable).where(eq(mealLogsTable.kidId, kidId));
       await tx.delete(mealDaysTable).where(eq(mealDaysTable.kidId, kidId));
       await tx.delete(medicalSettingsTable).where(eq(medicalSettingsTable.kidId, kidId));
-      const deleted = await tx.delete(kidsTable).where(and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId))).returning({ id: kidsTable.id });
+      const deleteWhere = isAdmin
+        ? eq(kidsTable.id, kidId)
+        : and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId));
+      const deleted = await tx.delete(kidsTable).where(deleteWhere).returning({ id: kidsTable.id });
       if (deleted.length === 0) {
         throw new Error("NOT_FOUND");
       }
@@ -1156,12 +1164,16 @@ router.delete("/:kidId/meal-plans/:planId/items/:itemId", async (req, res) => {
 
 router.get("/:kidId/meal-plan", async (req, res) => {
   const doctorId = req.session.doctorId!;
+  const isPrivileged = req.session.doctorRole === "moderator" || req.session.doctorRole === "admin";
   const kidId = parseInt(req.params.kidId, 10);
   try {
+    const kidWhere = isPrivileged
+      ? eq(kidsTable.id, kidId)
+      : and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId));
     const [kid] = await db
       .select({ currentMealPlanId: kidsTable.currentMealPlanId })
       .from(kidsTable)
-      .where(and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId)))
+      .where(kidWhere)
       .limit(1);
 
     if (!kid) {
@@ -1185,8 +1197,8 @@ router.get("/:kidId/meal-plan", async (req, res) => {
       return;
     }
 
-    // Defense-in-depth: ensure the assigned plan belongs to the same doctor
-    if (plan.doctorId !== doctorId) {
+    // Defense-in-depth: ensure the assigned plan belongs to the same doctor (skip for privileged roles)
+    if (!isPrivileged && plan.doctorId !== doctorId) {
       res.status(403).json({ error: "FORBIDDEN", message: "Plan access denied" });
       return;
     }
@@ -1206,6 +1218,7 @@ router.get("/:kidId/meal-plan", async (req, res) => {
 
 router.put("/:kidId/meal-plan", async (req, res) => {
   const doctorId = req.session.doctorId!;
+  const isAdmin = req.session.doctorRole === "admin";
   const kidId = parseInt(req.params.kidId, 10);
   try {
     const parsed = AssignKidMealPlanBody.safeParse(req.body);
@@ -1216,10 +1229,13 @@ router.put("/:kidId/meal-plan", async (req, res) => {
     const planId = parsed.data.planId;
 
     if (planId !== null) {
+      const planWhere = isAdmin
+        ? eq(libraryMealPlansTable.id, planId)
+        : and(eq(libraryMealPlansTable.id, planId), eq(libraryMealPlansTable.doctorId, doctorId));
       const [plan] = await db
         .select({ id: libraryMealPlansTable.id })
         .from(libraryMealPlansTable)
-        .where(and(eq(libraryMealPlansTable.id, planId), eq(libraryMealPlansTable.doctorId, doctorId)))
+        .where(planWhere)
         .limit(1);
 
       if (!plan) {
@@ -1228,10 +1244,13 @@ router.put("/:kidId/meal-plan", async (req, res) => {
       }
     }
 
+    const kidUpdateWhere = isAdmin
+      ? eq(kidsTable.id, kidId)
+      : and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId));
     await db
       .update(kidsTable)
       .set({ currentMealPlanId: planId })
-      .where(and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId)));
+      .where(kidUpdateWhere);
 
     res.json({ success: true });
   } catch (err) {

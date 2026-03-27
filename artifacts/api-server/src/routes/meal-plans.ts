@@ -10,23 +10,25 @@ import {
 
 const router: IRouter = Router();
 
-async function getOwnedPlan(planId: number, doctorId: number) {
+async function getOwnedPlan(planId: number, doctorId: number, isPrivileged = false) {
+  const whereClause = isPrivileged
+    ? eq(libraryMealPlansTable.id, planId)
+    : and(eq(libraryMealPlansTable.id, planId), eq(libraryMealPlansTable.doctorId, doctorId));
   const [plan] = await db
     .select()
     .from(libraryMealPlansTable)
-    .where(and(eq(libraryMealPlansTable.id, planId), eq(libraryMealPlansTable.doctorId, doctorId)))
+    .where(whereClause)
     .limit(1);
   return plan ?? null;
 }
 
 router.get("/", async (req, res) => {
   const doctorId = req.session.doctorId!;
+  const isPrivileged = req.session.doctorRole === "moderator" || req.session.doctorRole === "admin";
   try {
-    const plans = await db
-      .select()
-      .from(libraryMealPlansTable)
-      .where(eq(libraryMealPlansTable.doctorId, doctorId))
-      .orderBy(desc(libraryMealPlansTable.createdAt));
+    const plans = isPrivileged
+      ? await db.select().from(libraryMealPlansTable).orderBy(desc(libraryMealPlansTable.createdAt))
+      : await db.select().from(libraryMealPlansTable).where(eq(libraryMealPlansTable.doctorId, doctorId)).orderBy(desc(libraryMealPlansTable.createdAt));
     res.json(plans);
   } catch (err) {
     req.log.error({ err }, "Get library meal plans error");
@@ -62,12 +64,11 @@ router.post("/", async (req, res) => {
 
 router.get("/library", async (req, res) => {
   const doctorId = req.session.doctorId!;
+  const isPrivileged = req.session.doctorRole === "moderator" || req.session.doctorRole === "admin";
   try {
-    const plans = await db
-      .select()
-      .from(libraryMealPlansTable)
-      .where(eq(libraryMealPlansTable.doctorId, doctorId))
-      .orderBy(desc(libraryMealPlansTable.createdAt));
+    const plans = isPrivileged
+      ? await db.select().from(libraryMealPlansTable).orderBy(desc(libraryMealPlansTable.createdAt))
+      : await db.select().from(libraryMealPlansTable).where(eq(libraryMealPlansTable.doctorId, doctorId)).orderBy(desc(libraryMealPlansTable.createdAt));
     res.json(plans);
   } catch (err) {
     req.log.error({ err }, "Get library meal plans error");
@@ -77,9 +78,10 @@ router.get("/library", async (req, res) => {
 
 router.get("/:planId", async (req, res) => {
   const doctorId = req.session.doctorId!;
+  const isPrivileged = req.session.doctorRole === "moderator" || req.session.doctorRole === "admin";
   try {
     const planId = parseInt(req.params.planId, 10);
-    const plan = await getOwnedPlan(planId, doctorId);
+    const plan = await getOwnedPlan(planId, doctorId, isPrivileged);
     if (!plan) {
       res.status(404).json({ error: "NOT_FOUND", message: "Meal plan not found" });
       return;
@@ -98,9 +100,10 @@ router.get("/:planId", async (req, res) => {
 
 router.put("/:planId", async (req, res) => {
   const doctorId = req.session.doctorId!;
+  const isAdmin = req.session.doctorRole === "admin";
   try {
     const planId = parseInt(req.params.planId, 10);
-    const existing = await getOwnedPlan(planId, doctorId);
+    const existing = await getOwnedPlan(planId, doctorId, isAdmin);
     if (!existing) {
       res.status(404).json({ error: "NOT_FOUND", message: "Meal plan not found" });
       return;
@@ -120,7 +123,7 @@ router.put("/:planId", async (req, res) => {
     const [updated] = await db
       .update(libraryMealPlansTable)
       .set(updateData)
-      .where(and(eq(libraryMealPlansTable.id, planId), eq(libraryMealPlansTable.doctorId, doctorId)))
+      .where(eq(libraryMealPlansTable.id, planId))
       .returning();
     res.json(updated);
   } catch (err) {
@@ -131,9 +134,10 @@ router.put("/:planId", async (req, res) => {
 
 router.delete("/:planId", async (req, res) => {
   const doctorId = req.session.doctorId!;
+  const isAdmin = req.session.doctorRole === "admin";
   try {
     const planId = parseInt(req.params.planId, 10);
-    const existing = await getOwnedPlan(planId, doctorId);
+    const existing = await getOwnedPlan(planId, doctorId, isAdmin);
     if (!existing) {
       res.status(404).json({ error: "NOT_FOUND", message: "Meal plan not found" });
       return;
@@ -149,9 +153,10 @@ router.delete("/:planId", async (req, res) => {
 
 router.post("/:planId/items", async (req, res) => {
   const doctorId = req.session.doctorId!;
+  const isAdmin = req.session.doctorRole === "admin";
   try {
     const planId = parseInt(req.params.planId, 10);
-    const plan = await getOwnedPlan(planId, doctorId);
+    const plan = await getOwnedPlan(planId, doctorId, isAdmin);
     if (!plan) {
       res.status(404).json({ error: "NOT_FOUND", message: "Meal plan not found" });
       return;
@@ -185,10 +190,11 @@ router.post("/:planId/items", async (req, res) => {
 
 router.delete("/:planId/items/:itemId", async (req, res) => {
   const doctorId = req.session.doctorId!;
+  const isAdmin = req.session.doctorRole === "admin";
   try {
     const planId = parseInt(req.params.planId, 10);
     const itemId = parseInt(req.params.itemId, 10);
-    const plan = await getOwnedPlan(planId, doctorId);
+    const plan = await getOwnedPlan(planId, doctorId, isAdmin);
     if (!plan) {
       res.status(404).json({ error: "NOT_FOUND", message: "Meal plan not found" });
       return;
