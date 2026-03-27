@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   useListRecipes,
   useCreateRecipe,
   useUpdateRecipe,
   useDeleteRecipe,
   useGetRecipe,
+  useGetFoods,
   getListRecipesQueryKey,
 } from "@workspace/api-client-react";
-import type { RecipeDetail, RecipeIngredientRequest } from "@workspace/api-client-react";
+import type { RecipeDetail, Food } from "@workspace/api-client-react";
 import {
   Loader2,
   ChefHat,
@@ -16,11 +17,11 @@ import {
   Trash2,
   ChevronRight,
   X,
-  FlaskConical,
   Flame,
   Droplets,
   Beef,
   Wheat,
+  Info,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -36,22 +37,98 @@ const CATEGORIES = [
 interface IngredientRow {
   foodName: string;
   portionGrams: number | "";
-  unit: string;
-  fat: number | "";
-  protein: number | "";
-  carbs: number | "";
-  calories: number | "";
+  matchedFood: Food | null;
 }
 
 const emptyRow = (): IngredientRow => ({
   foodName: "",
   portionGrams: "",
-  unit: "g",
-  fat: "",
-  protein: "",
-  carbs: "",
-  calories: "",
+  matchedFood: null,
 });
+
+function computeMacroPreview(food: Food | null, portionGrams: number | "") {
+  if (!food || !portionGrams) return null;
+  const ratio = Number(portionGrams) / 100;
+  return {
+    fat:      Math.round(food.fat      * ratio * 100) / 100,
+    protein:  Math.round(food.protein  * ratio * 100) / 100,
+    carbs:    Math.round(food.carbs    * ratio * 100) / 100,
+    calories: Math.round(food.calories * ratio * 100) / 100,
+  };
+}
+
+function FoodAutocomplete({
+  value,
+  onSelect,
+  allFoods,
+}: {
+  value: string;
+  onSelect: (foodName: string, food: Food | null) => void;
+  allFoods: Food[];
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState(value);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const suggestions = query.length >= 1
+    ? allFoods.filter((f) =>
+        f.name.toLowerCase().includes(query.toLowerCase()) && f.isActive
+      ).slice(0, 8)
+    : [];
+
+  useEffect(() => { setQuery(value); }, [value]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value;
+    setQuery(v);
+    setOpen(true);
+    const exact = allFoods.find((f) => f.name.toLowerCase() === v.toLowerCase());
+    onSelect(v, exact ?? null);
+  };
+
+  const handlePick = (food: Food) => {
+    setQuery(food.name);
+    setOpen(false);
+    onSelect(food.name, food);
+  };
+
+  return (
+    <div ref={containerRef} className="relative w-full">
+      <input
+        value={query}
+        onChange={handleChange}
+        onFocus={() => setOpen(true)}
+        placeholder="Type food name…"
+        className="w-full border-0 bg-transparent outline-none text-slate-800 placeholder:text-slate-300 text-xs"
+      />
+      {open && suggestions.length > 0 && (
+        <div className="absolute left-0 top-full mt-1 z-50 bg-white border border-slate-200 rounded-lg shadow-xl w-52 max-h-40 overflow-y-auto">
+          {suggestions.map((food) => (
+            <button
+              key={food.id}
+              type="button"
+              onClick={() => handlePick(food)}
+              className="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 text-slate-700 border-b border-slate-50 last:border-0 flex items-center justify-between"
+            >
+              <span className="font-medium">{food.name}</span>
+              <span className="text-slate-400 text-[10px]">{food.category}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function NutriBadge({
   label,
@@ -88,6 +165,7 @@ function RecipeForm({
 }) {
   const createRecipe = useCreateRecipe();
   const updateRecipe = useUpdateRecipe();
+  const { data: allFoods = [] } = useGetFoods();
 
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
@@ -97,24 +175,24 @@ function RecipeForm({
       ? initial.ingredients.map((i) => ({
           foodName: i.foodName,
           portionGrams: i.portionGrams,
-          unit: i.unit,
-          fat: i.fat,
-          protein: i.protein,
-          carbs: i.carbs,
-          calories: i.calories,
+          matchedFood: null,
         }))
       : [emptyRow()]
   );
   const [error, setError] = useState("");
 
-  const updateIng = (idx: number, field: keyof IngredientRow, value: string) => {
+  const updateIngFood = (idx: number, foodName: string, food: Food | null) => {
     setIngredients((prev) => {
       const next = [...prev];
-      if (field === "portionGrams" || field === "fat" || field === "protein" || field === "carbs" || field === "calories") {
-        next[idx] = { ...next[idx], [field]: value === "" ? "" : Number(value) };
-      } else {
-        next[idx] = { ...next[idx], [field]: value };
-      }
+      next[idx] = { ...next[idx], foodName, matchedFood: food };
+      return next;
+    });
+  };
+
+  const updateIngPortion = (idx: number, value: string) => {
+    setIngredients((prev) => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], portionGrams: value === "" ? "" : Number(value) };
       return next;
     });
   };
@@ -126,14 +204,9 @@ function RecipeForm({
     e.preventDefault();
     if (!name.trim()) { setError("Recipe name is required."); return; }
     const validIngs = ingredients.filter((i) => i.foodName.trim());
-    const ingPayload: RecipeIngredientRequest[] = validIngs.map((i) => ({
+    const ingPayload = validIngs.map((i) => ({
       foodName: i.foodName.trim(),
-      portionGrams: Number(i.portionGrams) || 0,
-      unit: i.unit || "g",
-      fat: Number(i.fat) || 0,
-      protein: Number(i.protein) || 0,
-      carbs: Number(i.carbs) || 0,
-      calories: Number(i.calories) || 0,
+      portionGrams: Number(i.portionGrams) || 100,
     }));
 
     const payload = {
@@ -157,6 +230,17 @@ function RecipeForm({
   };
 
   const isPending = createRecipe.isPending || updateRecipe.isPending;
+
+  const liveTotal = ingredients.reduce((acc, row) => {
+    const m = computeMacroPreview(row.matchedFood, row.portionGrams);
+    if (!m) return acc;
+    return {
+      fat: acc.fat + m.fat,
+      protein: acc.protein + m.protein,
+      carbs: acc.carbs + m.carbs,
+      calories: acc.calories + m.calories,
+    };
+  }, { fat: 0, protein: 0, carbs: 0, calories: 0 });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-2 py-4">
@@ -208,7 +292,16 @@ function RecipeForm({
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Ingredients</label>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Ingredients</label>
+                  <span
+                    className="flex items-center gap-1 text-[10px] font-medium text-slate-400"
+                    title="Macros are calculated automatically from the food database (per-100g values)"
+                  >
+                    <Info className="h-3 w-3" />
+                    Macros auto-calculated
+                  </span>
+                </div>
                 <button
                   type="button"
                   onClick={addRow}
@@ -218,64 +311,78 @@ function RecipeForm({
                 </button>
               </div>
 
-              <div className="rounded-xl border border-slate-200 overflow-hidden">
+              <div className="rounded-xl border border-slate-200 overflow-visible">
                 <table className="w-full text-xs">
                   <thead className="bg-slate-50">
                     <tr>
-                      {["Food Name", "g", "Unit", "Fat", "Prot", "Carb", "Kcal", ""].map((h) => (
-                        <th key={h} className="px-2 py-2 text-left font-semibold text-slate-500 uppercase tracking-wide">{h}</th>
-                      ))}
+                      <th className="px-3 py-2 text-left font-semibold text-slate-500 uppercase tracking-wide">Food Name</th>
+                      <th className="px-2 py-2 text-left font-semibold text-slate-500 uppercase tracking-wide w-16">grams</th>
+                      <th className="px-2 py-2 text-left font-semibold text-slate-500 uppercase tracking-wide w-20">Fat</th>
+                      <th className="px-2 py-2 text-left font-semibold text-slate-500 uppercase tracking-wide w-20">Prot</th>
+                      <th className="px-2 py-2 text-left font-semibold text-slate-500 uppercase tracking-wide w-20">Carb</th>
+                      <th className="px-2 py-2 text-left font-semibold text-slate-500 uppercase tracking-wide w-20">Kcal</th>
+                      <th className="px-2 py-2 w-8"></th>
                     </tr>
                   </thead>
                   <tbody>
-                    {ingredients.map((row, idx) => (
-                      <tr key={idx} className="border-t border-slate-100">
-                        <td className="px-2 py-1">
-                          <input
-                            value={row.foodName}
-                            onChange={(e) => updateIng(idx, "foodName", e.target.value)}
-                            placeholder="Ingredient"
-                            className="w-full border-0 bg-transparent outline-none text-slate-800 placeholder:text-slate-300 text-xs"
-                          />
-                        </td>
-                        <td className="px-2 py-1 w-16">
-                          <input
-                            type="number"
-                            value={row.portionGrams}
-                            onChange={(e) => updateIng(idx, "portionGrams", e.target.value)}
-                            placeholder="0"
-                            className="w-full border-0 bg-transparent outline-none text-slate-800 text-xs"
-                          />
-                        </td>
-                        <td className="px-2 py-1 w-12">
-                          <input
-                            value={row.unit}
-                            onChange={(e) => updateIng(idx, "unit", e.target.value)}
-                            placeholder="g"
-                            className="w-full border-0 bg-transparent outline-none text-slate-800 text-xs"
-                          />
-                        </td>
-                        {(["fat", "protein", "carbs", "calories"] as const).map((field) => (
-                          <td key={field} className="px-2 py-1 w-14">
+                    {ingredients.map((row, idx) => {
+                      const preview = computeMacroPreview(row.matchedFood, row.portionGrams);
+                      const hasMatch = row.matchedFood !== null;
+                      const hasText = row.foodName.trim().length > 0;
+                      return (
+                        <tr key={idx} className="border-t border-slate-100">
+                          <td className="px-3 py-1.5 relative">
+                            <FoodAutocomplete
+                              value={row.foodName}
+                              onSelect={(name, food) => updateIngFood(idx, name, food)}
+                              allFoods={allFoods}
+                            />
+                            {hasText && !hasMatch && (
+                              <span className="text-[9px] text-amber-500 block mt-0.5">Not in food DB — macros = 0</span>
+                            )}
+                          </td>
+                          <td className="px-2 py-1.5 w-16">
                             <input
                               type="number"
-                              value={row[field]}
-                              onChange={(e) => updateIng(idx, field, e.target.value)}
-                              placeholder="0"
+                              value={row.portionGrams}
+                              onChange={(e) => updateIngPortion(idx, e.target.value)}
+                              placeholder="100"
                               className="w-full border-0 bg-transparent outline-none text-slate-800 text-xs"
                             />
                           </td>
-                        ))}
-                        <td className="px-2 py-1 w-8">
-                          <button type="button" onClick={() => removeRow(idx)} className="text-slate-300 hover:text-red-400">
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                          {(["fat", "protein", "carbs", "calories"] as const).map((field) => (
+                            <td key={field} className="px-2 py-1.5 w-20 text-slate-400 text-xs">
+                              {preview ? (
+                                <span className={hasMatch ? "text-slate-700 font-medium" : "text-slate-300"}>
+                                  {preview[field].toFixed(1)}
+                                </span>
+                              ) : (
+                                <span className="text-slate-200">—</span>
+                              )}
+                            </td>
+                          ))}
+                          <td className="px-2 py-1.5 w-8">
+                            <button type="button" onClick={() => removeRow(idx)} className="text-slate-300 hover:text-red-400">
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
+
+              {ingredients.some((r) => r.matchedFood) && (
+                <div className="mt-2 flex gap-4 px-3 text-xs text-slate-500 font-semibold">
+                  <span>Preview totals:</span>
+                  <span style={{ color: GREEN }}>Fat {liveTotal.fat.toFixed(1)}g</span>
+                  <span style={{ color: BLUE }}>Prot {liveTotal.protein.toFixed(1)}g</span>
+                  <span style={{ color: RED }}>Carb {liveTotal.carbs.toFixed(1)}g</span>
+                  <span style={{ color: AMBER }}>Kcal {liveTotal.calories.toFixed(0)}</span>
+                  <span className="text-slate-300 font-normal text-[10px] self-end">Final values computed on save</span>
+                </div>
+              )}
             </div>
 
             {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
@@ -318,8 +425,8 @@ function RecipeDetailPanel({
 
   if (isLoading || !recipe) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <Loader2 className="h-8 w-8 animate-spin text-white" />
       </div>
     );
   }
@@ -444,7 +551,7 @@ export default function RecipesPage() {
         <div>
           <h1 className="text-2xl font-black text-slate-900">Recipe Library</h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            Build and manage your collection of keto-friendly recipes
+            Build and manage your keto-friendly recipe collection — macros auto-calculated from the food database
           </p>
         </div>
         <button
@@ -458,8 +565,8 @@ export default function RecipesPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: "Total Recipes",  value: (recipes ?? []).length,                                        color: BLUE  },
-          { label: "Categories",     value: categories.length,                                             color: GREEN },
+          { label: "Total Recipes",  value: (recipes ?? []).length,      color: BLUE  },
+          { label: "Categories",     value: categories.length,            color: GREEN },
           { label: "Avg Ingredients",
             value: (recipes ?? []).length
               ? Math.round((recipes ?? []).reduce((s, r) => s + ((r as RecipeDetail).ingredients?.length ?? 0), 0) / (recipes ?? []).length)
@@ -615,8 +722,6 @@ export default function RecipesPage() {
           </div>
         </div>
       )}
-
-      {showForm && viewId !== null && null}
     </div>
   );
 }

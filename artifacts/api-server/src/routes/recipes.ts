@@ -1,26 +1,41 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { recipesTable, recipeIngredientsTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { recipesTable, recipeIngredientsTable, foodsTable } from "@workspace/db";
+import { eq, and, ilike } from "drizzle-orm";
 
 const router: IRouter = Router();
 
 type IngredientInput = {
   foodName: string;
   portionGrams: number;
-  unit?: string;
-  carbs?: number;
-  fat?: number;
-  protein?: number;
-  calories?: number;
 };
+
+async function computeMacros(foodName: string, portionGrams: number) {
+  const [food] = await db
+    .select()
+    .from(foodsTable)
+    .where(ilike(foodsTable.name, foodName.trim()))
+    .limit(1);
+
+  if (!food) {
+    return { carbs: 0, fat: 0, protein: 0, calories: 0 };
+  }
+
+  const ratio = portionGrams / 100;
+  return {
+    carbs:    Math.round((food.carbs    * ratio) * 100) / 100,
+    fat:      Math.round((food.fat      * ratio) * 100) / 100,
+    protein:  Math.round((food.protein  * ratio) * 100) / 100,
+    calories: Math.round((food.calories * ratio) * 100) / 100,
+  };
+}
 
 function calcTotals(ingredients: typeof recipeIngredientsTable.$inferSelect[]) {
   return ingredients.reduce(
     (acc, ing) => ({
-      totalCarbs: acc.totalCarbs + (ing.carbs ?? 0),
-      totalFat: acc.totalFat + (ing.fat ?? 0),
-      totalProtein: acc.totalProtein + (ing.protein ?? 0),
+      totalCarbs:    acc.totalCarbs    + (ing.carbs    ?? 0),
+      totalFat:      acc.totalFat      + (ing.fat      ?? 0),
+      totalProtein:  acc.totalProtein  + (ing.protein  ?? 0),
       totalCalories: acc.totalCalories + (ing.calories ?? 0),
     }),
     { totalCarbs: 0, totalFat: 0, totalProtein: 0, totalCalories: 0 }
@@ -82,17 +97,15 @@ router.post("/", async (req, res) => {
     if (ingredients && ingredients.length > 0) {
       for (const ing of ingredients) {
         if (!ing.foodName?.trim()) continue;
+        const macros = await computeMacros(ing.foodName, ing.portionGrams ?? 100);
         const [inserted] = await db
           .insert(recipeIngredientsTable)
           .values({
             recipeId: recipe.id,
             foodName: ing.foodName.trim(),
             portionGrams: ing.portionGrams ?? 100,
-            unit: ing.unit ?? "g",
-            carbs: ing.carbs ?? 0,
-            fat: ing.fat ?? 0,
-            protein: ing.protein ?? 0,
-            calories: ing.calories ?? 0,
+            unit: "g",
+            ...macros,
           })
           .returning();
         insertedIngredients.push(inserted);
@@ -182,15 +195,13 @@ router.put("/:recipeId", async (req, res) => {
       await db.delete(recipeIngredientsTable).where(eq(recipeIngredientsTable.recipeId, recipeId));
       for (const ing of ingredients) {
         if (!ing.foodName?.trim()) continue;
+        const macros = await computeMacros(ing.foodName, ing.portionGrams ?? 100);
         await db.insert(recipeIngredientsTable).values({
           recipeId,
           foodName: ing.foodName.trim(),
           portionGrams: ing.portionGrams ?? 100,
-          unit: ing.unit ?? "g",
-          carbs: ing.carbs ?? 0,
-          fat: ing.fat ?? 0,
-          protein: ing.protein ?? 0,
-          calories: ing.calories ?? 0,
+          unit: "g",
+          ...macros,
         });
       }
     }
@@ -246,7 +257,7 @@ router.post("/:recipeId/ingredients", async (req, res) => {
     return;
   }
 
-  const { foodName, portionGrams, unit, carbs, fat, protein, calories } = req.body as IngredientInput;
+  const { foodName, portionGrams } = req.body as IngredientInput;
 
   if (!foodName?.trim()) {
     res.status(400).json({ error: "BAD_REQUEST", message: "foodName is required" });
@@ -264,17 +275,15 @@ router.post("/:recipeId/ingredients", async (req, res) => {
       return;
     }
 
+    const macros = await computeMacros(foodName, portionGrams ?? 100);
     const [ingredient] = await db
       .insert(recipeIngredientsTable)
       .values({
         recipeId,
         foodName: foodName.trim(),
         portionGrams: portionGrams ?? 100,
-        unit: unit ?? "g",
-        carbs: carbs ?? 0,
-        fat: fat ?? 0,
-        protein: protein ?? 0,
-        calories: calories ?? 0,
+        unit: "g",
+        ...macros,
       })
       .returning();
 

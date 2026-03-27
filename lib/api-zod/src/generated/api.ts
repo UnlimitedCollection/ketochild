@@ -740,23 +740,28 @@ export const ListRecipesResponse = zod.array(ListRecipesResponseItem);
 /**
  * @summary Create a new recipe with ingredients
  */
-export const createRecipeBodyIngredientsItemUnitDefault = `g`;
-
 export const CreateRecipeBody = zod.object({
   name: zod.string(),
   description: zod.string().optional(),
   category: zod.string().optional(),
   ingredients: zod
     .array(
-      zod.object({
-        foodName: zod.string(),
-        portionGrams: zod.number(),
-        unit: zod.string().default(createRecipeBodyIngredientsItemUnitDefault),
-        carbs: zod.number().optional(),
-        fat: zod.number().optional(),
-        protein: zod.number().optional(),
-        calories: zod.number().optional(),
-      }),
+      zod
+        .object({
+          foodName: zod
+            .string()
+            .describe(
+              "Name of the food item. Must match an entry in the active food database for macros to be calculated.",
+            ),
+          portionGrams: zod
+            .number()
+            .describe(
+              "Portion size in grams (per-100g food DB values are scaled accordingly).",
+            ),
+        })
+        .describe(
+          "Ingredient request. Macros (fat\/protein\/carbs\/calories) are computed server-side from the food database using foodName + portionGrams. Any submitted macro values are ignored.\n",
+        ),
     )
     .optional(),
 });
@@ -802,23 +807,28 @@ export const UpdateRecipeParams = zod.object({
   recipeId: zod.coerce.number(),
 });
 
-export const updateRecipeBodyIngredientsItemUnitDefault = `g`;
-
 export const UpdateRecipeBody = zod.object({
   name: zod.string().optional(),
   description: zod.string().optional(),
   category: zod.string().optional(),
   ingredients: zod
     .array(
-      zod.object({
-        foodName: zod.string(),
-        portionGrams: zod.number(),
-        unit: zod.string().default(updateRecipeBodyIngredientsItemUnitDefault),
-        carbs: zod.number().optional(),
-        fat: zod.number().optional(),
-        protein: zod.number().optional(),
-        calories: zod.number().optional(),
-      }),
+      zod
+        .object({
+          foodName: zod
+            .string()
+            .describe(
+              "Name of the food item. Must match an entry in the active food database for macros to be calculated.",
+            ),
+          portionGrams: zod
+            .number()
+            .describe(
+              "Portion size in grams (per-100g food DB values are scaled accordingly).",
+            ),
+        })
+        .describe(
+          "Ingredient request. Macros (fat\/protein\/carbs\/calories) are computed server-side from the food database using foodName + portionGrams. Any submitted macro values are ignored.\n",
+        ),
     )
     .optional(),
 });
@@ -869,17 +879,22 @@ export const AddRecipeIngredientParams = zod.object({
   recipeId: zod.coerce.number(),
 });
 
-export const addRecipeIngredientBodyUnitDefault = `g`;
-
-export const AddRecipeIngredientBody = zod.object({
-  foodName: zod.string(),
-  portionGrams: zod.number(),
-  unit: zod.string().default(addRecipeIngredientBodyUnitDefault),
-  carbs: zod.number().optional(),
-  fat: zod.number().optional(),
-  protein: zod.number().optional(),
-  calories: zod.number().optional(),
-});
+export const AddRecipeIngredientBody = zod
+  .object({
+    foodName: zod
+      .string()
+      .describe(
+        "Name of the food item. Must match an entry in the active food database for macros to be calculated.",
+      ),
+    portionGrams: zod
+      .number()
+      .describe(
+        "Portion size in grams (per-100g food DB values are scaled accordingly).",
+      ),
+  })
+  .describe(
+    "Ingredient request. Macros (fat\/protein\/carbs\/calories) are computed server-side from the food database using foodName + portionGrams. Any submitted macro values are ignored.\n",
+  );
 
 /**
  * @summary Remove an ingredient from a recipe

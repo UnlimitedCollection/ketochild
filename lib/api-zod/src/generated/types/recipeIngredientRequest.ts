@@ -6,12 +6,13 @@
  * OpenAPI spec version: 0.1.0
  */
 
+/**
+ * Ingredient request. Macros (fat/protein/carbs/calories) are computed server-side from the food database using foodName + portionGrams. Any submitted macro values are ignored.
+
+ */
 export interface RecipeIngredientRequest {
+  /** Name of the food item. Must match an entry in the active food database for macros to be calculated. */
   foodName: string;
+  /** Portion size in grams (per-100g food DB values are scaled accordingly). */
   portionGrams: number;
-  unit?: string;
-  carbs?: number;
-  fat?: number;
-  protein?: number;
-  calories?: number;
 }
