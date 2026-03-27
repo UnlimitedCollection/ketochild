@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useGetMe, useUpdateDoctorProfile, useChangeDoctorPassword, getGetMeQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useIsModerator } from "@/hooks/useRole";
 
 function SectionCard({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
   return (
@@ -37,6 +38,7 @@ export default function SettingsPage() {
   const { data: user } = useGetMe();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const isModerator = useIsModerator();
 
   const updateProfile = useUpdateDoctorProfile();
   const changePassword = useChangeDoctorPassword();
@@ -142,6 +144,16 @@ export default function SettingsPage() {
         <p className="text-sm text-slate-500 mt-1">Manage your account information and security.</p>
       </div>
 
+      {isModerator && (
+        <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+          <span className="text-amber-500 mt-0.5">⚠️</span>
+          <div>
+            <p className="text-sm font-semibold text-amber-800">Read-only account</p>
+            <p className="text-xs text-amber-700 mt-0.5">Moderator accounts cannot update profile information. Contact an admin to make changes to your name, email, or username. You can still change your own password below.</p>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
         <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-black text-xl shrink-0">
           {initials}
@@ -153,7 +165,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <SectionCard title="Profile Information" description="Update your name, email, username, and specialty.">
+      <SectionCard title="Profile Information" description={isModerator ? "Profile information (read-only for moderators)." : "Update your name, email, username, and specialty."}>
         <form onSubmit={handleProfileSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <FieldGroup label="Full Name">
@@ -163,6 +175,7 @@ export default function SettingsPage() {
                 onChange={handleProfileChange}
                 placeholder="e.g. Jane Smith"
                 required
+                disabled={isModerator}
               />
             </FieldGroup>
             <FieldGroup label="Username">
@@ -172,6 +185,7 @@ export default function SettingsPage() {
                 onChange={handleProfileChange}
                 placeholder="e.g. jsmith"
                 required
+                disabled={isModerator}
               />
             </FieldGroup>
           </div>
@@ -183,6 +197,7 @@ export default function SettingsPage() {
               onChange={handleProfileChange}
               placeholder="e.g. jane@clinic.com"
               required
+              disabled={isModerator}
             />
           </FieldGroup>
           <FieldGroup label="Specialty (optional)">
@@ -191,6 +206,7 @@ export default function SettingsPage() {
               value={profile.specialty}
               onChange={handleProfileChange}
               placeholder="e.g. Pediatric Neurology"
+              disabled={isModerator}
             />
           </FieldGroup>
 
@@ -198,15 +214,17 @@ export default function SettingsPage() {
             <p className="text-sm text-red-600 font-medium">{profileError}</p>
           )}
 
-          <div className="flex justify-end pt-2">
-            <button
-              type="submit"
-              disabled={updateProfile.isPending}
-              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-semibold rounded-xl transition-all"
-            >
-              {updateProfile.isPending ? "Saving…" : "Save Profile"}
-            </button>
-          </div>
+          {!isModerator && (
+            <div className="flex justify-end pt-2">
+              <button
+                type="submit"
+                disabled={updateProfile.isPending}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-semibold rounded-xl transition-all"
+              >
+                {updateProfile.isPending ? "Saving…" : "Save Profile"}
+              </button>
+            </div>
+          )}
         </form>
       </SectionCard>
 

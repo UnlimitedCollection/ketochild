@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { boolean, pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -10,6 +10,7 @@ export const doctorsTable = pgTable("doctors", {
   email: varchar("email", { length: 255 }).notNull().unique(),
   specialty: varchar("specialty", { length: 200 }),
   role: varchar("role", { length: 20 }).notNull().default("admin"),
+  mustChangePassword: boolean("must_change_password").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

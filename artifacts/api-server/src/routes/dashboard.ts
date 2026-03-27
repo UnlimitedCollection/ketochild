@@ -8,12 +8,12 @@ const router: IRouter = Router();
 
 router.get("/stats", async (req, res) => {
   const doctorId = req.session.doctorId!;
+  const isAdmin = req.session.doctorRole === "admin";
 
   try {
-    const allKids = await db
-      .select()
-      .from(kidsTable)
-      .where(eq(kidsTable.doctorId, doctorId));
+    const allKids = isAdmin
+      ? await db.select().from(kidsTable).where(eq(kidsTable.doctorId, doctorId))
+      : await db.select().from(kidsTable);
 
     const totalChildren = allKids.length;
     const kidIds = allKids.map((k) => k.id);
@@ -21,7 +21,7 @@ router.get("/stats", async (req, res) => {
     if (kidIds.length === 0) {
       const [{ value: totalDoctors }] = await db.select({ value: count() }).from(doctorsTable);
       const [{ value: totalFoods }] = await db.select({ value: count() }).from(foodsTable).where(eq(foodsTable.isActive, true));
-      const [{ value: totalRecipes }] = await db.select({ value: count() }).from(recipesTable).where(eq(recipesTable.doctorId, doctorId));
+      const [{ value: totalRecipes }] = await db.select({ value: count() }).from(recipesTable);
       res.json({
         totalChildren: 0,
         highRiskChildren: 0,
@@ -116,7 +116,9 @@ router.get("/stats", async (req, res) => {
 
     const [{ value: totalDoctors }] = await db.select({ value: count() }).from(doctorsTable);
     const [{ value: totalFoods }] = await db.select({ value: count() }).from(foodsTable).where(eq(foodsTable.isActive, true));
-    const [{ value: totalRecipes }] = await db.select({ value: count() }).from(recipesTable).where(eq(recipesTable.doctorId, doctorId));
+    const [{ value: totalRecipes }] = isAdmin
+      ? await db.select({ value: count() }).from(recipesTable).where(eq(recipesTable.doctorId, doctorId))
+      : await db.select({ value: count() }).from(recipesTable);
 
     let tokenSummary = { active: 0, used: 0, expired: 0, total: 0 };
     if (kidIds.length > 0) {
@@ -157,12 +159,17 @@ router.get("/stats", async (req, res) => {
 
 router.get("/recent-activity", async (req, res) => {
   const doctorId = req.session.doctorId!;
+  const isAdmin = req.session.doctorRole === "admin";
 
   try {
-    const allKids = await db
-      .select({ id: kidsTable.id, name: kidsTable.name, phase: kidsTable.phase })
-      .from(kidsTable)
-      .where(eq(kidsTable.doctorId, doctorId));
+    const allKids = isAdmin
+      ? await db
+          .select({ id: kidsTable.id, name: kidsTable.name, phase: kidsTable.phase })
+          .from(kidsTable)
+          .where(eq(kidsTable.doctorId, doctorId))
+      : await db
+          .select({ id: kidsTable.id, name: kidsTable.name, phase: kidsTable.phase })
+          .from(kidsTable);
 
     const kidIds = allKids.map((k) => k.id);
     const kidMap = new Map(allKids.map((k) => [k.id, k]));

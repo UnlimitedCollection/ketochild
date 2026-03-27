@@ -5,6 +5,7 @@ import {
   useUpdateUser,
   useDeleteUser,
 } from "@workspace/api-client-react";
+import { RefreshCw } from "lucide-react";
 import type { UserResponse, CreateUserRequest, UpdateUserRequest } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getListUsersQueryKey } from "@workspace/api-client-react";
@@ -60,6 +61,24 @@ const BLANK_FORM: UserFormData = {
   specialty: "",
   role: "moderator",
 };
+
+function generateSecurePassword(): string {
+  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lower = "abcdefghjkmnpqrstuvwxyz";
+  const digits = "23456789";
+  const special = "@#$%!";
+  const all = upper + lower + digits + special;
+  let password = [
+    upper[Math.floor(Math.random() * upper.length)],
+    lower[Math.floor(Math.random() * lower.length)],
+    digits[Math.floor(Math.random() * digits.length)],
+    special[Math.floor(Math.random() * special.length)],
+  ];
+  for (let i = 0; i < 8; i++) {
+    password.push(all[Math.floor(Math.random() * all.length)]);
+  }
+  return password.sort(() => Math.random() - 0.5).join("");
+}
 
 export default function UsersPage() {
   const queryClient = useQueryClient();
@@ -331,28 +350,44 @@ export default function UsersPage() {
                 placeholder="jsmith@hospital.com"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>{editingId ? "New Password (optional)" : "Password"}</Label>
+            <div className="space-y-1.5">
+              <Label>{editingId ? "New Password (optional)" : "Password"}</Label>
+              <div className="flex gap-2">
                 <Input
-                  type="password"
+                  type="text"
                   value={form.password}
                   onChange={(e) => handleField("password", e.target.value)}
                   placeholder={editingId ? "Leave blank to keep" : "Min. 6 characters"}
+                  className="font-mono text-sm flex-1"
                 />
+                {!editingId && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0 gap-1.5"
+                    onClick={() => handleField("password", generateSecurePassword())}
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />
+                    Generate
+                  </Button>
+                )}
               </div>
-              <div className="space-y-1.5">
-                <Label>Role</Label>
-                <Select value={form.role} onValueChange={(v) => handleField("role", v)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="moderator">Moderator</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {!editingId && (
+                <p className="text-xs text-slate-500">Generated password is visible so you can copy and share it with the new user.</p>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label>Role</Label>
+              <Select value={form.role} onValueChange={(v) => handleField("role", v)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="moderator">Moderator</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <Label>Specialty (optional)</Label>

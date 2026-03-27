@@ -1,4 +1,5 @@
 import { useGetDashboardStats, useGetDashboardRecentActivity } from "@workspace/api-client-react";
+import { useCanWrite } from "@/hooks/useRole";
 import { Link, useLocation } from "wouter";
 import { Loader2, AlertTriangle } from "lucide-react";
 import {
@@ -84,6 +85,7 @@ function KpiCard({
 
 export default function DashboardPage() {
   const [, navigate] = useLocation();
+  const canWrite = useCanWrite();
   const { data: stats, isLoading, error } = useGetDashboardStats();
   const { data: recentActivity, isLoading: activityLoading } = useGetDashboardRecentActivity();
 
@@ -347,25 +349,27 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-          <h2 className="font-bold text-slate-800 mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {QUICK_ACTIONS.map((qa) => (
-              <button
-                key={qa.label}
-                className="flex flex-col items-center gap-2 group cursor-pointer"
-                onClick={() => navigate(qa.href)}
-              >
-                <div className="w-14 h-14 rounded-full bg-slate-100 group-hover:bg-blue-600 flex items-center justify-center text-2xl transition-colors">
-                  {qa.icon}
-                </div>
-                <span className="text-xs font-semibold text-slate-600 group-hover:text-blue-600 transition-colors text-center">
-                  {qa.label}
-                </span>
-              </button>
-            ))}
+        {canWrite && (
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <h2 className="font-bold text-slate-800 mb-4">Quick Actions</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {QUICK_ACTIONS.map((qa) => (
+                <button
+                  key={qa.label}
+                  className="flex flex-col items-center gap-2 group cursor-pointer"
+                  onClick={() => navigate(qa.href)}
+                >
+                  <div className="w-14 h-14 rounded-full bg-slate-100 group-hover:bg-blue-600 flex items-center justify-center text-2xl transition-colors">
+                    {qa.icon}
+                  </div>
+                  <span className="text-xs font-semibold text-slate-600 group-hover:text-blue-600 transition-colors text-center">
+                    {qa.label}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
           <h2 className="font-bold text-slate-800 mb-4">Recent Activity</h2>

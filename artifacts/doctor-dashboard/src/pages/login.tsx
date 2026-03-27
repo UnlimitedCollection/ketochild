@@ -95,7 +95,7 @@ export default function LoginPage() {
         <Card className="border-0 shadow-xl shadow-black/5 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
           <div className="h-2 w-full bg-gradient-to-r from-primary to-secondary" />
           <CardHeader className="space-y-1 pb-6 px-8 pt-8">
-            <CardTitle className="text-2xl font-bold">Admin Login</CardTitle>
+            <CardTitle className="text-2xl font-bold">Staff Login</CardTitle>
             <CardDescription className="text-base">
               Enter your credentials to access patient records.
             </CardDescription>

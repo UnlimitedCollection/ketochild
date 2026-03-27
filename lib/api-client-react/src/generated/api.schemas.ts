@@ -38,6 +38,7 @@ export interface Doctor {
   email: string;
   specialty?: string;
   role: DoctorRole;
+  mustChangePassword?: boolean;
 }
 
 export interface LoginResponse {

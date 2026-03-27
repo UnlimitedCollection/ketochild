@@ -24,6 +24,7 @@ import TokensPage from "@/pages/tokens";
 import RecipesPage from "@/pages/recipes";
 import SettingsPage from "@/pages/settings";
 import UsersPage from "@/pages/users";
+import SetPasswordPage from "@/pages/set-password";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,6 +42,8 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   useEffect(() => {
     if (!isLoading && (error || !user)) {
       setLocation("/login");
+    } else if (!isLoading && user && user.mustChangePassword) {
+      setLocation("/set-password");
     }
   }, [user, isLoading, error, setLocation]);
 
@@ -52,7 +55,7 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
     );
   }
 
-  if (!user) return null;
+  if (!user || user.mustChangePassword) return null;
 
   return (
     <AppLayout>
@@ -97,7 +100,7 @@ function Router() {
       <Route path="/login" component={LoginPage} />
       <Route path="/" component={() => <ProtectedRoute component={DashboardPage} />} />
       <Route path="/kids" component={() => <ProtectedRoute component={KidsListPage} />} />
-      <Route path="/kids/new" component={() => <ProtectedRoute component={AddKidPage} />} />
+      <Route path="/kids/new" component={() => <AdminRoute component={AddKidPage} />} />
       <Route path="/kids/:id" component={() => <ProtectedRoute component={KidProfilePage} />} />
       <Route path="/high-risk" component={() => <ProtectedRoute component={HighRiskPage} />} />
       <Route path="/foods" component={() => <ProtectedRoute component={FoodsPage} />} />
@@ -106,6 +109,7 @@ function Router() {
       <Route path="/recipes" component={() => <ProtectedRoute component={RecipesPage} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={SettingsPage} />} />
       <Route path="/users" component={() => <AdminRoute component={UsersPage} />} />
+      <Route path="/set-password" component={SetPasswordPage} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -72,7 +72,7 @@ router.post("/", async (req, res) => {
     const hashed = await bcrypt.hash(password, 12);
     const [created] = await db
       .insert(doctorsTable)
-      .values({ username, password: hashed, name, email, specialty: specialty ?? null, role })
+      .values({ username, password: hashed, name, email, specialty: specialty ?? null, role, mustChangePassword: true })
       .returning();
 
     res.status(201).json(mapUser(created));

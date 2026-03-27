@@ -137,6 +137,37 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /auth/force-change:
+    put:
+      operationId: forceChangePassword
+      tags: [auth]
+      summary: Force password change (first login — no current password required)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForceChangePasswordRequest"
+      responses:
+        "200":
+          description: Password changed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /auth/password:
     put:
       operationId: changeDoctorPassword
@@ -1768,6 +1799,8 @@ components:
         role:
           type: string
           enum: [admin, moderator]
+        mustChangePassword:
+          type: boolean
       required:
         - id
         - username
@@ -1794,6 +1827,19 @@ components:
         - name
         - email
         - username
+
+    ForceChangePasswordRequest:
+      type: object
+      properties:
+        newPassword:
+          type: string
+          minLength: 6
+        confirmPassword:
+          type: string
+          minLength: 1
+      required:
+        - newPassword
+        - confirmPassword
 
     ChangeDoctorPasswordRequest:
       type: object
