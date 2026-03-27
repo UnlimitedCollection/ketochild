@@ -156,6 +156,34 @@ export default function DashboardPage() {
         />
       </div>
 
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-5">
+        <KpiCard
+          label="Registered Doctors"
+          value={stats.totalDoctors ?? 0}
+          icon="🩺"
+          accent={BLUE}
+        />
+        <KpiCard
+          label="Active Foods"
+          value={stats.totalFoods ?? 0}
+          icon="🥑"
+          accent={GREEN}
+        />
+        <KpiCard
+          label="My Recipes"
+          value={stats.totalRecipes ?? 0}
+          icon="🍳"
+          accent={AMBER}
+        />
+        <KpiCard
+          label="Active Tokens"
+          value={stats.tokenSummary?.active ?? 0}
+          sub={`${stats.tokenSummary?.total ?? 0} total`}
+          icon="🔑"
+          accent={RED}
+        />
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
           <h2 className="font-bold text-slate-800 mb-1">Phase Distribution</h2>

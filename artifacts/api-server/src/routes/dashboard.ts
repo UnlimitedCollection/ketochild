@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { kidsTable, weightRecordsTable, mealDaysTable, mealLogsTable, notesTable } from "@workspace/db";
-import { eq, gte, desc, inArray } from "drizzle-orm";
+import { kidsTable, weightRecordsTable, mealDaysTable, mealLogsTable, notesTable, doctorsTable, foodsTable, parentTokensTable, recipesTable } from "@workspace/db";
+import { eq, gte, desc, inArray, count } from "drizzle-orm";
 import { calcAgeMonths } from "../lib/utils";
 
 const router: IRouter = Router();
@@ -19,6 +19,9 @@ router.get("/stats", async (req, res) => {
     const kidIds = allKids.map((k) => k.id);
 
     if (kidIds.length === 0) {
+      const [{ value: totalDoctors }] = await db.select({ value: count() }).from(doctorsTable);
+      const [{ value: totalFoods }] = await db.select({ value: count() }).from(foodsTable).where(eq(foodsTable.isActive, true));
+      const [{ value: totalRecipes }] = await db.select({ value: count() }).from(recipesTable).where(eq(recipesTable.doctorId, doctorId));
       res.json({
         totalChildren: 0,
         highRiskChildren: 0,
@@ -27,6 +30,10 @@ router.get("/stats", async (req, res) => {
         averageWeightChange: 0,
         phaseDistribution: [1, 2, 3, 4].map((p) => ({ phase: p, count: 0, label: `Phase ${p}` })),
         recentHighRiskKids: [],
+        totalDoctors: Number(totalDoctors),
+        totalFoods: Number(totalFoods),
+        totalRecipes: Number(totalRecipes),
+        tokenSummary: { active: 0, used: 0, expired: 0, total: 0 },
       });
       return;
     }
@@ -107,6 +114,26 @@ router.get("/stats", async (req, res) => {
       }
     }
 
+    const [{ value: totalDoctors }] = await db.select({ value: count() }).from(doctorsTable);
+    const [{ value: totalFoods }] = await db.select({ value: count() }).from(foodsTable).where(eq(foodsTable.isActive, true));
+    const [{ value: totalRecipes }] = await db.select({ value: count() }).from(recipesTable).where(eq(recipesTable.doctorId, doctorId));
+
+    let tokenSummary = { active: 0, used: 0, expired: 0, total: 0 };
+    if (kidIds.length > 0) {
+      const tokens = await db.select().from(parentTokensTable).where(inArray(parentTokensTable.kidId, kidIds));
+      const now = new Date();
+      for (const t of tokens) {
+        tokenSummary.total++;
+        if (t.status === "revoked" || new Date(t.expiresAt) < now) {
+          tokenSummary.expired++;
+        } else if (t.status === "used") {
+          tokenSummary.used++;
+        } else {
+          tokenSummary.active++;
+        }
+      }
+    }
+
     res.json({
       totalChildren,
       highRiskChildren,
@@ -117,6 +144,10 @@ router.get("/stats", async (req, res) => {
         : 0,
       phaseDistribution,
       recentHighRiskKids,
+      totalDoctors: Number(totalDoctors),
+      totalFoods: Number(totalFoods),
+      totalRecipes: Number(totalRecipes),
+      tokenSummary,
     });
   } catch (err) {
     req.log.error({ err }, "Dashboard stats error");

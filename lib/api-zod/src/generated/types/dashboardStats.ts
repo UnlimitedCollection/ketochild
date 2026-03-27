@@ -7,6 +7,7 @@
  */
 import type { HighRiskKid } from "./highRiskKid";
 import type { PhaseCount } from "./phaseCount";
+import type { TokenSummary } from "./tokenSummary";
 
 export interface DashboardStats {
   totalChildren: number;
@@ -16,4 +17,8 @@ export interface DashboardStats {
   averageWeightChange: number;
   phaseDistribution: PhaseCount[];
   recentHighRiskKids: HighRiskKid[];
+  totalDoctors: number;
+  totalFoods: number;
+  totalRecipes: number;
+  tokenSummary: TokenSummary;
 }

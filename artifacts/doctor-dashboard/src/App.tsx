@@ -19,6 +19,8 @@ import KidProfilePage from "@/pages/kid-profile";
 import AddKidPage from "@/pages/add-kid";
 import FoodsPage from "@/pages/foods";
 import MealPlansPage from "@/pages/meal-plans";
+import TokensPage from "@/pages/tokens";
+import RecipesPage from "@/pages/recipes";
 import SettingsPage from "@/pages/settings";
 
 const queryClient = new QueryClient({
@@ -68,6 +70,8 @@ function Router() {
       <Route path="/high-risk" component={() => <ProtectedRoute component={HighRiskPage} />} />
       <Route path="/foods" component={() => <ProtectedRoute component={FoodsPage} />} />
       <Route path="/meal-plans" component={() => <ProtectedRoute component={MealPlansPage} />} />
+      <Route path="/tokens" component={() => <ProtectedRoute component={TokensPage} />} />
+      <Route path="/recipes" component={() => <ProtectedRoute component={RecipesPage} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={SettingsPage} />} />
       <Route component={NotFound} />
     </Switch>

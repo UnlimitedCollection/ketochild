@@ -21,6 +21,10 @@ tags:
     description: Private notes
   - name: mealplans
     description: Library meal plan management and assignment
+  - name: tokens
+    description: Parent access token management
+  - name: recipes
+    description: Doctor recipe library management
   - name: Storage
     description: Object storage upload and serving endpoints.
 paths:
@@ -675,6 +679,280 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SuccessResponse"
+
+  /tokens:
+    get:
+      operationId: listTokens
+      tags: [tokens]
+      summary: List all parent access tokens for the doctor's kids
+      responses:
+        "200":
+          description: List of tokens
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ParentToken"
+
+    post:
+      operationId: createToken
+      tags: [tokens]
+      summary: Generate (or regenerate) a parent access token for a kid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTokenRequest"
+      responses:
+        "201":
+          description: Token created or regenerated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParentToken"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Child not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /tokens/{tokenId}/reset:
+    put:
+      operationId: resetToken
+      tags: [tokens]
+      summary: Regenerate a parent token (invalidates old token)
+      parameters:
+        - name: tokenId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Token regenerated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParentToken"
+        "404":
+          description: Token not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /tokens/{tokenId}:
+    delete:
+      operationId: revokeToken
+      tags: [tokens]
+      summary: Revoke and delete a parent token
+      parameters:
+        - name: tokenId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Token revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "404":
+          description: Token not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /recipes:
+    get:
+      operationId: listRecipes
+      tags: [recipes]
+      summary: List all recipes for the logged-in doctor
+      responses:
+        "200":
+          description: List of recipes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RecipeDetail"
+
+    post:
+      operationId: createRecipe
+      tags: [recipes]
+      summary: Create a new recipe with ingredients
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRecipeRequest"
+      responses:
+        "201":
+          description: Recipe created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecipeDetail"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /recipes/{recipeId}:
+    get:
+      operationId: getRecipe
+      tags: [recipes]
+      summary: Get a single recipe with ingredients
+      parameters:
+        - name: recipeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Recipe detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecipeDetail"
+        "404":
+          description: Recipe not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    put:
+      operationId: updateRecipe
+      tags: [recipes]
+      summary: Update a recipe and replace its ingredients
+      parameters:
+        - name: recipeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRecipeRequest"
+      responses:
+        "200":
+          description: Recipe updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecipeDetail"
+        "404":
+          description: Recipe not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      operationId: deleteRecipe
+      tags: [recipes]
+      summary: Delete a recipe and all its ingredients
+      parameters:
+        - name: recipeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Recipe deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "404":
+          description: Recipe not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /recipes/{recipeId}/ingredients:
+    post:
+      operationId: addRecipeIngredient
+      tags: [recipes]
+      summary: Add an ingredient to a recipe
+      parameters:
+        - name: recipeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecipeIngredientRequest"
+      responses:
+        "201":
+          description: Ingredient added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecipeIngredient"
+        "404":
+          description: Recipe not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /recipes/{recipeId}/ingredients/{ingId}:
+    delete:
+      operationId: deleteRecipeIngredient
+      tags: [recipes]
+      summary: Remove an ingredient from a recipe
+      parameters:
+        - name: recipeId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: ingId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Ingredient removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "404":
+          description: Recipe or ingredient not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /storage/uploads/request-url:
     post:
@@ -1409,6 +1687,14 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/HighRiskKid"
+        totalDoctors:
+          type: integer
+        totalFoods:
+          type: integer
+        totalRecipes:
+          type: integer
+        tokenSummary:
+          $ref: "#/components/schemas/TokenSummary"
       required:
         - totalChildren
         - highRiskChildren
@@ -1417,6 +1703,10 @@ components:
         - averageWeightChange
         - phaseDistribution
         - recentHighRiskKids
+        - totalDoctors
+        - totalFoods
+        - totalRecipes
+        - tokenSummary
 
     PhaseCount:
       type: object
@@ -2386,3 +2676,220 @@ components:
         - foodId
         - foodName
         - portionGrams
+
+    TokenSummary:
+      type: object
+      properties:
+        active:
+          type: integer
+        used:
+          type: integer
+        expired:
+          type: integer
+        total:
+          type: integer
+      required:
+        - active
+        - used
+        - expired
+        - total
+
+    ParentToken:
+      type: object
+      properties:
+        id:
+          type: integer
+        kidId:
+          type: integer
+        kidName:
+          type: string
+        token:
+          type: string
+        status:
+          type: string
+          enum: [active, used, expired, revoked]
+        expiresAt:
+          type: string
+          format: date-time
+        usedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - kidId
+        - kidName
+        - token
+        - status
+        - expiresAt
+        - createdAt
+
+    CreateTokenRequest:
+      type: object
+      properties:
+        kidId:
+          type: integer
+        expiresInDays:
+          type: integer
+          default: 90
+          description: Number of days until the token expires
+      required:
+        - kidId
+
+    RecipeIngredient:
+      type: object
+      properties:
+        id:
+          type: integer
+        recipeId:
+          type: integer
+        foodName:
+          type: string
+        portionGrams:
+          type: number
+        unit:
+          type: string
+        carbs:
+          type: number
+        fat:
+          type: number
+        protein:
+          type: number
+        calories:
+          type: number
+      required:
+        - id
+        - recipeId
+        - foodName
+        - portionGrams
+        - unit
+        - carbs
+        - fat
+        - protein
+        - calories
+
+    RecipeIngredientRequest:
+      type: object
+      properties:
+        foodName:
+          type: string
+        portionGrams:
+          type: number
+        unit:
+          type: string
+          default: g
+        carbs:
+          type: number
+        fat:
+          type: number
+        protein:
+          type: number
+        calories:
+          type: number
+      required:
+        - foodName
+        - portionGrams
+
+    Recipe:
+      type: object
+      properties:
+        id:
+          type: integer
+        doctorId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - doctorId
+        - name
+        - category
+        - createdAt
+        - updatedAt
+
+    RecipeDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        doctorId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        ingredients:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecipeIngredient"
+        totalCarbs:
+          type: number
+        totalFat:
+          type: number
+        totalProtein:
+          type: number
+        totalCalories:
+          type: number
+      required:
+        - id
+        - doctorId
+        - name
+        - category
+        - createdAt
+        - updatedAt
+        - ingredients
+        - totalCarbs
+        - totalFat
+        - totalProtein
+        - totalCalories
+
+    CreateRecipeRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        ingredients:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecipeIngredientRequest"
+      required:
+        - name
+
+    UpdateRecipeRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        ingredients:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecipeIngredientRequest"

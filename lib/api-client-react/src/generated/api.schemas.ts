@@ -74,6 +74,13 @@ export interface HighRiskKid {
   mealCompletionRate?: number;
 }
 
+export interface TokenSummary {
+  active: number;
+  used: number;
+  expired: number;
+  total: number;
+}
+
 export interface DashboardStats {
   totalChildren: number;
   highRiskChildren: number;
@@ -82,6 +89,10 @@ export interface DashboardStats {
   averageWeightChange: number;
   phaseDistribution: PhaseCount[];
   recentHighRiskKids: HighRiskKid[];
+  totalDoctors: number;
+  totalFoods: number;
+  totalRecipes: number;
+  tokenSummary: TokenSummary;
 }
 
 export type KidGender = (typeof KidGender)[keyof typeof KidGender];
@@ -674,6 +685,94 @@ export interface AddMealPlanItemRequest {
   fat?: number;
   protein?: number;
   notes?: string;
+}
+
+export type ParentTokenStatus =
+  (typeof ParentTokenStatus)[keyof typeof ParentTokenStatus];
+
+export const ParentTokenStatus = {
+  active: "active",
+  used: "used",
+  expired: "expired",
+  revoked: "revoked",
+} as const;
+
+export interface ParentToken {
+  id: number;
+  kidId: number;
+  kidName: string;
+  token: string;
+  status: ParentTokenStatus;
+  expiresAt: string;
+  usedAt?: string | null;
+  createdAt: string;
+}
+
+export interface CreateTokenRequest {
+  kidId: number;
+  /** Number of days until the token expires */
+  expiresInDays?: number;
+}
+
+export interface RecipeIngredient {
+  id: number;
+  recipeId: number;
+  foodName: string;
+  portionGrams: number;
+  unit: string;
+  carbs: number;
+  fat: number;
+  protein: number;
+  calories: number;
+}
+
+export interface RecipeIngredientRequest {
+  foodName: string;
+  portionGrams: number;
+  unit?: string;
+  carbs?: number;
+  fat?: number;
+  protein?: number;
+  calories?: number;
+}
+
+export interface Recipe {
+  id: number;
+  doctorId: number;
+  name: string;
+  description?: string;
+  category: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RecipeDetail {
+  id: number;
+  doctorId: number;
+  name: string;
+  description?: string;
+  category: string;
+  createdAt: string;
+  updatedAt: string;
+  ingredients: RecipeIngredient[];
+  totalCarbs: number;
+  totalFat: number;
+  totalProtein: number;
+  totalCalories: number;
+}
+
+export interface CreateRecipeRequest {
+  name: string;
+  description?: string;
+  category?: string;
+  ingredients?: RecipeIngredientRequest[];
+}
+
+export interface UpdateRecipeRequest {
+  name?: string;
+  description?: string;
+  category?: string;
+  ingredients?: RecipeIngredientRequest[];
 }
 
 export type GetKidsParams = {

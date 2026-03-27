@@ -96,12 +96,22 @@ function IconAccount() {
   );
 }
 
+function IconKey() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
+    </svg>
+  );
+}
+
 const NAV_ITEMS = [
-  { title: "Dashboard",         url: "/",          icon: IconDashboard  },
-  { title: "Children",          url: "/kids",      icon: IconChildren   },
-  { title: "Analysis",          url: "/high-risk", icon: IconAnalysis   },
-  { title: "Food Visibility",   url: "/foods",     icon: IconVisibility },
-  { title: "Recipe Visibility", url: "/foods",     icon: IconRecipe     },
+  { title: "Dashboard",   url: "/",         icon: IconDashboard  },
+  { title: "Children",    url: "/kids",     icon: IconChildren   },
+  { title: "Analysis",    url: "/high-risk",icon: IconAnalysis   },
+  { title: "Foods",       url: "/foods",    icon: IconVisibility },
+  { title: "Meal Plans",  url: "/meal-plans", icon: IconRecipe   },
+  { title: "Recipes",     url: "/recipes",  icon: IconRecipe     },
+  { title: "Tokens",      url: "/tokens",   icon: IconKey        },
 ];
 
 function isNavActive(url: string, location: string): boolean {

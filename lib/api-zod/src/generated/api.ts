@@ -121,6 +121,15 @@ export const GetDashboardStatsResponse = zod.object({
       mealCompletionRate: zod.number().optional(),
     }),
   ),
+  totalDoctors: zod.number(),
+  totalFoods: zod.number(),
+  totalRecipes: zod.number(),
+  tokenSummary: zod.object({
+    active: zod.number(),
+    used: zod.number(),
+    expired: zod.number(),
+    total: zod.number(),
+  }),
 });
 
 /**
@@ -635,6 +644,252 @@ export const UpsertKidFoodApprovalBody = zod.object({
 });
 
 export const UpsertKidFoodApprovalResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string().optional(),
+});
+
+/**
+ * @summary List all parent access tokens for the doctor's kids
+ */
+export const ListTokensResponseItem = zod.object({
+  id: zod.number(),
+  kidId: zod.number(),
+  kidName: zod.string(),
+  token: zod.string(),
+  status: zod.enum(["active", "used", "expired", "revoked"]),
+  expiresAt: zod.date(),
+  usedAt: zod.date().nullish(),
+  createdAt: zod.date(),
+});
+export const ListTokensResponse = zod.array(ListTokensResponseItem);
+
+/**
+ * @summary Generate (or regenerate) a parent access token for a kid
+ */
+export const createTokenBodyExpiresInDaysDefault = 90;
+
+export const CreateTokenBody = zod.object({
+  kidId: zod.number(),
+  expiresInDays: zod
+    .number()
+    .default(createTokenBodyExpiresInDaysDefault)
+    .describe("Number of days until the token expires"),
+});
+
+/**
+ * @summary Regenerate a parent token (invalidates old token)
+ */
+export const ResetTokenParams = zod.object({
+  tokenId: zod.coerce.number(),
+});
+
+export const ResetTokenResponse = zod.object({
+  id: zod.number(),
+  kidId: zod.number(),
+  kidName: zod.string(),
+  token: zod.string(),
+  status: zod.enum(["active", "used", "expired", "revoked"]),
+  expiresAt: zod.date(),
+  usedAt: zod.date().nullish(),
+  createdAt: zod.date(),
+});
+
+/**
+ * @summary Revoke and delete a parent token
+ */
+export const RevokeTokenParams = zod.object({
+  tokenId: zod.coerce.number(),
+});
+
+export const RevokeTokenResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string().optional(),
+});
+
+/**
+ * @summary List all recipes for the logged-in doctor
+ */
+export const ListRecipesResponseItem = zod.object({
+  id: zod.number(),
+  doctorId: zod.number(),
+  name: zod.string(),
+  description: zod.string().optional(),
+  category: zod.string(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+  ingredients: zod.array(
+    zod.object({
+      id: zod.number(),
+      recipeId: zod.number(),
+      foodName: zod.string(),
+      portionGrams: zod.number(),
+      unit: zod.string(),
+      carbs: zod.number(),
+      fat: zod.number(),
+      protein: zod.number(),
+      calories: zod.number(),
+    }),
+  ),
+  totalCarbs: zod.number(),
+  totalFat: zod.number(),
+  totalProtein: zod.number(),
+  totalCalories: zod.number(),
+});
+export const ListRecipesResponse = zod.array(ListRecipesResponseItem);
+
+/**
+ * @summary Create a new recipe with ingredients
+ */
+export const createRecipeBodyIngredientsItemUnitDefault = `g`;
+
+export const CreateRecipeBody = zod.object({
+  name: zod.string(),
+  description: zod.string().optional(),
+  category: zod.string().optional(),
+  ingredients: zod
+    .array(
+      zod.object({
+        foodName: zod.string(),
+        portionGrams: zod.number(),
+        unit: zod.string().default(createRecipeBodyIngredientsItemUnitDefault),
+        carbs: zod.number().optional(),
+        fat: zod.number().optional(),
+        protein: zod.number().optional(),
+        calories: zod.number().optional(),
+      }),
+    )
+    .optional(),
+});
+
+/**
+ * @summary Get a single recipe with ingredients
+ */
+export const GetRecipeParams = zod.object({
+  recipeId: zod.coerce.number(),
+});
+
+export const GetRecipeResponse = zod.object({
+  id: zod.number(),
+  doctorId: zod.number(),
+  name: zod.string(),
+  description: zod.string().optional(),
+  category: zod.string(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+  ingredients: zod.array(
+    zod.object({
+      id: zod.number(),
+      recipeId: zod.number(),
+      foodName: zod.string(),
+      portionGrams: zod.number(),
+      unit: zod.string(),
+      carbs: zod.number(),
+      fat: zod.number(),
+      protein: zod.number(),
+      calories: zod.number(),
+    }),
+  ),
+  totalCarbs: zod.number(),
+  totalFat: zod.number(),
+  totalProtein: zod.number(),
+  totalCalories: zod.number(),
+});
+
+/**
+ * @summary Update a recipe and replace its ingredients
+ */
+export const UpdateRecipeParams = zod.object({
+  recipeId: zod.coerce.number(),
+});
+
+export const updateRecipeBodyIngredientsItemUnitDefault = `g`;
+
+export const UpdateRecipeBody = zod.object({
+  name: zod.string().optional(),
+  description: zod.string().optional(),
+  category: zod.string().optional(),
+  ingredients: zod
+    .array(
+      zod.object({
+        foodName: zod.string(),
+        portionGrams: zod.number(),
+        unit: zod.string().default(updateRecipeBodyIngredientsItemUnitDefault),
+        carbs: zod.number().optional(),
+        fat: zod.number().optional(),
+        protein: zod.number().optional(),
+        calories: zod.number().optional(),
+      }),
+    )
+    .optional(),
+});
+
+export const UpdateRecipeResponse = zod.object({
+  id: zod.number(),
+  doctorId: zod.number(),
+  name: zod.string(),
+  description: zod.string().optional(),
+  category: zod.string(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+  ingredients: zod.array(
+    zod.object({
+      id: zod.number(),
+      recipeId: zod.number(),
+      foodName: zod.string(),
+      portionGrams: zod.number(),
+      unit: zod.string(),
+      carbs: zod.number(),
+      fat: zod.number(),
+      protein: zod.number(),
+      calories: zod.number(),
+    }),
+  ),
+  totalCarbs: zod.number(),
+  totalFat: zod.number(),
+  totalProtein: zod.number(),
+  totalCalories: zod.number(),
+});
+
+/**
+ * @summary Delete a recipe and all its ingredients
+ */
+export const DeleteRecipeParams = zod.object({
+  recipeId: zod.coerce.number(),
+});
+
+export const DeleteRecipeResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string().optional(),
+});
+
+/**
+ * @summary Add an ingredient to a recipe
+ */
+export const AddRecipeIngredientParams = zod.object({
+  recipeId: zod.coerce.number(),
+});
+
+export const addRecipeIngredientBodyUnitDefault = `g`;
+
+export const AddRecipeIngredientBody = zod.object({
+  foodName: zod.string(),
+  portionGrams: zod.number(),
+  unit: zod.string().default(addRecipeIngredientBodyUnitDefault),
+  carbs: zod.number().optional(),
+  fat: zod.number().optional(),
+  protein: zod.number().optional(),
+  calories: zod.number().optional(),
+});
+
+/**
+ * @summary Remove an ingredient from a recipe
+ */
+export const DeleteRecipeIngredientParams = zod.object({
+  recipeId: zod.coerce.number(),
+  ingId: zod.coerce.number(),
+});
+
+export const DeleteRecipeIngredientResponse = zod.object({
   success: zod.boolean(),
   message: zod.string().optional(),
 });

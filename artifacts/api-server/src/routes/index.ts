@@ -6,6 +6,8 @@ import kidsRouter from "./kids";
 import foodsRouter from "./foods";
 import mealPlansRouter from "./meal-plans";
 import storageRouter from "./storage";
+import tokensRouter from "./tokens";
+import recipesRouter from "./recipes";
 import { requireAuth } from "../middleware/requireAuth";
 
 const router: IRouter = Router();
@@ -19,6 +21,8 @@ router.use("/dashboard", dashboardRouter);
 router.use("/kids", kidsRouter);
 router.use("/foods", foodsRouter);
 router.use("/meal-plans", mealPlansRouter);
+router.use("/tokens", tokensRouter);
+router.use("/recipes", recipesRouter);
 router.use(storageRouter);
 
 export default router;
