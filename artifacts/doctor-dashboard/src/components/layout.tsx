@@ -118,11 +118,11 @@ const BASE_NAV_ITEMS = [
   { title: "Foods",       url: "/foods",    icon: IconVisibility },
   { title: "Meal Plans",  url: "/meal-plans", icon: IconRecipe   },
   { title: "Recipes",     url: "/recipes",  icon: IconRecipe     },
-  { title: "Tokens",      url: "/tokens",   icon: IconKey        },
 ];
 
 const ADMIN_NAV_ITEMS = [
   ...BASE_NAV_ITEMS,
+  { title: "Tokens",      url: "/tokens",   icon: IconKey        },
   { title: "User Management", url: "/users", icon: IconUsers },
 ];
 
