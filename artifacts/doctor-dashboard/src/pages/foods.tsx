@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
+import { useUpload } from "@workspace/object-storage-web";
 import { useGetFoods, useCreateFood, useUpdateFood, useDeleteFood } from "@workspace/api-client-react";
 import type { CreateFoodRequest, UpdateFoodRequest } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -37,7 +38,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2, Plus, Search, Pencil, Trash2, Flame, Apple, EyeOff } from "lucide-react";
+import { Loader2, Plus, Search, Pencil, Trash2, Flame, Apple, EyeOff, ImageUp, X } from "lucide-react";
 
 type FoodFormData = {
   name: string;
@@ -78,6 +79,18 @@ export default function FoodsPage() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [form, setForm] = useState<FoodFormData>(BLANK_FORM);
   const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { uploadFile, isUploading } = useUpload({
+    onSuccess: (response) => {
+      handleFormChange("imageUrl", response.objectPath);
+      setImagePreview(`/api/storage${response.objectPath}`);
+    },
+    onError: () => {
+      toast({ title: "Image upload failed", variant: "destructive" });
+    },
+  });
 
   const { data: foods, isLoading } = useGetFoods();
   const createFood = useCreateFood();
@@ -102,11 +115,13 @@ export default function FoodsPage() {
   function openAdd() {
     setEditingId(null);
     setForm(BLANK_FORM);
+    setImagePreview(null);
     setDialogOpen(true);
   }
 
   function openEdit(food: { id: number; name: string; category: string; carbs: number; fat: number; protein: number; calories: number; description?: string | null; imageUrl?: string | null; isActive?: boolean | null }) {
     setEditingId(food.id);
+    const imageUrl = food.imageUrl ?? "";
     setForm({
       name: food.name,
       category: food.category,
@@ -115,9 +130,10 @@ export default function FoodsPage() {
       protein: food.protein,
       calories: food.calories,
       description: food.description ?? "",
-      imageUrl: food.imageUrl ?? "",
+      imageUrl,
       isActive: food.isActive !== false,
     });
+    setImagePreview(imageUrl ? (imageUrl.startsWith("/objects/") ? `/api/storage${imageUrl}` : imageUrl) : null);
     setDialogOpen(true);
   }
 
@@ -216,7 +232,7 @@ export default function FoodsPage() {
     );
   }
 
-  const isMutating = createFood.isPending || updateFood.isPending;
+  const isMutating = createFood.isPending || updateFood.isPending || isUploading;
   const canWrite = useCanWrite();
 
   return (
@@ -506,14 +522,66 @@ export default function FoodsPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="food-image-url">Image URL (optional)</Label>
-              <Input
-                id="food-image-url"
-                type="url"
-                placeholder="https://example.com/image.jpg"
-                value={form.imageUrl}
-                onChange={(e) => handleFormChange("imageUrl", e.target.value)}
+              <Label>Food Image (optional)</Label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) uploadFile(file);
+                  e.target.value = "";
+                }}
               />
+              {imagePreview ? (
+                <div className="flex items-center gap-3 rounded-lg border border-slate-200 p-3">
+                  <img
+                    src={imagePreview}
+                    alt="Food preview"
+                    className="h-16 w-16 rounded-md object-cover border border-slate-200"
+                  />
+                  <div className="flex flex-col gap-1.5">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={isUploading}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      {isUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <ImageUp className="h-3.5 w-3.5 mr-1" />}
+                      Change
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-slate-400 hover:text-destructive"
+                      onClick={() => {
+                        handleFormChange("imageUrl", "");
+                        setImagePreview(null);
+                      }}
+                    >
+                      <X className="h-3.5 w-3.5 mr-1" />
+                      Remove
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  disabled={isUploading}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-slate-200 p-6 text-slate-400 transition-colors hover:border-primary/50 hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isUploading ? (
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  ) : (
+                    <ImageUp className="h-6 w-6" />
+                  )}
+                  <span className="text-sm">{isUploading ? "Uploading..." : "Click to upload image"}</span>
+                </button>
+              )}
             </div>
 
             {editingId !== null && (
