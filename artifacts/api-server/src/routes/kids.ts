@@ -910,15 +910,12 @@ router.get("/:kidId/meal-log", async (req, res) => {
       .where(and(eq(mealEntriesTable.kidId, kidId), eq(mealEntriesTable.date, dateStr)))
       .orderBy(asc(mealEntriesTable.mealType), asc(mealEntriesTable.createdAt));
 
-    const grouped: Record<string, typeof entries> = {
-      breakfast: [],
-      lunch: [],
-      dinner: [],
-    };
+    const grouped: Record<string, typeof entries> = {};
 
     for (const entry of entries) {
-      const slot = entry.mealType as keyof typeof grouped;
-      if (grouped[slot]) grouped[slot].push(entry);
+      const slot = entry.mealType;
+      if (!grouped[slot]) grouped[slot] = [];
+      grouped[slot].push(entry);
     }
 
     const toDto = (e: (typeof entries)[number]) => ({
@@ -935,11 +932,14 @@ router.get("/:kidId/meal-log", async (req, res) => {
       protein: e.protein,
     });
 
+    const meals: Record<string, ReturnType<typeof toDto>[]> = {};
+    for (const [slot, items] of Object.entries(grouped)) {
+      meals[slot] = items.map(toDto);
+    }
+
     res.json({
       date: dateStr,
-      breakfast: grouped.breakfast.map(toDto),
-      lunch: grouped.lunch.map(toDto),
-      dinner: grouped.dinner.map(toDto),
+      meals,
     });
   } catch (err) {
     req.log.error({ err }, "Get meal log detail error");

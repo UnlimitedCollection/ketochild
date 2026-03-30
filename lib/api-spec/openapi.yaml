@@ -29,6 +29,8 @@ tags:
     description: User management (admin only)
   - name: Storage
     description: Object storage upload and serving endpoints.
+  - name: mealtypes
+    description: Meal type management
 paths:
   /healthz:
     get:
@@ -991,6 +993,112 @@ paths:
                 $ref: "#/components/schemas/SuccessResponse"
         "404":
           description: Recipe or ingredient not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /meal-types:
+    get:
+      operationId: listMealTypes
+      tags: [mealtypes]
+      summary: List all meal types
+      responses:
+        "200":
+          description: List of meal types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MealTypeItem"
+
+    post:
+      operationId: createMealType
+      tags: [mealtypes]
+      summary: Create a new meal type
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMealTypeRequest"
+      responses:
+        "201":
+          description: Meal type created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealTypeItem"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Duplicate name
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /meal-types/{id}:
+    put:
+      operationId: updateMealType
+      tags: [mealtypes]
+      summary: Update a meal type name
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMealTypeRequest"
+      responses:
+        "200":
+          description: Meal type updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealTypeItem"
+        "404":
+          description: Meal type not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Duplicate name
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      operationId: deleteMealType
+      tags: [mealtypes]
+      summary: Delete a meal type
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Meal type deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "404":
+          description: Meal type not found
           content:
             application/json:
               schema:
@@ -2274,7 +2382,6 @@ components:
           format: date
         mealType:
           type: string
-          enum: [breakfast, lunch, dinner]
         isCompleted:
           type: boolean
         calories:
@@ -2377,7 +2484,6 @@ components:
           format: date
         mealType:
           type: string
-          enum: [breakfast, lunch, dinner]
         isCompleted:
           type: boolean
           default: true
@@ -2407,7 +2513,6 @@ components:
           format: date
         mealType:
           type: string
-          enum: [breakfast, lunch, dinner]
         foodName:
           type: string
         quantity:
@@ -2437,23 +2542,15 @@ components:
         date:
           type: string
           format: date
-        breakfast:
-          type: array
-          items:
-            $ref: "#/components/schemas/MealEntry"
-        lunch:
-          type: array
-          items:
-            $ref: "#/components/schemas/MealEntry"
-        dinner:
-          type: array
-          items:
-            $ref: "#/components/schemas/MealEntry"
+        meals:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              $ref: "#/components/schemas/MealEntry"
       required:
         - date
-        - breakfast
-        - lunch
-        - dinner
+        - meals
 
     KetoneReading:
       type: object
@@ -2628,7 +2725,6 @@ components:
           type: integer
         mealType:
           type: string
-          enum: [breakfast, lunch, dinner]
         foodName:
           type: string
         portionGrams:
@@ -2706,7 +2802,6 @@ components:
       properties:
         mealType:
           type: string
-          enum: [breakfast, lunch, dinner]
         foodName:
           type: string
         portionGrams:
@@ -2747,7 +2842,6 @@ components:
           type: integer
         mealType:
           type: string
-          enum: [breakfast, lunch, dinner]
         foodId:
           type: integer
         foodName:
@@ -2850,7 +2944,6 @@ components:
       properties:
         mealType:
           type: string
-          enum: [breakfast, lunch, dinner]
         foodId:
           type: integer
         foodName:
@@ -3175,3 +3268,28 @@ components:
         role:
           type: string
           enum: [admin, moderator]
+
+    MealTypeItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - createdAt
+
+    CreateMealTypeRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+      required:
+        - name

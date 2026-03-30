@@ -9,6 +9,7 @@ import {
   useDeleteLibraryMealPlanItem,
   getGetLibraryMealPlansQueryKey,
   getGetLibraryMealPlanQueryKey,
+  useListMealTypes,
 } from "@workspace/api-client-react";
 import type { LibraryMealPlan, LibraryMealPlanItem } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -34,16 +35,19 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Loader2, Plus, Search, ClipboardList, Pencil, Trash2, ChevronDown, ChevronUp,
-  Coffee, Sun, Moon, BookOpen, Users, Eye, X,
+  Coffee, Sun, Moon, BookOpen, Users, Eye, X, UtensilsCrossed,
 } from "lucide-react";
 
-type MealType = "breakfast" | "lunch" | "dinner";
+const KNOWN_MEAL_STYLES: Record<string, { icon: typeof Coffee; color: string }> = {
+  breakfast: { icon: Coffee, color: "bg-amber-50 text-amber-600 border-amber-100" },
+  lunch: { icon: Sun, color: "bg-sky-50 text-sky-600 border-sky-100" },
+  dinner: { icon: Moon, color: "bg-indigo-50 text-indigo-600 border-indigo-100" },
+};
+const DEFAULT_MEAL_STYLE = { icon: UtensilsCrossed, color: "bg-slate-50 text-slate-600 border-slate-100" };
 
-const MEAL_CONFIG: { value: MealType; label: string; icon: typeof Coffee; color: string }[] = [
-  { value: "breakfast", label: "Breakfast", icon: Coffee, color: "bg-amber-50 text-amber-600 border-amber-100" },
-  { value: "lunch", label: "Lunch", icon: Sun, color: "bg-sky-50 text-sky-600 border-sky-100" },
-  { value: "dinner", label: "Dinner", icon: Moon, color: "bg-indigo-50 text-indigo-600 border-indigo-100" },
-];
+function getMealStyle(name: string) {
+  return KNOWN_MEAL_STYLES[name.toLowerCase()] ?? DEFAULT_MEAL_STYLE;
+}
 
 export default function MealPlansPage() {
   const [search, setSearch] = useState("");
@@ -52,8 +56,13 @@ export default function MealPlansPage() {
   const [editPlan, setEditPlan] = useState<LibraryMealPlan | null>(null);
   const [deletePlanId, setDeletePlanId] = useState<number | null>(null);
   const [viewPlan, setViewPlan] = useState<LibraryMealPlan | null>(null);
-  const [expandedMeal, setExpandedMeal] = useState<MealType | null>("breakfast");
-  const [addItemMeal, setAddItemMeal] = useState<MealType | null>(null);
+  const [expandedMeal, setExpandedMeal] = useState<string | null>(null);
+  const [addItemMeal, setAddItemMeal] = useState<string | null>(null);
+  const { data: mealTypesData } = useListMealTypes();
+  const mealTypeNames = useMemo(
+    () => (mealTypesData ?? []).map((mt) => mt.name),
+    [mealTypesData]
+  );
 
   const { data: plans, isLoading } = useGetLibraryMealPlans();
   const { data: planDetail, isLoading: detailLoading } = useGetLibraryMealPlan(
@@ -125,7 +134,7 @@ export default function MealPlansPage() {
     );
   }
 
-  function handleAddItem(mealType: MealType, formData: {
+  function handleAddItem(mealType: string, formData: {
     foodName: string; portionGrams: number; unit: string;
     calories: number; carbs: number; fat: number; protein: number; notes: string;
   }) {
@@ -162,12 +171,12 @@ export default function MealPlansPage() {
 
   const canWrite = useCanWrite();
 
-  const getMealItems = (mt: MealType): LibraryMealPlanItem[] =>
-    planDetail?.items?.filter((i) => i.mealType === mt) ?? [];
+  const getMealItems = (mt: string): LibraryMealPlanItem[] =>
+    planDetail?.items?.filter((i) => i.mealType.toLowerCase() === mt.toLowerCase()) ?? [];
 
-  const totalNutrition = MEAL_CONFIG.reduce(
-    (acc, { value }) => {
-      const items = getMealItems(value);
+  const totalNutrition = mealTypeNames.reduce(
+    (acc, name) => {
+      const items = getMealItems(name);
       return items.reduce(
         (a, i) => ({
           calories: a.calories + (i.calories ?? 0),
@@ -370,23 +379,24 @@ export default function MealPlansPage() {
               </Card>
 
               {/* Meal sections */}
-              {MEAL_CONFIG.map(({ value: mealType, label, icon: Icon, color }) => {
-                const items = getMealItems(mealType);
+              {mealTypeNames.map((mealTypeName) => {
+                const { icon: Icon, color } = getMealStyle(mealTypeName);
+                const items = getMealItems(mealTypeName);
                 const mealCals = items.reduce((a, i) => a + (i.calories ?? 0), 0);
-                const isExpanded = expandedMeal === mealType;
+                const isExpanded = expandedMeal === mealTypeName;
                 return (
-                  <Card key={mealType} className="border border-slate-200">
+                  <Card key={mealTypeName} className="border border-slate-200">
                     <CardHeader className="py-3 px-4">
                       <div className="flex items-center justify-between">
                         <button
                           className="flex items-center gap-3 flex-1 text-left"
-                          onClick={() => setExpandedMeal(isExpanded ? null : mealType)}
+                          onClick={() => setExpandedMeal(isExpanded ? null : mealTypeName)}
                         >
                           <div className={`flex h-8 w-8 items-center justify-center rounded-lg border ${color}`}>
                             <Icon className="h-4 w-4" />
                           </div>
                           <div>
-                            <p className="font-medium text-slate-800 text-sm">{label}</p>
+                            <p className="font-medium text-slate-800 text-sm">{mealTypeName}</p>
                             <p className="text-xs text-slate-400">
                               {items.length} item{items.length !== 1 ? "s" : ""} · {Math.round(mealCals)} kcal
                             </p>
@@ -400,7 +410,7 @@ export default function MealPlansPage() {
                             variant="outline"
                             size="sm"
                             className="h-7 text-xs gap-1"
-                            onClick={() => { setAddItemMeal(mealType); setExpandedMeal(mealType); }}
+                            onClick={() => { setAddItemMeal(mealTypeName); setExpandedMeal(mealTypeName); }}
                           >
                             <Plus className="h-3 w-3" />Add Food
                           </Button>
@@ -409,10 +419,10 @@ export default function MealPlansPage() {
                     </CardHeader>
                     {isExpanded && (
                       <CardContent className="pt-0 px-4 pb-4 space-y-3">
-                        {addItemMeal === mealType && (
+                        {addItemMeal === mealTypeName && (
                           <AddItemForm
-                            label={label}
-                            onSubmit={(data) => handleAddItem(mealType, data)}
+                            label={mealTypeName}
+                            onSubmit={(data) => handleAddItem(mealTypeName, data)}
                             onCancel={() => setAddItemMeal(null)}
                             isPending={addItem.isPending}
                           />
@@ -520,6 +530,11 @@ function MealPlanDetailDialog({
   const { data: detail, isLoading } = useGetLibraryMealPlan(plan.id, {
     query: { queryKey: getGetLibraryMealPlanQueryKey(plan.id), enabled: true },
   });
+  const { data: mealTypesData } = useListMealTypes();
+  const mealTypeNames = useMemo(
+    () => (mealTypesData ?? []).map((mt) => mt.name),
+    [mealTypesData]
+  );
 
   const totalNutrition = detail?.items
     ? detail.items.reduce(
@@ -575,16 +590,17 @@ function MealPlanDetailDialog({
                 </div>
               )}
 
-              {MEAL_CONFIG.map(({ value: mealType, label, icon: Icon, color }) => {
-                const items = detail.items?.filter((i) => i.mealType === mealType) ?? [];
+              {mealTypeNames.map((mealTypeName) => {
+                const { icon: Icon, color } = getMealStyle(mealTypeName);
+                const items = detail.items?.filter((i) => i.mealType.toLowerCase() === mealTypeName.toLowerCase()) ?? [];
                 if (items.length === 0) return null;
                 return (
-                  <div key={mealType}>
+                  <div key={mealTypeName}>
                     <div className="flex items-center gap-2 mb-2">
                       <div className={`flex h-7 w-7 items-center justify-center rounded-lg border ${color}`}>
                         <Icon className="h-3.5 w-3.5" />
                       </div>
-                      <h3 className="text-sm font-semibold text-slate-700">{label}</h3>
+                      <h3 className="text-sm font-semibold text-slate-700">{mealTypeName}</h3>
                       <span className="text-xs text-slate-400">({items.length} item{items.length !== 1 ? "s" : ""})</span>
                     </div>
                     <div className="space-y-1.5 pl-9">

@@ -20485,27 +20485,27 @@ var require_router = __commonJS({
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var methods = METHODS.map((method) => method.toLowerCase());
-    module.exports = Router13;
+    module.exports = Router14;
     module.exports.Route = Route;
-    function Router13(options) {
-      if (!(this instanceof Router13)) {
-        return new Router13(options);
+    function Router14(options) {
+      if (!(this instanceof Router14)) {
+        return new Router14(options);
       }
       const opts = options || {};
-      function router13(req, res, next) {
-        router13.handle(req, res, next);
+      function router14(req, res, next) {
+        router14.handle(req, res, next);
       }
-      Object.setPrototypeOf(router13, this);
-      router13.caseSensitive = opts.caseSensitive;
-      router13.mergeParams = opts.mergeParams;
-      router13.params = {};
-      router13.strict = opts.strict;
-      router13.stack = [];
-      return router13;
+      Object.setPrototypeOf(router14, this);
+      router14.caseSensitive = opts.caseSensitive;
+      router14.mergeParams = opts.mergeParams;
+      router14.params = {};
+      router14.strict = opts.strict;
+      router14.stack = [];
+      return router14;
     }
-    Router13.prototype = function() {
+    Router14.prototype = function() {
     };
-    Router13.prototype.param = function param(name, fn) {
+    Router14.prototype.param = function param(name, fn) {
       if (!name) {
         throw new TypeError("argument name is required");
       }
@@ -20525,7 +20525,7 @@ var require_router = __commonJS({
       params.push(fn);
       return this;
     };
-    Router13.prototype.handle = function handle(req, res, callback) {
+    Router14.prototype.handle = function handle(req, res, callback) {
       if (!callback) {
         throw new TypeError("argument callback is required");
       }
@@ -20652,7 +20652,7 @@ var require_router = __commonJS({
         }
       }
     };
-    Router13.prototype.use = function use(handler) {
+    Router14.prototype.use = function use(handler) {
       let offset = 0;
       let path = "/";
       if (typeof handler !== "function") {
@@ -20685,7 +20685,7 @@ var require_router = __commonJS({
       }
       return this;
     };
-    Router13.prototype.route = function route(path) {
+    Router14.prototype.route = function route(path) {
       const route2 = new Route(path);
       const layer = new Layer(path, {
         sensitive: this.caseSensitive,
@@ -20700,7 +20700,7 @@ var require_router = __commonJS({
       return route2;
     };
     methods.concat("all").forEach(function(method) {
-      Router13.prototype[method] = function(path) {
+      Router14.prototype[method] = function(path) {
         const route = this.route(path);
         route[method].apply(route, slice.call(arguments, 1));
         return this;
@@ -20883,13 +20883,13 @@ var require_application = __commonJS({
     var compileTrust = require_utils3().compileTrust;
     var resolve = __require("node:path").resolve;
     var once = require_once();
-    var Router13 = require_router();
+    var Router14 = require_router();
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var app2 = exports = module.exports = {};
     var trustProxyDefaultSymbol = "@@symbol:trust_proxy_default";
     app2.init = function init() {
-      var router13 = null;
+      var router14 = null;
       this.cache = /* @__PURE__ */ Object.create(null);
       this.engines = /* @__PURE__ */ Object.create(null);
       this.settings = /* @__PURE__ */ Object.create(null);
@@ -20898,13 +20898,13 @@ var require_application = __commonJS({
         configurable: true,
         enumerable: true,
         get: function getrouter() {
-          if (router13 === null) {
-            router13 = new Router13({
+          if (router14 === null) {
+            router14 = new Router14({
               caseSensitive: this.enabled("case sensitive routing"),
               strict: this.enabled("strict routing")
             });
           }
-          return router13;
+          return router14;
         }
       });
     };
@@ -20975,15 +20975,15 @@ var require_application = __commonJS({
       if (fns.length === 0) {
         throw new TypeError("app.use() requires a middleware function");
       }
-      var router13 = this.router;
+      var router14 = this.router;
       fns.forEach(function(fn2) {
         if (!fn2 || !fn2.handle || !fn2.set) {
-          return router13.use(path, fn2);
+          return router14.use(path, fn2);
         }
         debug(".use app under %s", path);
         fn2.mountpath = path;
         fn2.parent = this;
-        router13.use(path, function mounted_app(req, res, next) {
+        router14.use(path, function mounted_app(req, res, next) {
           var orig = req.app;
           fn2.handle(req, res, function(err) {
             Object.setPrototypeOf(req, orig.request);
@@ -23510,7 +23510,7 @@ var require_express = __commonJS({
     var EventEmitter = __require("node:events").EventEmitter;
     var mixin = require_merge_descriptors();
     var proto = require_application();
-    var Router13 = require_router();
+    var Router14 = require_router();
     var req = require_request();
     var res = require_response();
     exports = module.exports = createApplication;
@@ -23532,8 +23532,8 @@ var require_express = __commonJS({
     exports.application = proto;
     exports.request = req;
     exports.response = res;
-    exports.Route = Router13.Route;
-    exports.Router = Router13;
+    exports.Route = Router14.Route;
+    exports.Router = Router14;
     exports.json = bodyParser.json;
     exports.raw = bodyParser.raw;
     exports.static = require_serve_static();
@@ -34886,13 +34886,13 @@ var require_lib5 = __commonJS({
 });
 
 // src/app.ts
-var import_express13 = __toESM(require_express2(), 1);
+var import_express14 = __toESM(require_express2(), 1);
 var import_cors = __toESM(require_lib3(), 1);
 var import_pino_http = __toESM(require_logger(), 1);
 var import_express_session = __toESM(require_express_session(), 1);
 
 // src/routes/index.ts
-var import_express12 = __toESM(require_express2(), 1);
+var import_express13 = __toESM(require_express2(), 1);
 
 // src/routes/health.ts
 var import_express = __toESM(require_express2(), 1);
@@ -39344,7 +39344,7 @@ var GetKidMealLogsResponseItem = objectType({
   id: numberType(),
   kidId: numberType(),
   date: dateType(),
-  mealType: enumType(["breakfast", "lunch", "dinner"]),
+  mealType: stringType(),
   isCompleted: booleanType(),
   calories: numberType().optional(),
   carbs: numberType().optional(),
@@ -39361,7 +39361,7 @@ var AddMealLogParams = objectType({
 var addMealLogBodyIsCompletedDefault = true;
 var AddMealLogBody = objectType({
   date: dateType(),
-  mealType: enumType(["breakfast", "lunch", "dinner"]),
+  mealType: stringType(),
   isCompleted: booleanType().default(addMealLogBodyIsCompletedDefault),
   calories: numberType().optional(),
   carbs: numberType().optional(),
@@ -39388,7 +39388,7 @@ var UpdateMealLogImageResponse = objectType({
   id: numberType(),
   kidId: numberType(),
   date: dateType(),
-  mealType: enumType(["breakfast", "lunch", "dinner"]),
+  mealType: stringType(),
   isCompleted: booleanType(),
   calories: numberType().optional(),
   carbs: numberType().optional(),
@@ -39486,10 +39486,9 @@ var ListRecipesResponseItem = objectType({
   totalCalories: numberType()
 });
 var ListRecipesResponse = arrayType(ListRecipesResponseItem);
-var createRecipeBodyDescriptionMax = 1e3;
 var CreateRecipeBody = objectType({
   name: stringType(),
-  description: stringType().max(createRecipeBodyDescriptionMax).optional(),
+  description: stringType().optional(),
   category: stringType().optional(),
   ingredients: arrayType(
     objectType({
@@ -39536,10 +39535,9 @@ var GetRecipeResponse = objectType({
 var UpdateRecipeParams = objectType({
   recipeId: coerce.number()
 });
-var updateRecipeBodyDescriptionMax = 1e3;
 var UpdateRecipeBody = objectType({
   name: stringType().optional(),
-  description: stringType().max(updateRecipeBodyDescriptionMax).optional(),
+  description: stringType().optional(),
   category: stringType().optional(),
   ingredients: arrayType(
     objectType({
@@ -39605,6 +39603,35 @@ var DeleteRecipeIngredientParams = objectType({
   ingId: coerce.number()
 });
 var DeleteRecipeIngredientResponse = objectType({
+  success: booleanType(),
+  message: stringType().optional()
+});
+var ListMealTypesResponseItem = objectType({
+  id: numberType(),
+  name: stringType(),
+  createdAt: dateType()
+});
+var ListMealTypesResponse = arrayType(ListMealTypesResponseItem);
+var createMealTypeBodyNameMax = 100;
+var CreateMealTypeBody = objectType({
+  name: stringType().min(1).max(createMealTypeBodyNameMax)
+});
+var UpdateMealTypeParams = objectType({
+  id: coerce.number()
+});
+var updateMealTypeBodyNameMax = 100;
+var UpdateMealTypeBody = objectType({
+  name: stringType().min(1).max(updateMealTypeBodyNameMax)
+});
+var UpdateMealTypeResponse = objectType({
+  id: numberType(),
+  name: stringType(),
+  createdAt: dateType()
+});
+var DeleteMealTypeParams = objectType({
+  id: coerce.number()
+});
+var DeleteMealTypeResponse = objectType({
   success: booleanType(),
   message: stringType().optional()
 });
@@ -39689,50 +39716,23 @@ var GetKidMealLogQueryParams = objectType({
 });
 var GetKidMealLogResponse = objectType({
   date: dateType(),
-  breakfast: arrayType(
-    objectType({
-      id: numberType(),
-      kidId: numberType(),
-      date: dateType(),
-      mealType: enumType(["breakfast", "lunch", "dinner"]),
-      foodName: stringType(),
-      quantity: numberType(),
-      unit: stringType(),
-      calories: numberType().optional(),
-      carbs: numberType().optional(),
-      fat: numberType().optional(),
-      protein: numberType().optional()
-    })
-  ),
-  lunch: arrayType(
-    objectType({
-      id: numberType(),
-      kidId: numberType(),
-      date: dateType(),
-      mealType: enumType(["breakfast", "lunch", "dinner"]),
-      foodName: stringType(),
-      quantity: numberType(),
-      unit: stringType(),
-      calories: numberType().optional(),
-      carbs: numberType().optional(),
-      fat: numberType().optional(),
-      protein: numberType().optional()
-    })
-  ),
-  dinner: arrayType(
-    objectType({
-      id: numberType(),
-      kidId: numberType(),
-      date: dateType(),
-      mealType: enumType(["breakfast", "lunch", "dinner"]),
-      foodName: stringType(),
-      quantity: numberType(),
-      unit: stringType(),
-      calories: numberType().optional(),
-      carbs: numberType().optional(),
-      fat: numberType().optional(),
-      protein: numberType().optional()
-    })
+  meals: recordType(
+    stringType(),
+    arrayType(
+      objectType({
+        id: numberType(),
+        kidId: numberType(),
+        date: dateType(),
+        mealType: stringType(),
+        foodName: stringType(),
+        quantity: numberType(),
+        unit: stringType(),
+        calories: numberType().optional(),
+        carbs: numberType().optional(),
+        fat: numberType().optional(),
+        protein: numberType().optional()
+      })
+    )
   )
 });
 var GetKidKetoneReadingsParams = objectType({
@@ -39787,10 +39787,9 @@ var GetLibraryMealPlansResponseItem = objectType({
 var GetLibraryMealPlansResponse = arrayType(
   GetLibraryMealPlansResponseItem
 );
-var createLibraryMealPlanBodyDescriptionMax = 1e3;
 var CreateLibraryMealPlanBody = objectType({
   name: stringType(),
-  description: stringType().max(createLibraryMealPlanBodyDescriptionMax).optional(),
+  description: stringType().optional(),
   targetPhase: numberType().optional()
 });
 var GetLibraryMealPlanParams = objectType({
@@ -39808,7 +39807,7 @@ var GetLibraryMealPlanResponse = objectType({
     objectType({
       id: numberType(),
       planId: numberType(),
-      mealType: enumType(["breakfast", "lunch", "dinner"]),
+      mealType: stringType(),
       foodName: stringType(),
       portionGrams: numberType(),
       unit: stringType(),
@@ -39823,10 +39822,9 @@ var GetLibraryMealPlanResponse = objectType({
 var UpdateLibraryMealPlanParams = objectType({
   planId: coerce.number()
 });
-var updateLibraryMealPlanBodyDescriptionMax = 1e3;
 var UpdateLibraryMealPlanBody = objectType({
   name: stringType().optional(),
-  description: stringType().max(updateLibraryMealPlanBodyDescriptionMax).optional(),
+  description: stringType().optional(),
   targetPhase: numberType().optional()
 });
 var UpdateLibraryMealPlanResponse = objectType({
@@ -39850,7 +39848,7 @@ var AddLibraryMealPlanItemParams = objectType({
 });
 var addLibraryMealPlanItemBodyUnitDefault = `g`;
 var AddLibraryMealPlanItemBody = objectType({
-  mealType: enumType(["breakfast", "lunch", "dinner"]),
+  mealType: stringType(),
   foodName: stringType(),
   portionGrams: numberType(),
   unit: stringType().default(addLibraryMealPlanItemBodyUnitDefault),
@@ -39883,7 +39881,7 @@ var GetKidAssignedMealPlanResponse = objectType({
     objectType({
       id: numberType(),
       planId: numberType(),
-      mealType: enumType(["breakfast", "lunch", "dinner"]),
+      mealType: stringType(),
       foodName: stringType(),
       portionGrams: numberType(),
       unit: stringType(),
@@ -39923,7 +39921,6 @@ var GetFoodsResponseItem = objectType({
   isActive: booleanType()
 });
 var GetFoodsResponse = arrayType(GetFoodsResponseItem);
-var createFoodBodyDescriptionMax = 1e3;
 var CreateFoodBody = objectType({
   name: stringType(),
   category: stringType(),
@@ -39932,7 +39929,7 @@ var CreateFoodBody = objectType({
   protein: numberType(),
   calories: numberType(),
   imageUrl: stringType().optional(),
-  description: stringType().max(createFoodBodyDescriptionMax).optional(),
+  description: stringType().optional(),
   indicator: enumType(["vegi", "fruit", "non-vegi", "recipe"]).optional()
 });
 var GetKidMealPlansParams = objectType({
@@ -39951,10 +39948,9 @@ var GetKidMealPlansResponse = arrayType(GetKidMealPlansResponseItem);
 var CreateKidMealPlanParams = objectType({
   kidId: coerce.number()
 });
-var createKidMealPlanBodyDescriptionMax = 1e3;
 var CreateKidMealPlanBody = objectType({
   name: stringType(),
-  description: stringType().max(createKidMealPlanBodyDescriptionMax).optional(),
+  description: stringType().optional(),
   isActive: booleanType().optional()
 });
 var GetKidMealPlanParams = objectType({
@@ -39973,7 +39969,7 @@ var GetKidMealPlanResponse = objectType({
     objectType({
       id: numberType(),
       planId: numberType(),
-      mealType: enumType(["breakfast", "lunch", "dinner"]),
+      mealType: stringType(),
       foodId: numberType(),
       foodName: stringType(),
       portionGrams: numberType(),
@@ -39989,10 +39985,9 @@ var UpdateKidMealPlanParams = objectType({
   kidId: coerce.number(),
   planId: coerce.number()
 });
-var updateKidMealPlanBodyDescriptionMax = 1e3;
 var UpdateKidMealPlanBody = objectType({
   name: stringType().optional(),
-  description: stringType().max(updateKidMealPlanBodyDescriptionMax).optional(),
+  description: stringType().optional(),
   isActive: booleanType().optional()
 });
 var UpdateKidMealPlanResponse = objectType({
@@ -40017,7 +40012,7 @@ var AddMealPlanItemParams = objectType({
   planId: coerce.number()
 });
 var AddMealPlanItemBody = objectType({
-  mealType: enumType(["breakfast", "lunch", "dinner"]),
+  mealType: stringType(),
   foodId: numberType(),
   foodName: stringType(),
   portionGrams: numberType(),
@@ -40055,7 +40050,6 @@ var GetFoodResponse = objectType({
 var UpdateFoodParams = objectType({
   foodId: coerce.number()
 });
-var updateFoodBodyDescriptionMax = 1e3;
 var UpdateFoodBody = objectType({
   name: stringType().optional(),
   category: stringType().optional(),
@@ -40064,7 +40058,7 @@ var UpdateFoodBody = objectType({
   protein: numberType().optional(),
   calories: numberType().optional(),
   imageUrl: stringType().optional(),
-  description: stringType().max(updateFoodBodyDescriptionMax).optional(),
+  description: stringType().optional(),
   indicator: enumType(["vegi", "fruit", "non-vegi", "recipe"]).optional(),
   isActive: booleanType().optional()
 });
@@ -47122,6 +47116,7 @@ __export(schema_exports, {
   mealLogsTable: () => mealLogsTable,
   mealPlanItemsTable: () => mealPlanItemsTable,
   mealPlansTable: () => mealPlansTable,
+  mealTypesTable: () => mealTypesTable,
   medicalSettingsTable: () => medicalSettingsTable,
   notesTable: () => notesTable,
   parentTokensTable: () => parentTokensTable,
@@ -58739,6 +58734,13 @@ var recipeIngredientsTable = pgTable("recipe_ingredients", {
   calories: real("calories").notNull().default(0)
 });
 
+// ../../lib/db/src/schema/meal-types.ts
+var mealTypesTable = pgTable("meal_types", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
 // ../../lib/db/src/index.ts
 var { Pool: Pool3 } = esm_default;
 if (!process.env.DATABASE_URL) {
@@ -61633,14 +61635,11 @@ router5.get("/:kidId/meal-log", async (req, res) => {
       return;
     }
     const entries = await db.select().from(mealEntriesTable).where(and(eq(mealEntriesTable.kidId, kidId), eq(mealEntriesTable.date, dateStr))).orderBy(asc(mealEntriesTable.mealType), asc(mealEntriesTable.createdAt));
-    const grouped = {
-      breakfast: [],
-      lunch: [],
-      dinner: []
-    };
+    const grouped = {};
     for (const entry of entries) {
       const slot = entry.mealType;
-      if (grouped[slot]) grouped[slot].push(entry);
+      if (!grouped[slot]) grouped[slot] = [];
+      grouped[slot].push(entry);
     }
     const toDto = (e) => ({
       id: e.id,
@@ -61655,11 +61654,13 @@ router5.get("/:kidId/meal-log", async (req, res) => {
       fat: e.fat,
       protein: e.protein
     });
+    const meals = {};
+    for (const [slot, items] of Object.entries(grouped)) {
+      meals[slot] = items.map(toDto);
+    }
     res.json({
       date: dateStr,
-      breakfast: grouped.breakfast.map(toDto),
-      lunch: grouped.lunch.map(toDto),
-      dinner: grouped.dinner.map(toDto)
+      meals
     });
   } catch (err) {
     req.log.error({ err }, "Get meal log detail error");
@@ -62934,9 +62935,88 @@ router10.delete("/:recipeId/ingredients/:ingId", async (req, res) => {
 });
 var recipes_default = router10;
 
-// src/routes/users.ts
+// src/routes/meal-types.ts
 var import_express11 = __toESM(require_express2(), 1);
 var router11 = (0, import_express11.Router)();
+router11.get("/", async (req, res) => {
+  try {
+    const types3 = await db.select().from(mealTypesTable).orderBy(asc(mealTypesTable.id));
+    res.json(types3);
+  } catch (err) {
+    req.log.error({ err }, "List meal types error");
+    res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
+  }
+});
+router11.post("/", async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name || typeof name !== "string" || !name.trim()) {
+      res.status(400).json({ error: "INVALID_INPUT", message: "Name is required" });
+      return;
+    }
+    const [created] = await db.insert(mealTypesTable).values({ name: name.trim() }).returning();
+    res.status(201).json(created);
+  } catch (err) {
+    const dbErr = err;
+    if (dbErr?.code === "23505") {
+      res.status(409).json({ error: "DUPLICATE", message: "A meal type with that name already exists" });
+      return;
+    }
+    req.log.error({ err }, "Create meal type error");
+    res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
+  }
+});
+router11.put("/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id) || id <= 0) {
+      res.status(400).json({ error: "INVALID_INPUT", message: "Invalid meal type ID" });
+      return;
+    }
+    const { name } = req.body;
+    if (!name || typeof name !== "string" || !name.trim()) {
+      res.status(400).json({ error: "INVALID_INPUT", message: "Name is required" });
+      return;
+    }
+    const [updated] = await db.update(mealTypesTable).set({ name: name.trim() }).where(eq(mealTypesTable.id, id)).returning();
+    if (!updated) {
+      res.status(404).json({ error: "NOT_FOUND", message: "Meal type not found" });
+      return;
+    }
+    res.json(updated);
+  } catch (err) {
+    const dbErr = err;
+    if (dbErr?.code === "23505") {
+      res.status(409).json({ error: "DUPLICATE", message: "A meal type with that name already exists" });
+      return;
+    }
+    req.log.error({ err }, "Update meal type error");
+    res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
+  }
+});
+router11.delete("/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id) || id <= 0) {
+      res.status(400).json({ error: "INVALID_INPUT", message: "Invalid meal type ID" });
+      return;
+    }
+    const [deleted] = await db.delete(mealTypesTable).where(eq(mealTypesTable.id, id)).returning();
+    if (!deleted) {
+      res.status(404).json({ error: "NOT_FOUND", message: "Meal type not found" });
+      return;
+    }
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error({ err }, "Delete meal type error");
+    res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
+  }
+});
+var meal_types_default = router11;
+
+// src/routes/users.ts
+var import_express12 = __toESM(require_express2(), 1);
+var router12 = (0, import_express12.Router)();
 var CreateUserBody2 = external_exports.object({
   username: external_exports.string().min(3).max(100),
   password: external_exports.string().min(6),
@@ -62970,7 +63050,7 @@ function mapUser(u) {
     createdAt: u.createdAt.toISOString()
   };
 }
-router11.get("/", async (req, res) => {
+router12.get("/", async (req, res) => {
   try {
     const users = await db.select().from(doctorsTable).orderBy(doctorsTable.createdAt);
     res.json(users.map(mapUser));
@@ -62979,7 +63059,7 @@ router11.get("/", async (req, res) => {
     res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
   }
 });
-router11.post("/", async (req, res) => {
+router12.post("/", async (req, res) => {
   const parsed = CreateUserBody2.safeParse(req.body);
   if (!parsed.success) {
     const first = parsed.error.issues[0];
@@ -63006,7 +63086,7 @@ router11.post("/", async (req, res) => {
     res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
   }
 });
-router11.put("/:userId", async (req, res) => {
+router12.put("/:userId", async (req, res) => {
   const userId = parseInt(req.params.userId);
   if (isNaN(userId)) {
     res.status(400).json({ error: "BAD_REQUEST", message: "Invalid user ID" });
@@ -63068,7 +63148,7 @@ router11.put("/:userId", async (req, res) => {
     res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
   }
 });
-router11.delete("/:userId", async (req, res) => {
+router12.delete("/:userId", async (req, res) => {
   const userId = parseInt(req.params.userId);
   const requestingId = req.session.doctorId;
   if (isNaN(userId)) {
@@ -63099,7 +63179,7 @@ router11.delete("/:userId", async (req, res) => {
     res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
   }
 });
-var users_default = router11;
+var users_default = router12;
 
 // src/middleware/requireAuth.ts
 function requireAuth(req, res, next) {
@@ -63129,21 +63209,22 @@ function restrictWriteForModerator(req, res, next) {
 }
 
 // src/routes/index.ts
-var router12 = (0, import_express12.Router)();
-router12.use(health_default);
-router12.use("/auth", auth_default);
-router12.use(requireAuth);
-router12.use(restrictWriteForModerator);
-router12.use("/dashboard", dashboard_default);
-router12.use("/analytics", analytics_default);
-router12.use("/kids", kids_default);
-router12.use("/foods", foods_default);
-router12.use("/meal-plans", meal_plans_default);
-router12.use("/tokens", tokens_default);
-router12.use("/recipes", recipes_default);
-router12.use(storage_default);
-router12.use("/users", requireAdmin, users_default);
-var routes_default = router12;
+var router13 = (0, import_express13.Router)();
+router13.use(health_default);
+router13.use("/auth", auth_default);
+router13.use(requireAuth);
+router13.use(restrictWriteForModerator);
+router13.use("/dashboard", dashboard_default);
+router13.use("/analytics", analytics_default);
+router13.use("/kids", kids_default);
+router13.use("/foods", foods_default);
+router13.use("/meal-plans", meal_plans_default);
+router13.use("/tokens", tokens_default);
+router13.use("/recipes", recipes_default);
+router13.use("/meal-types", meal_types_default);
+router13.use(storage_default);
+router13.use("/users", requireAdmin, users_default);
+var routes_default = router13;
 
 // src/lib/logger.ts
 var import_pino = __toESM(require_pino(), 1);
@@ -63169,7 +63250,7 @@ var sessionSecret = process.env.SESSION_SECRET;
 if (!sessionSecret && isProduction2) {
   throw new Error("SESSION_SECRET environment variable is required in production but was not set.");
 }
-var app = (0, import_express13.default)();
+var app = (0, import_express14.default)();
 app.set("trust proxy", 1);
 app.use(
   (0, import_pino_http.default)({
@@ -63211,8 +63292,8 @@ app.use(
     credentials: true
   })
 );
-app.use(import_express13.default.json());
-app.use(import_express13.default.urlencoded({ extended: true }));
+app.use(import_express14.default.json());
+app.use(import_express14.default.urlencoded({ extended: true }));
 app.use(
   (0, import_express_session.default)({
     secret: sessionSecret ?? "dev-only-insecure-secret-change-in-production",

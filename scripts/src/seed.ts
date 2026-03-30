@@ -15,6 +15,7 @@ import {
   mealEntriesTable,
   ketoneReadingsTable,
   kidFoodApprovalsTable,
+  mealTypesTable,
 } from "@workspace/db";
 import { eq, inArray } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -172,6 +173,18 @@ async function seed() {
     console.log(`Foods seeded: ${foods.length}`);
   } else {
     console.log(`Foods already seeded (${existingFoodCount.length} found), skipping.`);
+  }
+
+  // ── 3b. Seed default meal types ────────────────────────────────────────────
+  const existingMealTypes = await db.select().from(mealTypesTable);
+  if (existingMealTypes.length === 0) {
+    const defaultMealTypes = ["Breakfast", "Lunch", "Dinner"];
+    for (const name of defaultMealTypes) {
+      await db.insert(mealTypesTable).values({ name }).onConflictDoNothing();
+    }
+    console.log(`Meal types seeded: ${defaultMealTypes.length}`);
+  } else {
+    console.log(`Meal types already seeded (${existingMealTypes.length} found), skipping.`);
   }
 
   // ── 4. Seed 5 library meal plans ───────────────────────────────────────────

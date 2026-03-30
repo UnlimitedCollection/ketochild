@@ -567,7 +567,7 @@ export const GetKidMealLogsResponseItem = zod.object({
   id: zod.number(),
   kidId: zod.number(),
   date: zod.date(),
-  mealType: zod.enum(["breakfast", "lunch", "dinner"]),
+  mealType: zod.string(),
   isCompleted: zod.boolean(),
   calories: zod.number().optional(),
   carbs: zod.number().optional(),
@@ -590,7 +590,7 @@ export const addMealLogBodyIsCompletedDefault = true;
 
 export const AddMealLogBody = zod.object({
   date: zod.date(),
-  mealType: zod.enum(["breakfast", "lunch", "dinner"]),
+  mealType: zod.string(),
   isCompleted: zod.boolean().default(addMealLogBodyIsCompletedDefault),
   calories: zod.number().optional(),
   carbs: zod.number().optional(),
@@ -631,7 +631,7 @@ export const UpdateMealLogImageResponse = zod.object({
   id: zod.number(),
   kidId: zod.number(),
   date: zod.date(),
-  mealType: zod.enum(["breakfast", "lunch", "dinner"]),
+  mealType: zod.string(),
   isCompleted: zod.boolean(),
   calories: zod.number().optional(),
   carbs: zod.number().optional(),
@@ -772,11 +772,9 @@ export const ListRecipesResponse = zod.array(ListRecipesResponseItem);
 /**
  * @summary Create a new recipe with ingredients
  */
-export const createRecipeBodyDescriptionMax = 1000;
-
 export const CreateRecipeBody = zod.object({
   name: zod.string(),
-  description: zod.string().max(createRecipeBodyDescriptionMax).optional(),
+  description: zod.string().optional(),
   category: zod.string().optional(),
   ingredients: zod
     .array(
@@ -841,11 +839,9 @@ export const UpdateRecipeParams = zod.object({
   recipeId: zod.coerce.number(),
 });
 
-export const updateRecipeBodyDescriptionMax = 1000;
-
 export const UpdateRecipeBody = zod.object({
   name: zod.string().optional(),
-  description: zod.string().max(updateRecipeBodyDescriptionMax).optional(),
+  description: zod.string().optional(),
   category: zod.string().optional(),
   ingredients: zod
     .array(
@@ -941,6 +937,56 @@ export const DeleteRecipeIngredientParams = zod.object({
 });
 
 export const DeleteRecipeIngredientResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string().optional(),
+});
+
+/**
+ * @summary List all meal types
+ */
+export const ListMealTypesResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  createdAt: zod.date(),
+});
+export const ListMealTypesResponse = zod.array(ListMealTypesResponseItem);
+
+/**
+ * @summary Create a new meal type
+ */
+export const createMealTypeBodyNameMax = 100;
+
+export const CreateMealTypeBody = zod.object({
+  name: zod.string().min(1).max(createMealTypeBodyNameMax),
+});
+
+/**
+ * @summary Update a meal type name
+ */
+export const UpdateMealTypeParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const updateMealTypeBodyNameMax = 100;
+
+export const UpdateMealTypeBody = zod.object({
+  name: zod.string().min(1).max(updateMealTypeBodyNameMax),
+});
+
+export const UpdateMealTypeResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  createdAt: zod.date(),
+});
+
+/**
+ * @summary Delete a meal type
+ */
+export const DeleteMealTypeParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const DeleteMealTypeResponse = zod.object({
   success: zod.boolean(),
   message: zod.string().optional(),
 });
@@ -1073,50 +1119,23 @@ export const GetKidMealLogQueryParams = zod.object({
 
 export const GetKidMealLogResponse = zod.object({
   date: zod.date(),
-  breakfast: zod.array(
-    zod.object({
-      id: zod.number(),
-      kidId: zod.number(),
-      date: zod.date(),
-      mealType: zod.enum(["breakfast", "lunch", "dinner"]),
-      foodName: zod.string(),
-      quantity: zod.number(),
-      unit: zod.string(),
-      calories: zod.number().optional(),
-      carbs: zod.number().optional(),
-      fat: zod.number().optional(),
-      protein: zod.number().optional(),
-    }),
-  ),
-  lunch: zod.array(
-    zod.object({
-      id: zod.number(),
-      kidId: zod.number(),
-      date: zod.date(),
-      mealType: zod.enum(["breakfast", "lunch", "dinner"]),
-      foodName: zod.string(),
-      quantity: zod.number(),
-      unit: zod.string(),
-      calories: zod.number().optional(),
-      carbs: zod.number().optional(),
-      fat: zod.number().optional(),
-      protein: zod.number().optional(),
-    }),
-  ),
-  dinner: zod.array(
-    zod.object({
-      id: zod.number(),
-      kidId: zod.number(),
-      date: zod.date(),
-      mealType: zod.enum(["breakfast", "lunch", "dinner"]),
-      foodName: zod.string(),
-      quantity: zod.number(),
-      unit: zod.string(),
-      calories: zod.number().optional(),
-      carbs: zod.number().optional(),
-      fat: zod.number().optional(),
-      protein: zod.number().optional(),
-    }),
+  meals: zod.record(
+    zod.string(),
+    zod.array(
+      zod.object({
+        id: zod.number(),
+        kidId: zod.number(),
+        date: zod.date(),
+        mealType: zod.string(),
+        foodName: zod.string(),
+        quantity: zod.number(),
+        unit: zod.string(),
+        calories: zod.number().optional(),
+        carbs: zod.number().optional(),
+        fat: zod.number().optional(),
+        protein: zod.number().optional(),
+      }),
+    ),
   ),
 });
 
@@ -1199,11 +1218,9 @@ export const GetLibraryMealPlansResponse = zod.array(
 /**
  * @summary Create a new library meal plan
  */
-export const createLibraryMealPlanBodyDescriptionMax = 1000;
-
 export const CreateLibraryMealPlanBody = zod.object({
   name: zod.string(),
-  description: zod.string().max(createLibraryMealPlanBodyDescriptionMax).optional(),
+  description: zod.string().optional(),
   targetPhase: zod.number().optional(),
 });
 
@@ -1226,7 +1243,7 @@ export const GetLibraryMealPlanResponse = zod.object({
     zod.object({
       id: zod.number(),
       planId: zod.number(),
-      mealType: zod.enum(["breakfast", "lunch", "dinner"]),
+      mealType: zod.string(),
       foodName: zod.string(),
       portionGrams: zod.number(),
       unit: zod.string(),
@@ -1246,11 +1263,9 @@ export const UpdateLibraryMealPlanParams = zod.object({
   planId: zod.coerce.number(),
 });
 
-export const updateLibraryMealPlanBodyDescriptionMax = 1000;
-
 export const UpdateLibraryMealPlanBody = zod.object({
   name: zod.string().optional(),
-  description: zod.string().max(updateLibraryMealPlanBodyDescriptionMax).optional(),
+  description: zod.string().optional(),
   targetPhase: zod.number().optional(),
 });
 
@@ -1286,7 +1301,7 @@ export const AddLibraryMealPlanItemParams = zod.object({
 export const addLibraryMealPlanItemBodyUnitDefault = `g`;
 
 export const AddLibraryMealPlanItemBody = zod.object({
-  mealType: zod.enum(["breakfast", "lunch", "dinner"]),
+  mealType: zod.string(),
   foodName: zod.string(),
   portionGrams: zod.number(),
   unit: zod.string().default(addLibraryMealPlanItemBodyUnitDefault),
@@ -1329,7 +1344,7 @@ export const GetKidAssignedMealPlanResponse = zod.object({
     zod.object({
       id: zod.number(),
       planId: zod.number(),
-      mealType: zod.enum(["breakfast", "lunch", "dinner"]),
+      mealType: zod.string(),
       foodName: zod.string(),
       portionGrams: zod.number(),
       unit: zod.string(),
@@ -1384,8 +1399,6 @@ export const GetFoodsResponse = zod.array(GetFoodsResponseItem);
 /**
  * @summary Create a new food item
  */
-export const createFoodBodyDescriptionMax = 1000;
-
 export const CreateFoodBody = zod.object({
   name: zod.string(),
   category: zod.string(),
@@ -1394,7 +1407,7 @@ export const CreateFoodBody = zod.object({
   protein: zod.number(),
   calories: zod.number(),
   imageUrl: zod.string().optional(),
-  description: zod.string().max(createFoodBodyDescriptionMax).optional(),
+  description: zod.string().optional(),
   indicator: zod.enum(["vegi", "fruit", "non-vegi", "recipe"]).optional(),
 });
 
@@ -1423,11 +1436,9 @@ export const CreateKidMealPlanParams = zod.object({
   kidId: zod.coerce.number(),
 });
 
-export const createKidMealPlanBodyDescriptionMax = 1000;
-
 export const CreateKidMealPlanBody = zod.object({
   name: zod.string(),
-  description: zod.string().max(createKidMealPlanBodyDescriptionMax).optional(),
+  description: zod.string().optional(),
   isActive: zod.boolean().optional(),
 });
 
@@ -1451,7 +1462,7 @@ export const GetKidMealPlanResponse = zod.object({
     zod.object({
       id: zod.number(),
       planId: zod.number(),
-      mealType: zod.enum(["breakfast", "lunch", "dinner"]),
+      mealType: zod.string(),
       foodId: zod.number(),
       foodName: zod.string(),
       portionGrams: zod.number(),
@@ -1472,11 +1483,9 @@ export const UpdateKidMealPlanParams = zod.object({
   planId: zod.coerce.number(),
 });
 
-export const updateKidMealPlanBodyDescriptionMax = 1000;
-
 export const UpdateKidMealPlanBody = zod.object({
   name: zod.string().optional(),
-  description: zod.string().max(updateKidMealPlanBodyDescriptionMax).optional(),
+  description: zod.string().optional(),
   isActive: zod.boolean().optional(),
 });
 
@@ -1512,7 +1521,7 @@ export const AddMealPlanItemParams = zod.object({
 });
 
 export const AddMealPlanItemBody = zod.object({
-  mealType: zod.enum(["breakfast", "lunch", "dinner"]),
+  mealType: zod.string(),
   foodId: zod.number(),
   foodName: zod.string(),
   portionGrams: zod.number(),
@@ -1565,8 +1574,6 @@ export const UpdateFoodParams = zod.object({
   foodId: zod.coerce.number(),
 });
 
-export const updateFoodBodyDescriptionMax = 1000;
-
 export const UpdateFoodBody = zod.object({
   name: zod.string().optional(),
   category: zod.string().optional(),
@@ -1575,7 +1582,7 @@ export const UpdateFoodBody = zod.object({
   protein: zod.number().optional(),
   calories: zod.number().optional(),
   imageUrl: zod.string().optional(),
-  description: zod.string().max(updateFoodBodyDescriptionMax).optional(),
+  description: zod.string().optional(),
   indicator: zod.enum(["vegi", "fruit", "non-vegi", "recipe"]).optional(),
   isActive: zod.boolean().optional(),
 });

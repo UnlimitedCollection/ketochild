@@ -5,12 +5,11 @@
  * Keto Diet Doctor Dashboard API
  * OpenAPI spec version: 0.1.0
  */
-import type { MealPlanItemMealType } from "./mealPlanItemMealType";
 
 export interface MealPlanItem {
   id: number;
   planId: number;
-  mealType: MealPlanItemMealType;
+  mealType: string;
   foodId: number;
   foodName: string;
   portionGrams: number;

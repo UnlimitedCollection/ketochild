@@ -5,11 +5,9 @@
  * Keto Diet Doctor Dashboard API
  * OpenAPI spec version: 0.1.0
  */
-import type { MealEntry } from "./mealEntry";
+import type { MealLogDetailMeals } from "./mealLogDetailMeals";
 
 export interface MealLogDetail {
   date: Date;
-  breakfast: MealEntry[];
-  lunch: MealEntry[];
-  dinner: MealEntry[];
+  meals: MealLogDetailMeals;
 }

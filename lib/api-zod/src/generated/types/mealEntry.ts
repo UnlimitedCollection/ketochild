@@ -5,13 +5,12 @@
  * Keto Diet Doctor Dashboard API
  * OpenAPI spec version: 0.1.0
  */
-import type { MealEntryMealType } from "./mealEntryMealType";
 
 export interface MealEntry {
   id: number;
   kidId: number;
   date: Date;
-  mealType: MealEntryMealType;
+  mealType: string;
   foodName: string;
   quantity: number;
   unit: string;

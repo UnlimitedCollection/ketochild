@@ -170,7 +170,7 @@ router.post("/:planId/items", async (req, res) => {
       .insert(libraryMealPlanItemsTable)
       .values({
         planId,
-        mealType: parsed.data.mealType as "breakfast" | "lunch" | "dinner",
+        mealType: parsed.data.mealType,
         foodName: parsed.data.foodName,
         portionGrams: parsed.data.portionGrams,
         unit: parsed.data.unit ?? "g",

@@ -5,13 +5,12 @@
  * Keto Diet Doctor Dashboard API
  * OpenAPI spec version: 0.1.0
  */
-import type { MealLogMealType } from "./mealLogMealType";
 
 export interface MealLog {
   id: number;
   kidId: number;
   date: Date;
-  mealType: MealLogMealType;
+  mealType: string;
   isCompleted: boolean;
   calories?: number;
   carbs?: number;

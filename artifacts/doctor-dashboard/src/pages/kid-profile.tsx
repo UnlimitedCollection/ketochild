@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useParams, Link, useLocation } from "wouter";
-import { useGetKid, useAddWeightRecord, useUpdateKidMedical, useUpdateKid, useDeleteKid, useGetKidMealHistory, useGetKidKetoneReadings, useAddKetoneReading, useDeleteKetoneReading, useGetKidMealLogs, useAddMealLog, useDeleteMealLog, useGetKidMealLog, useGetKidAssignedMealPlan, useAssignKidMealPlan, useGetLibraryMealPlans, useGetFoods, useGetKidFoodApprovals, useUpsertKidFoodApproval, useUpdateMealLogImage, getGetKidAssignedMealPlanQueryKey, type LibraryMealPlanDetail, type LibraryMealPlanItem, type FoodApproval, type MedicalSettingsRequest, type UpdateKidRequest } from "@workspace/api-client-react";
+import { useGetKid, useAddWeightRecord, useUpdateKidMedical, useUpdateKid, useDeleteKid, useGetKidMealHistory, useGetKidKetoneReadings, useAddKetoneReading, useDeleteKetoneReading, useGetKidMealLogs, useAddMealLog, useDeleteMealLog, useGetKidMealLog, useGetKidAssignedMealPlan, useAssignKidMealPlan, useGetLibraryMealPlans, useGetFoods, useGetKidFoodApprovals, useUpsertKidFoodApproval, useUpdateMealLogImage, getGetKidAssignedMealPlanQueryKey, useListMealTypes, type LibraryMealPlanDetail, type LibraryMealPlanItem, type FoodApproval, type MedicalSettingsRequest, type UpdateKidRequest } from "@workspace/api-client-react";
 import { useUpload } from "@workspace/object-storage-web";
 import { z } from "zod";
 import { useForm, useWatch } from "react-hook-form";
@@ -26,7 +26,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCanWrite } from "@/hooks/useRole";
-import { Activity, User, Scale, Calendar, FileText, Trash2, Settings, Plus, Loader2, BarChart2, TrendingUp, Flame, FlaskConical, AlertTriangle, ClipboardList, CheckCircle2, Circle, ChevronDown, ChevronUp, Coffee, Sun, Moon, LayoutGrid, Camera, ThumbsUp, ThumbsDown, Minus, ImageIcon, X, Search, Pencil, LineChart as LineChartIcon } from "lucide-react";
+import { Activity, User, Scale, Calendar, FileText, Trash2, Settings, Plus, Loader2, BarChart2, TrendingUp, Flame, FlaskConical, AlertTriangle, ClipboardList, CheckCircle2, Circle, ChevronDown, ChevronUp, Coffee, Sun, Moon, LayoutGrid, Camera, ThumbsUp, ThumbsDown, Minus, ImageIcon, X, Search, Pencil, LineChart as LineChartIcon, UtensilsCrossed } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function KidProfilePage() {
@@ -1055,12 +1055,15 @@ type MedicalData = {
   dailyProtein?: number;
 };
 
-const MEAL_TYPES = ["breakfast", "lunch", "dinner"] as const;
-const MEAL_LABELS: Record<string, { label: string; icon: string }> = {
-  breakfast: { label: "Breakfast", icon: "🌅" },
-  lunch: { label: "Lunch", icon: "☀️" },
-  dinner: { label: "Dinner", icon: "🌙" },
+const KNOWN_MEAL_LABELS: Record<string, { icon: string }> = {
+  breakfast: { icon: "🌅" },
+  lunch: { icon: "☀️" },
+  dinner: { icon: "🌙" },
 };
+
+function getMealLabel(name: string) {
+  return KNOWN_MEAL_LABELS[name.toLowerCase()] ?? { icon: "🍽️" };
+}
 
 function MealPhotoUpload({ kidId, log }: { kidId: number; log: { id: number; imageUrl?: string | null } }) {
   const { toast } = useToast();
@@ -1134,9 +1137,11 @@ function MealDayDetailDialog({ kidId, date, onClose }: { kidId: number; date: st
   const queryClient = useQueryClient();
   const canWrite = useCanWrite();
   const { data: logs, isLoading } = useGetKidMealLogs(kidId, { date });
+  const { data: mealTypesData } = useListMealTypes();
+  const mealTypeNames = useMemo(() => (mealTypesData ?? []).map((mt) => mt.name), [mealTypesData]);
   const addLog = useAddMealLog();
   const deleteLog = useDeleteMealLog();
-  const [mealType, setMealType] = useState<"breakfast" | "lunch" | "dinner">("breakfast");
+  const [mealType, setMealType] = useState("");
   const [isCompleted, setIsCompleted] = useState(true);
   const [calories, setCalories] = useState("");
   const [carbs, setCarbs] = useState("");
@@ -1190,16 +1195,16 @@ function MealDayDetailDialog({ kidId, date, onClose }: { kidId: number; date: st
             <div className="py-4 text-center"><Loader2 className="h-5 w-5 animate-spin mx-auto text-primary" /></div>
           ) : (
             <div className="space-y-2">
-              {MEAL_TYPES.map((type) => {
-                const entry = logs?.find(l => l.mealType === type);
-                const meta = MEAL_LABELS[type];
+              {mealTypeNames.map((typeName) => {
+                const entry = logs?.find(l => l.mealType.toLowerCase() === typeName.toLowerCase());
+                const meta = getMealLabel(typeName);
                 return (
-                  <div key={type} className={`p-3 rounded-xl border ${entry ? (entry.isCompleted ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50') : 'border-slate-200 bg-slate-50'}`}>
+                  <div key={typeName} className={`p-3 rounded-xl border ${entry ? (entry.isCompleted ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50') : 'border-slate-200 bg-slate-50'}`}>
                     <div className="flex items-center gap-3">
                       <span className="text-xl">{meta.icon}</span>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm text-slate-800">{meta.label}</span>
+                          <span className="font-medium text-sm text-slate-800">{typeName}</span>
                           {entry ? (
                             <Badge className={`text-xs ${entry.isCompleted ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                               {entry.isCompleted ? '✓ Completed' : '✗ Missed'}
@@ -1237,12 +1242,12 @@ function MealDayDetailDialog({ kidId, date, onClose }: { kidId: number; date: st
             <div className="grid grid-cols-2 gap-2 mb-3">
               <div>
                 <label className="text-xs font-medium text-slate-600 mb-1 block">Meal Type</label>
-                <Select value={mealType} onValueChange={(v) => setMealType(v as typeof mealType)}>
+                <Select value={mealType || undefined} onValueChange={(v) => setMealType(v)}>
                   <SelectTrigger className="h-9 text-sm">
-                    <SelectValue />
+                    <SelectValue placeholder="Select…" />
                   </SelectTrigger>
                   <SelectContent>
-                    {MEAL_TYPES.map(t => <SelectItem key={t} value={t}>{MEAL_LABELS[t].label}</SelectItem>)}
+                    {mealTypeNames.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -1288,15 +1293,22 @@ function MealDayDetailDialog({ kidId, date, onClose }: { kidId: number; date: st
   );
 }
 
-const MEAL_SLOT_CONFIG: { key: "breakfast" | "lunch" | "dinner"; label: string; icon: string; color: string }[] = [
-  { key: "breakfast", label: "Breakfast", icon: "🌅", color: "text-amber-700 bg-amber-50 border-amber-200" },
-  { key: "lunch", label: "Lunch", icon: "☀️", color: "text-blue-700 bg-blue-50 border-blue-200" },
-  { key: "dinner", label: "Dinner", icon: "🌙", color: "text-violet-700 bg-violet-50 border-violet-200" },
-];
+const KNOWN_SLOT_STYLES: Record<string, { icon: string; color: string }> = {
+  breakfast: { icon: "🌅", color: "text-amber-700 bg-amber-50 border-amber-200" },
+  lunch: { icon: "☀️", color: "text-blue-700 bg-blue-50 border-blue-200" },
+  dinner: { icon: "🌙", color: "text-violet-700 bg-violet-50 border-violet-200" },
+};
+const DEFAULT_SLOT_STYLE = { icon: "🍽️", color: "text-slate-700 bg-slate-50 border-slate-200" };
+
+function getSlotStyle(name: string) {
+  return KNOWN_SLOT_STYLES[name.toLowerCase()] ?? DEFAULT_SLOT_STYLE;
+}
 
 function MealDayAccordion({ kidId, date, onManage }: { kidId: number; date: string; onManage: () => void }) {
   const { data, isLoading } = useGetKidMealLog(kidId, { date });
   const { data: mealLogs } = useGetKidMealLogs(kidId, { date });
+  const { data: mealTypesData } = useListMealTypes();
+  const mealTypeNames = useMemo(() => (mealTypesData ?? []).map((mt) => mt.name), [mealTypesData]);
 
   if (isLoading) {
     return (
@@ -1311,16 +1323,17 @@ function MealDayAccordion({ kidId, date, onManage }: { kidId: number; date: stri
   return (
     <div className="px-4 pb-4 pt-1 bg-slate-50/60 border-t border-slate-100">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-        {MEAL_SLOT_CONFIG.map(({ key, label, icon, color }) => {
-          const foods = data?.[key] ?? [];
-          const slotCalories = foods.reduce((s, f) => s + (f.calories ?? 0), 0);
-          const logEntry = mealLogs?.find(l => l.mealType === key);
+        {mealTypeNames.map((typeName) => {
+          const { icon, color } = getSlotStyle(typeName);
+          const foods = data?.meals?.[typeName.toLowerCase()] ?? data?.meals?.[typeName] ?? [];
+          const slotCalories = foods.reduce((s: number, f: any) => s + (f.calories ?? 0), 0);
+          const logEntry = mealLogs?.find(l => l.mealType.toLowerCase() === typeName.toLowerCase());
           const imageUrl = logEntry?.imageUrl;
           return (
-            <div key={key} className={`rounded-xl border p-3 ${color}`}>
+            <div key={typeName} className={`rounded-xl border p-3 ${color}`}>
               <div className="flex items-center justify-between mb-2">
                 <span className="font-semibold text-sm flex items-center gap-1.5">
-                  <span>{icon}</span> {label}
+                  <span>{icon}</span> {typeName}
                 </span>
                 <div className="flex items-center gap-2">
                   {imageUrl && (
@@ -1676,20 +1689,24 @@ function ComplianceTab({ kidId }: { kidId: number }) {
 
 // ─── Meal Plan Tab ─────────────────────────────────────────────────────────────
 
-const MEAL_TYPE_CONFIG = [
-  { value: "breakfast", label: "Breakfast", icon: Coffee, color: "text-amber-600 bg-amber-50 border-amber-100" },
-  { value: "lunch", label: "Lunch", icon: Sun, color: "text-blue-600 bg-blue-50 border-blue-100" },
-  { value: "dinner", label: "Dinner", icon: Moon, color: "text-indigo-600 bg-indigo-50 border-indigo-100" },
-] as const;
+const KNOWN_PLAN_STYLES: Record<string, { icon: typeof Coffee; color: string }> = {
+  breakfast: { icon: Coffee, color: "text-amber-600 bg-amber-50 border-amber-100" },
+  lunch: { icon: Sun, color: "text-blue-600 bg-blue-50 border-blue-100" },
+  dinner: { icon: Moon, color: "text-indigo-600 bg-indigo-50 border-indigo-100" },
+};
+const DEFAULT_PLAN_STYLE = { icon: UtensilsCrossed, color: "text-slate-600 bg-slate-50 border-slate-100" };
 
-type MealType = typeof MEAL_TYPE_CONFIG[number]["value"];
-
+function getPlanStyle(name: string) {
+  return KNOWN_PLAN_STYLES[name.toLowerCase()] ?? DEFAULT_PLAN_STYLE;
+}
 
 function MealPlanTab({ kidId }: { kidId: number }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const canWrite = useCanWrite();
-  const [expandedMeal, setExpandedMeal] = useState<MealType | null>("breakfast");
+  const { data: mealTypesData } = useListMealTypes();
+  const mealTypeNames = useMemo(() => (mealTypesData ?? []).map((mt) => mt.name), [mealTypesData]);
+  const [expandedMeal, setExpandedMeal] = useState<string | null>(null);
   const [pendingPlanId, setPendingPlanId] = useState<string>("");
 
   const { data: rawAssigned, isLoading: assignedLoading } = useGetKidAssignedMealPlan(kidId);
@@ -1723,8 +1740,8 @@ function MealPlanTab({ kidId }: { kidId: number }) {
     );
   }
 
-  const getMealItems = (mealType: MealType): LibraryMealPlanItem[] =>
-    plan?.items?.filter((i: LibraryMealPlanItem) => i.mealType === mealType) ?? [];
+  const getMealItems = (mealType: string): LibraryMealPlanItem[] =>
+    plan?.items?.filter((i: LibraryMealPlanItem) => i.mealType.toLowerCase() === mealType.toLowerCase()) ?? [];
 
   // Planned daily macro totals from the assigned plan items
   const plannedTotals = (plan?.items ?? []).reduce(
@@ -1888,22 +1905,23 @@ function MealPlanTab({ kidId }: { kidId: number }) {
           </Card>
 
           {/* Meal sections — read-only view */}
-          {MEAL_TYPE_CONFIG.map(({ value: mealType, label, icon: Icon, color }) => {
-            const items = getMealItems(mealType);
+          {mealTypeNames.map((mealTypeName) => {
+            const { icon: Icon, color } = getPlanStyle(mealTypeName);
+            const items = getMealItems(mealTypeName);
             const mealCals = items.reduce((a: number, i: LibraryMealPlanItem) => a + (i.calories ?? 0), 0);
-            const isExpanded = expandedMeal === mealType;
+            const isExpanded = expandedMeal === mealTypeName;
             return (
-              <Card key={mealType} className="border border-slate-200">
+              <Card key={mealTypeName} className="border border-slate-200">
                 <CardHeader className="py-3 px-4">
                   <button
                     className="flex items-center gap-3 w-full text-left"
-                    onClick={() => setExpandedMeal(isExpanded ? null : mealType)}
+                    onClick={() => setExpandedMeal(isExpanded ? null : mealTypeName)}
                   >
                     <div className={`flex h-8 w-8 items-center justify-center rounded-lg border ${color}`}>
                       <Icon className="h-4 w-4" />
                     </div>
                     <div className="flex-1">
-                      <p className="font-medium text-slate-800 text-sm">{label}</p>
+                      <p className="font-medium text-slate-800 text-sm">{mealTypeName}</p>
                       <p className="text-xs text-slate-400">
                         {items.length} item{items.length !== 1 ? "s" : ""} · {Math.round(mealCals)} kcal
                       </p>
