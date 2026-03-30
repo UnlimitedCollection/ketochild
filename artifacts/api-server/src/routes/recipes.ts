@@ -76,10 +76,11 @@ router.get("/", async (req, res) => {
 
 router.post("/", async (req, res) => {
   const doctorId = req.session.doctorId!;
-  const { name, description, category, ingredients } = req.body as {
+  const { name, description, category, imageUrl, ingredients } = req.body as {
     name: string;
     description?: string;
     category?: string;
+    imageUrl?: string;
     ingredients?: IngredientInput[];
   };
 
@@ -101,6 +102,7 @@ router.post("/", async (req, res) => {
         name: name.trim(),
         description: description ?? "",
         category: category ?? "General",
+        imageUrl: imageUrl ?? "",
       })
       .returning();
 
@@ -179,10 +181,11 @@ router.put("/:recipeId", async (req, res) => {
     return;
   }
 
-  const { name, description, category, ingredients } = req.body as {
+  const { name, description, category, imageUrl, ingredients } = req.body as {
     name?: string;
     description?: string;
     category?: string;
+    imageUrl?: string;
     ingredients?: IngredientInput[];
   };
 
@@ -211,6 +214,7 @@ router.put("/:recipeId", async (req, res) => {
         ...(name ? { name: name.trim() } : {}),
         ...(description !== undefined ? { description } : {}),
         ...(category ? { category } : {}),
+        ...(imageUrl !== undefined ? { imageUrl } : {}),
         updatedAt: new Date(),
       })
       .where(eq(recipesTable.id, recipeId))

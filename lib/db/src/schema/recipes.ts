@@ -7,6 +7,7 @@ export const recipesTable = pgTable("recipes", {
   name: varchar("name", { length: 200 }).notNull(),
   description: text("description").default(""),
   category: varchar("category", { length: 100 }).notNull().default("General"),
+  imageUrl: text("image_url").default(""),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

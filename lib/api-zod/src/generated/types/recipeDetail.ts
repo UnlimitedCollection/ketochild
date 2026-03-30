@@ -13,6 +13,7 @@ export interface RecipeDetail {
   name: string;
   description?: string;
   category: string;
+  imageUrl?: string;
   createdAt: Date;
   updatedAt: Date;
   ingredients: RecipeIngredient[];

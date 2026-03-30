@@ -39465,6 +39465,7 @@ var ListRecipesResponseItem = objectType({
   name: stringType(),
   description: stringType().optional(),
   category: stringType(),
+  imageUrl: stringType().optional(),
   createdAt: dateType(),
   updatedAt: dateType(),
   ingredients: arrayType(
@@ -39490,6 +39491,7 @@ var CreateRecipeBody = objectType({
   name: stringType(),
   description: stringType().optional(),
   category: stringType().optional(),
+  imageUrl: stringType().optional(),
   ingredients: arrayType(
     objectType({
       foodName: stringType().describe(
@@ -39512,6 +39514,7 @@ var GetRecipeResponse = objectType({
   name: stringType(),
   description: stringType().optional(),
   category: stringType(),
+  imageUrl: stringType().optional(),
   createdAt: dateType(),
   updatedAt: dateType(),
   ingredients: arrayType(
@@ -39539,6 +39542,7 @@ var UpdateRecipeBody = objectType({
   name: stringType().optional(),
   description: stringType().optional(),
   category: stringType().optional(),
+  imageUrl: stringType().optional(),
   ingredients: arrayType(
     objectType({
       foodName: stringType().describe(
@@ -39558,6 +39562,7 @@ var UpdateRecipeResponse = objectType({
   name: stringType(),
   description: stringType().optional(),
   category: stringType(),
+  imageUrl: stringType().optional(),
   createdAt: dateType(),
   updatedAt: dateType(),
   ingredients: arrayType(
@@ -58719,6 +58724,7 @@ var recipesTable = pgTable("recipes", {
   name: varchar("name", { length: 200 }).notNull(),
   description: text("description").default(""),
   category: varchar("category", { length: 100 }).notNull().default("General"),
+  imageUrl: text("image_url").default(""),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
@@ -62740,7 +62746,7 @@ router10.get("/", async (req, res) => {
 });
 router10.post("/", async (req, res) => {
   const doctorId = req.session.doctorId;
-  const { name, description, category, ingredients } = req.body;
+  const { name, description, category, imageUrl, ingredients } = req.body;
   if (!name?.trim()) {
     res.status(400).json({ error: "BAD_REQUEST", message: "Recipe name is required" });
     return;
@@ -62754,7 +62760,8 @@ router10.post("/", async (req, res) => {
       doctorId,
       name: name.trim(),
       description: description ?? "",
-      category: category ?? "General"
+      category: category ?? "General",
+      imageUrl: imageUrl ?? ""
     }).returning();
     const insertedIngredients = [];
     if (ingredients && ingredients.length > 0) {
@@ -62810,7 +62817,7 @@ router10.put("/:recipeId", async (req, res) => {
     res.status(400).json({ error: "BAD_REQUEST", message: "Invalid recipe ID" });
     return;
   }
-  const { name, description, category, ingredients } = req.body;
+  const { name, description, category, imageUrl, ingredients } = req.body;
   if (description && description.length > 1e3) {
     res.status(400).json({ error: "BAD_REQUEST", message: "Description must be 1000 characters or fewer" });
     return;
@@ -62826,6 +62833,7 @@ router10.put("/:recipeId", async (req, res) => {
       ...name ? { name: name.trim() } : {},
       ...description !== void 0 ? { description } : {},
       ...category ? { category } : {},
+      ...imageUrl !== void 0 ? { imageUrl } : {},
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq(recipesTable.id, recipeId)).returning();
     if (ingredients !== void 0) {

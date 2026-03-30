@@ -23,9 +23,11 @@ import {
   Wheat,
   Info,
   Eye,
+  ImagePlus,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCanWrite } from "@/hooks/useRole";
+import { useUpload } from "@workspace/object-storage-web";
 
 const BLUE  = "#004ac6";
 const GREEN = "#0a7c42";
@@ -172,6 +174,17 @@ function RecipeForm({
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [category, setCategory] = useState(initial?.category ?? "");
+  const [imageUrl, setImageUrl] = useState(initial?.imageUrl ?? "");
+  const [imagePreview, setImagePreview] = useState<string | null>(
+    initial?.imageUrl ? `/api/storage${initial.imageUrl}` : null
+  );
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { uploadFile, isUploading } = useUpload({
+    onSuccess: (response) => {
+      setImageUrl(response.objectPath);
+      setImagePreview(`/api/storage${response.objectPath}`);
+    },
+  });
   const [ingredients, setIngredients] = useState<IngredientRow[]>(
     initial?.ingredients?.length
       ? initial.ingredients.map((i) => ({
@@ -182,6 +195,27 @@ function RecipeForm({
       : [emptyRow()]
   );
   const [error, setError] = useState("");
+  const [initialLoaded, setInitialLoaded] = useState(!!initial);
+
+  useEffect(() => {
+    if (initial && !initialLoaded) {
+      setName(initial.name ?? "");
+      setDescription(initial.description ?? "");
+      setCategory(initial.category ?? "");
+      setImageUrl(initial.imageUrl ?? "");
+      setImagePreview(initial.imageUrl ? `/api/storage${initial.imageUrl}` : null);
+      setIngredients(
+        initial.ingredients?.length
+          ? initial.ingredients.map((i) => ({
+              foodName: i.foodName,
+              portionGrams: i.portionGrams,
+              matchedFood: null,
+            }))
+          : [emptyRow()]
+      );
+      setInitialLoaded(true);
+    }
+  }, [initial, initialLoaded]);
 
   const updateIngFood = (idx: number, foodName: string, food: Food | null) => {
     setIngredients((prev) => {
@@ -215,6 +249,7 @@ function RecipeForm({
       name: name.trim(),
       description: description.trim() || undefined,
       category: category.trim() || undefined,
+      imageUrl: imageUrl,
       ingredients: ingPayload,
     };
 
@@ -292,6 +327,66 @@ function RecipeForm({
                 className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 resize-none focus:outline-none focus:ring-2 focus:ring-blue-300"
               />
               <p className="text-xs text-slate-400 text-right mt-1">{description.length} / 1000</p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Recipe Image (optional)</label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) uploadFile(file);
+                  e.target.value = "";
+                }}
+              />
+              {imagePreview ? (
+                <div className="flex items-center gap-3 rounded-xl border border-slate-200 p-3">
+                  <img
+                    src={imagePreview}
+                    alt="Recipe preview"
+                    className="h-16 w-16 rounded-lg object-cover border border-slate-200"
+                  />
+                  <div className="flex flex-col gap-1.5">
+                    <button
+                      type="button"
+                      disabled={isUploading}
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline disabled:opacity-50"
+                    >
+                      {isUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImagePlus className="h-3.5 w-3.5" />}
+                      Change
+                    </button>
+                    <button
+                      type="button"
+                      className="flex items-center gap-1 text-xs font-semibold text-slate-400 hover:text-red-500"
+                      onClick={() => {
+                        setImageUrl("");
+                        setImagePreview(null);
+                      }}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  disabled={isUploading}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-200 p-6 text-slate-400 transition-colors hover:border-blue-300 hover:text-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isUploading ? (
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  ) : (
+                    <ImagePlus className="h-6 w-6" />
+                  )}
+                  <span className="text-sm">{isUploading ? "Uploading..." : "Click to upload image"}</span>
+                </button>
+              )}
             </div>
 
             <div>
@@ -463,6 +558,14 @@ function RecipeDetailPanel({
         </div>
 
         <div className="overflow-y-auto flex-1 px-6 py-4 space-y-4">
+          {recipe.imageUrl && (
+            <img
+              src={`/api/storage${recipe.imageUrl}`}
+              alt={recipe.name}
+              className="w-full h-48 object-cover rounded-xl border border-slate-200"
+            />
+          )}
+
           {recipe.description && (
             <p className="text-sm text-slate-600">{recipe.description}</p>
           )}
@@ -642,12 +745,20 @@ export default function RecipesPage() {
                 className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 cursor-pointer group transition-colors"
                 onClick={() => setViewId(r.id)}
               >
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ background: `${BLUE}14` }}
-                >
-                  <ChefHat className="h-5 w-5" style={{ color: BLUE }} />
-                </div>
+                {(r as RecipeDetail).imageUrl ? (
+                  <img
+                    src={`/api/storage${(r as RecipeDetail).imageUrl}`}
+                    alt={r.name}
+                    className="w-10 h-10 rounded-xl object-cover shrink-0 border border-slate-200"
+                  />
+                ) : (
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ background: `${BLUE}14` }}
+                  >
+                    <ChefHat className="h-5 w-5" style={{ color: BLUE }} />
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-slate-900 truncate">{r.name}</p>
                   <div className="flex items-center gap-3 mt-0.5">

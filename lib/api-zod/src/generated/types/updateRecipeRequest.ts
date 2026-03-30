@@ -11,5 +11,6 @@ export interface UpdateRecipeRequest {
   name?: string;
   description?: string;
   category?: string;
+  imageUrl?: string;
   ingredients?: RecipeIngredientRequest[];
 }

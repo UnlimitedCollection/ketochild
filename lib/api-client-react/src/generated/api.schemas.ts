@@ -698,6 +698,7 @@ export interface RecipeDetail {
   name: string;
   description?: string;
   category: string;
+  imageUrl?: string;
   createdAt: string;
   updatedAt: string;
   ingredients: RecipeIngredient[];
@@ -711,6 +712,7 @@ export interface CreateRecipeRequest {
   name: string;
   description?: string;
   category?: string;
+  imageUrl?: string;
   ingredients?: RecipeIngredientRequest[];
 }
 
@@ -718,6 +720,7 @@ export interface UpdateRecipeRequest {
   name?: string;
   description?: string;
   category?: string;
+  imageUrl?: string;
   ingredients?: RecipeIngredientRequest[];
 }
 

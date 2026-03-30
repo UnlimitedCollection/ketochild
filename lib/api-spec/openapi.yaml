@@ -3117,6 +3117,8 @@ components:
           type: string
         category:
           type: string
+        imageUrl:
+          type: string
         createdAt:
           type: string
           format: date-time
@@ -3157,6 +3159,8 @@ components:
           type: string
         category:
           type: string
+        imageUrl:
+          type: string
         ingredients:
           type: array
           items:
@@ -3172,6 +3176,8 @@ components:
         description:
           type: string
         category:
+          type: string
+        imageUrl:
           type: string
         ingredients:
           type: array

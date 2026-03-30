@@ -747,6 +747,7 @@ export const ListRecipesResponseItem = zod.object({
   name: zod.string(),
   description: zod.string().optional(),
   category: zod.string(),
+  imageUrl: zod.string().optional(),
   createdAt: zod.date(),
   updatedAt: zod.date(),
   ingredients: zod.array(
@@ -776,6 +777,7 @@ export const CreateRecipeBody = zod.object({
   name: zod.string(),
   description: zod.string().optional(),
   category: zod.string().optional(),
+  imageUrl: zod.string().optional(),
   ingredients: zod
     .array(
       zod
@@ -811,6 +813,7 @@ export const GetRecipeResponse = zod.object({
   name: zod.string(),
   description: zod.string().optional(),
   category: zod.string(),
+  imageUrl: zod.string().optional(),
   createdAt: zod.date(),
   updatedAt: zod.date(),
   ingredients: zod.array(
@@ -843,6 +846,7 @@ export const UpdateRecipeBody = zod.object({
   name: zod.string().optional(),
   description: zod.string().optional(),
   category: zod.string().optional(),
+  imageUrl: zod.string().optional(),
   ingredients: zod
     .array(
       zod
@@ -871,6 +875,7 @@ export const UpdateRecipeResponse = zod.object({
   name: zod.string(),
   description: zod.string().optional(),
   category: zod.string(),
+  imageUrl: zod.string().optional(),
   createdAt: zod.date(),
   updatedAt: zod.date(),
   ingredients: zod.array(
