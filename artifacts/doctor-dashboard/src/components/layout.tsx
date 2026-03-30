@@ -313,15 +313,94 @@ function AlertsBell() {
   );
 }
 
+function ProfileDropdown() {
+  const [, setLocation] = useLocation();
+  const [open, setOpen] = useState(false);
+  const { data: user } = useGetMe();
+  const logout = useDoctorLogout();
+  const queryClient = useQueryClient();
+  const isModerator = useIsModerator();
+
+  const handleLogout = () => {
+    setOpen(false);
+    logout.mutate(undefined, {
+      onSuccess: () => {
+        queryClient.clear();
+        window.location.href = "/login";
+      }
+    });
+  };
+
+  const initials = user?.name
+    ? user.name.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase()
+    : "DR";
+
+  const role = user?.role as string | undefined;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button className="p-2 text-slate-500 hover:bg-slate-50 rounded-full transition-colors" aria-label="Profile menu">
+          <IconAccount />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-72 p-0 rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+        <div className="px-4 py-4 border-b border-slate-100 bg-slate-50">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm shrink-0">
+              {initials}
+            </div>
+            <div className="overflow-hidden flex-1 min-w-0">
+              <p className="text-sm font-bold text-slate-800 truncate">
+                {user?.name ? `Dr. ${user.name.split(" ").slice(-1)[0]}` : "Dr. Smith"}
+              </p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <p className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold truncate">
+                  {user?.designation || "Pediatric Neurology"}
+                </p>
+                {role && (
+                  <span className={`shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full
+                    ${role === "admin"
+                      ? "bg-blue-100 text-blue-700 uppercase tracking-wider"
+                      : "bg-amber-100 text-amber-700"
+                    }`}>
+                    {role === "admin" ? "Admin" : "Moderator – View Only"}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="py-1">
+          {!isModerator && (
+            <button
+              className="w-full text-left px-4 py-2.5 hover:bg-slate-50 transition-colors flex items-center gap-3 text-sm font-medium text-slate-700"
+              onClick={() => { setOpen(false); setLocation("/settings"); }}
+            >
+              <IconSettings />
+              <span>Settings</span>
+            </button>
+          )}
+          <button
+            className="w-full text-left px-4 py-2.5 hover:bg-red-50 transition-colors flex items-center gap-3 text-sm font-medium text-slate-600 hover:text-red-600"
+            onClick={handleLogout}
+          >
+            <IconLogout />
+            <span>Logout</span>
+          </button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function AppHeader() {
   return (
     <header className="sticky top-0 w-full z-40 bg-white/90 backdrop-blur-md flex items-center gap-4 px-8 py-3 shadow-sm border-b border-slate-200">
       <div className="flex-1" />
       <div className="flex items-center gap-1">
         <AlertsBell />
-        <button className="p-2 text-slate-500 hover:bg-slate-50 rounded-full transition-colors">
-          <IconAccount />
-        </button>
+        <ProfileDropdown />
       </div>
     </header>
   );
