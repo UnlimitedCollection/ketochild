@@ -32,7 +32,7 @@ async function seed() {
   }
 
   // ── 2. Upsert admin account with bcrypt password ───────────────────────────
-  const hashedPassword = await bcrypt.hash("admin123", 12);
+  const hashedPassword = await bcrypt.hash("1234", 12);
 
   const existingAdmins = await db.select().from(doctorsTable).where(eq(doctorsTable.username, "admin"));
   let doctorId: number;
@@ -60,7 +60,7 @@ async function seed() {
   }
 
   // ── 2b. Upsert moderator account ─────────────────────────────────────────
-  const moderatorPassword = await bcrypt.hash("admin1234", 12);
+  const moderatorPassword = await bcrypt.hash("12345", 12);
   const existingMods = await db.select().from(doctorsTable).where(eq(doctorsTable.username, "admin1"));
 
   if (existingMods.length > 0) {

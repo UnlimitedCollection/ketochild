@@ -159,8 +159,8 @@ The `/settings` page (accessible via the sidebar Settings link) provides:
 
 | Role      | Username | Password   |
 |-----------|----------|------------|
-| admin     | admin    | admin123   |
-| moderator | admin1   | admin1234  |
+| admin     | admin    | 1234       |
+| moderator | admin1   | 12345      |
 
 ## RBAC (Role-Based Access Control)
 
