@@ -19,9 +19,8 @@ import HighRiskPage from "@/pages/high-risk";
 import KidProfilePage from "@/pages/kid-profile";
 import AddKidPage from "@/pages/add-kid";
 import FoodsPage from "@/pages/foods";
-import MealPlansPage from "@/pages/meal-plans";
+import MealPlansRecipesPage from "@/pages/meal-plans-recipes";
 import TokensPage from "@/pages/tokens";
-import RecipesPage from "@/pages/recipes";
 import SettingsPage from "@/pages/settings";
 import UsersPage from "@/pages/users";
 import SetPasswordPage from "@/pages/set-password";
@@ -97,6 +96,12 @@ function AdminRoute({ component: Component }: { component: React.ComponentType }
   );
 }
 
+function RedirectTo({ to }: { to: string }) {
+  const [, setLocation] = useLocation();
+  useEffect(() => { setLocation(to); }, [to, setLocation]);
+  return null;
+}
+
 function Router() {
   return (
     <Switch>
@@ -107,9 +112,9 @@ function Router() {
       <Route path="/kids/:id" component={() => <ProtectedRoute component={KidProfilePage} />} />
       <Route path="/high-risk" component={() => <ProtectedRoute component={HighRiskPage} />} />
       <Route path="/foods" component={() => <ProtectedRoute component={FoodsPage} />} />
-      <Route path="/meal-plans" component={() => <ProtectedRoute component={MealPlansPage} />} />
+      <Route path="/meal-plans" component={() => <ProtectedRoute component={MealPlansRecipesPage} />} />
+      <Route path="/recipes" component={() => <RedirectTo to="/meal-plans" />} />
       <Route path="/tokens" component={() => <ProtectedRoute component={TokensPage} />} />
-      <Route path="/recipes" component={() => <ProtectedRoute component={RecipesPage} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={SettingsPage} />} />
       <Route path="/analytics" component={() => <ProtectedRoute component={AnalyticsPage} />} />
       <Route path="/users" component={() => <AdminRoute component={UsersPage} />} />
