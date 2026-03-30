@@ -47,7 +47,7 @@ export default function SettingsPage() {
     name: "",
     email: "",
     username: "",
-    specialty: "",
+    designation: "",
   });
 
   useEffect(() => {
@@ -56,10 +56,10 @@ export default function SettingsPage() {
         name: user.name ?? "",
         email: user.email ?? "",
         username: user.username ?? "",
-        specialty: user.specialty ?? "",
+        designation: user.designation ?? "",
       });
     }
-  }, [user?.id, user?.name, user?.email, user?.username, user?.specialty]);
+  }, [user?.id, user?.name, user?.email, user?.username, user?.designation]);
 
   const [passwords, setPasswords] = useState({
     currentPassword: "",
@@ -87,7 +87,7 @@ export default function SettingsPage() {
       return;
     }
     updateProfile.mutate(
-      { data: { name: profile.name.trim(), email: profile.email.trim(), username: profile.username.trim(), specialty: profile.specialty.trim() || undefined } },
+      { data: { name: profile.name.trim(), email: profile.email.trim(), username: profile.username.trim(), designation: profile.designation.trim() || undefined } },
       {
         onSuccess: (updated) => {
           queryClient.setQueryData(getGetMeQueryKey(), updated);
@@ -161,11 +161,11 @@ export default function SettingsPage() {
         <div>
           <p className="text-lg font-bold text-slate-800">{user?.name ? `Dr. ${user.name}` : "—"}</p>
           <p className="text-sm text-slate-500">{user?.email ?? "—"}</p>
-          <p className="text-xs text-blue-600 font-semibold mt-0.5">{user?.specialty ?? "No specialty set"}</p>
+          <p className="text-xs text-blue-600 font-semibold mt-0.5">{user?.designation ?? "No designation set"}</p>
         </div>
       </div>
 
-      <SectionCard title="Profile Information" description={isModerator ? "Profile information (read-only for moderators)." : "Update your name, email, username, and specialty."}>
+      <SectionCard title="Profile Information" description={isModerator ? "Profile information (read-only for moderators)." : "Update your name, email, username, and designation."}>
         <form onSubmit={handleProfileSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <FieldGroup label="Full Name">
@@ -200,12 +200,12 @@ export default function SettingsPage() {
               disabled={isModerator}
             />
           </FieldGroup>
-          <FieldGroup label="Specialty (optional)">
+          <FieldGroup label="Designation (optional)">
             <Input
-              name="specialty"
-              value={profile.specialty}
+              name="designation"
+              value={profile.designation}
               onChange={handleProfileChange}
-              placeholder="e.g. Pediatric Neurology"
+              placeholder="e.g. Pediatric Neurologist"
               disabled={isModerator}
             />
           </FieldGroup>

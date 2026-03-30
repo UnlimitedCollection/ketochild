@@ -165,7 +165,7 @@ function AppSidebar() {
             </p>
             <div className="flex items-center gap-1.5 mt-0.5">
               <p className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold truncate">
-                {user?.specialty || "Pediatric Neurology"}
+                {user?.designation || "Pediatric Neurology"}
               </p>
               {role && (
                 <span className={`shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full

@@ -46,7 +46,7 @@ router.post("/login", async (req, res) => {
         username: doctor.username,
         name: doctor.name,
         email: doctor.email,
-        specialty: doctor.specialty ?? undefined,
+        designation: doctor.designation ?? undefined,
         role: doctor.role,
         mustChangePassword: doctor.mustChangePassword,
       },
@@ -88,7 +88,7 @@ router.get("/me", async (req, res) => {
       username: doctor.username,
       name: doctor.name,
       email: doctor.email,
-      specialty: doctor.specialty ?? undefined,
+      designation: doctor.designation ?? undefined,
       role: doctor.role,
       mustChangePassword: doctor.mustChangePassword,
     });
@@ -102,7 +102,7 @@ const UpdateProfileBody = z.object({
   name: z.string().min(1),
   email: z.string().email(),
   username: z.string().min(3).max(100),
-  specialty: z.string().optional(),
+  designation: z.string().optional(),
 });
 
 const ChangePasswordBody = z.object({
@@ -134,7 +134,7 @@ router.put("/profile", async (req, res) => {
     return;
   }
 
-  const { name, email, username, specialty } = parsed.data;
+  const { name, email, username, designation } = parsed.data;
 
   try {
     const [existing] = await db
@@ -155,7 +155,7 @@ router.put("/profile", async (req, res) => {
 
     const [updated] = await db
       .update(doctorsTable)
-      .set({ name, email, username, specialty: specialty ?? null })
+      .set({ name, email, username, designation: designation ?? null })
       .where(eq(doctorsTable.id, doctorId))
       .returning();
 
@@ -172,7 +172,7 @@ router.put("/profile", async (req, res) => {
       username: updated.username,
       name: updated.name,
       email: updated.email,
-      specialty: updated.specialty ?? undefined,
+      designation: updated.designation ?? undefined,
       role: updated.role,
       mustChangePassword: updated.mustChangePassword,
     });

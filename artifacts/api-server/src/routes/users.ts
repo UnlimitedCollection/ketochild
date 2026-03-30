@@ -12,7 +12,8 @@ const CreateUserBody = z.object({
   password: z.string().min(6),
   name: z.string().min(1).max(200),
   email: z.string().email(),
-  specialty: z.string().optional(),
+  designation: z.string().optional(),
+  profilePhoto: z.string().optional(),
   role: z.enum(["admin", "moderator"]),
 });
 
@@ -21,7 +22,8 @@ const UpdateUserBody = z.object({
   password: z.string().min(6).optional(),
   name: z.string().min(1).max(200).optional(),
   email: z.string().email().optional(),
-  specialty: z.string().optional(),
+  designation: z.string().optional(),
+  profilePhoto: z.string().optional(),
   role: z.enum(["admin", "moderator"]).optional(),
 });
 
@@ -31,7 +33,8 @@ function mapUser(u: typeof doctorsTable.$inferSelect) {
     username: u.username,
     name: u.name,
     email: u.email,
-    specialty: u.specialty ?? undefined,
+    designation: u.designation ?? undefined,
+    profilePhoto: u.profilePhoto ?? undefined,
     role: u.role,
     createdAt: u.createdAt.toISOString(),
   };
@@ -55,7 +58,7 @@ router.post("/", async (req, res) => {
     return;
   }
 
-  const { username, password, name, email, specialty, role } = parsed.data;
+  const { username, password, name, email, designation, profilePhoto, role } = parsed.data;
 
   try {
     const existing = await db
@@ -72,7 +75,7 @@ router.post("/", async (req, res) => {
     const hashed = await bcrypt.hash(password, 12);
     const [created] = await db
       .insert(doctorsTable)
-      .values({ username, password: hashed, name, email, specialty: specialty ?? null, role, mustChangePassword: true })
+      .values({ username, password: hashed, name, email, designation: designation ?? null, profilePhoto: profilePhoto ?? null, role, mustChangePassword: true })
       .returning();
 
     res.status(201).json(mapUser(created));
@@ -101,7 +104,7 @@ router.put("/:userId", async (req, res) => {
     return;
   }
 
-  const { username, password, name, email, specialty, role } = parsed.data;
+  const { username, password, name, email, designation, profilePhoto, role } = parsed.data;
 
   try {
     const [target] = await db.select().from(doctorsTable).where(eq(doctorsTable.id, userId)).limit(1);
@@ -146,7 +149,8 @@ router.put("/:userId", async (req, res) => {
     if (name !== undefined) updates.name = name;
     if (email !== undefined) updates.email = email;
     if (username !== undefined) updates.username = username;
-    if (specialty !== undefined) updates.specialty = specialty;
+    if (designation !== undefined) updates.designation = designation || null;
+    if (profilePhoto !== undefined) updates.profilePhoto = profilePhoto || null;
     if (role !== undefined) updates.role = role;
     if (password !== undefined) updates.password = await bcrypt.hash(password, 12);
 

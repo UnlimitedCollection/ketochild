@@ -28,8 +28,9 @@ export const DoctorLoginResponse = zod.object({
     username: zod.string(),
     name: zod.string(),
     email: zod.string(),
-    specialty: zod.string().optional(),
+    designation: zod.string().optional(),
     role: zod.enum(["admin", "moderator"]),
+    mustChangePassword: zod.boolean().optional(),
   }),
   token: zod.string(),
 });
@@ -50,12 +51,13 @@ export const GetMeResponse = zod.object({
   username: zod.string(),
   name: zod.string(),
   email: zod.string(),
-  specialty: zod.string().optional(),
+  designation: zod.string().optional(),
   role: zod.enum(["admin", "moderator"]),
+  mustChangePassword: zod.boolean().optional(),
 });
 
 /**
- * @summary Update doctor profile (name, email, specialty, username)
+ * @summary Update doctor profile (name, email, designation, username)
  */
 
 export const updateDoctorProfileBodyUsernameMin = 3;
@@ -64,7 +66,7 @@ export const updateDoctorProfileBodyUsernameMax = 100;
 export const UpdateDoctorProfileBody = zod.object({
   name: zod.string().min(1),
   email: zod.string().email(),
-  specialty: zod.string().optional(),
+  designation: zod.string().optional(),
   username: zod
     .string()
     .min(updateDoctorProfileBodyUsernameMin)
@@ -76,8 +78,24 @@ export const UpdateDoctorProfileResponse = zod.object({
   username: zod.string(),
   name: zod.string(),
   email: zod.string(),
-  specialty: zod.string().optional(),
+  designation: zod.string().optional(),
   role: zod.enum(["admin", "moderator"]),
+  mustChangePassword: zod.boolean().optional(),
+});
+
+/**
+ * @summary Force password change (first login — no current password required)
+ */
+export const forceChangePasswordBodyNewPasswordMin = 6;
+
+export const ForceChangePasswordBody = zod.object({
+  newPassword: zod.string().min(forceChangePasswordBodyNewPasswordMin),
+  confirmPassword: zod.string().min(1),
+});
+
+export const ForceChangePasswordResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string().optional(),
 });
 
 /**
@@ -920,7 +938,8 @@ export const ListUsersResponseItem = zod.object({
   username: zod.string(),
   name: zod.string(),
   email: zod.string(),
-  specialty: zod.string().optional(),
+  designation: zod.string().optional(),
+  profilePhoto: zod.string().optional(),
   role: zod.enum(["admin", "moderator"]),
   createdAt: zod.date(),
 });
@@ -942,7 +961,8 @@ export const CreateUserBody = zod.object({
   password: zod.string().min(createUserBodyPasswordMin),
   name: zod.string().min(1),
   email: zod.string().email(),
-  specialty: zod.string().optional(),
+  designation: zod.string().optional(),
+  profilePhoto: zod.string().optional(),
   role: zod.enum(["admin", "moderator"]),
 });
 
@@ -967,7 +987,8 @@ export const UpdateUserBody = zod.object({
   password: zod.string().min(updateUserBodyPasswordMin).optional(),
   name: zod.string().min(1).optional(),
   email: zod.string().email().optional(),
-  specialty: zod.string().optional(),
+  designation: zod.string().optional(),
+  profilePhoto: zod.string().optional(),
   role: zod.enum(["admin", "moderator"]).optional(),
 });
 
@@ -976,7 +997,8 @@ export const UpdateUserResponse = zod.object({
   username: zod.string(),
   name: zod.string(),
   email: zod.string(),
-  specialty: zod.string().optional(),
+  designation: zod.string().optional(),
+  profilePhoto: zod.string().optional(),
   role: zod.enum(["admin", "moderator"]),
   createdAt: zod.date(),
 });

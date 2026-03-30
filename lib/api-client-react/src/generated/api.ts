@@ -36,6 +36,7 @@ import type {
   Food,
   FoodApproval,
   FoodApprovalRequest,
+  ForceChangePasswordRequest,
   GetFoodsParams,
   GetKidKetoneReadingsParams,
   GetKidMealHistoryParams,
@@ -398,7 +399,7 @@ export function useGetMe<
 }
 
 /**
- * @summary Update doctor profile (name, email, specialty, username)
+ * @summary Update doctor profile (name, email, designation, username)
  */
 export const getUpdateDoctorProfileUrl = () => {
   return `/api/auth/profile`;
@@ -462,7 +463,7 @@ export type UpdateDoctorProfileMutationBody =
 export type UpdateDoctorProfileMutationError = ErrorType<ErrorResponse>;
 
 /**
- * @summary Update doctor profile (name, email, specialty, username)
+ * @summary Update doctor profile (name, email, designation, username)
  */
 export const useUpdateDoctorProfile = <
   TError = ErrorType<ErrorResponse>,
@@ -482,6 +483,93 @@ export const useUpdateDoctorProfile = <
   TContext
 > => {
   return useMutation(getUpdateDoctorProfileMutationOptions(options));
+};
+
+/**
+ * @summary Force password change (first login — no current password required)
+ */
+export const getForceChangePasswordUrl = () => {
+  return `/api/auth/force-change`;
+};
+
+export const forceChangePassword = async (
+  forceChangePasswordRequest: ForceChangePasswordRequest,
+  options?: RequestInit,
+): Promise<SuccessResponse> => {
+  return customFetch<SuccessResponse>(getForceChangePasswordUrl(), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(forceChangePasswordRequest),
+  });
+};
+
+export const getForceChangePasswordMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof forceChangePassword>>,
+    TError,
+    { data: BodyType<ForceChangePasswordRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof forceChangePassword>>,
+  TError,
+  { data: BodyType<ForceChangePasswordRequest> },
+  TContext
+> => {
+  const mutationKey = ["forceChangePassword"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof forceChangePassword>>,
+    { data: BodyType<ForceChangePasswordRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return forceChangePassword(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ForceChangePasswordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof forceChangePassword>>
+>;
+export type ForceChangePasswordMutationBody =
+  BodyType<ForceChangePasswordRequest>;
+export type ForceChangePasswordMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Force password change (first login — no current password required)
+ */
+export const useForceChangePassword = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof forceChangePassword>>,
+    TError,
+    { data: BodyType<ForceChangePasswordRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof forceChangePassword>>,
+  TError,
+  { data: BodyType<ForceChangePasswordRequest> },
+  TContext
+> => {
+  return useMutation(getForceChangePasswordMutationOptions(options));
 };
 
 /**

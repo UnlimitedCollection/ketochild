@@ -38952,8 +38952,9 @@ var DoctorLoginResponse = objectType({
     username: stringType(),
     name: stringType(),
     email: stringType(),
-    specialty: stringType().optional(),
-    role: enumType(["admin", "moderator"])
+    designation: stringType().optional(),
+    role: enumType(["admin", "moderator"]),
+    mustChangePassword: booleanType().optional()
   }),
   token: stringType()
 });
@@ -38966,15 +38967,16 @@ var GetMeResponse = objectType({
   username: stringType(),
   name: stringType(),
   email: stringType(),
-  specialty: stringType().optional(),
-  role: enumType(["admin", "moderator"])
+  designation: stringType().optional(),
+  role: enumType(["admin", "moderator"]),
+  mustChangePassword: booleanType().optional()
 });
 var updateDoctorProfileBodyUsernameMin = 3;
 var updateDoctorProfileBodyUsernameMax = 100;
 var UpdateDoctorProfileBody = objectType({
   name: stringType().min(1),
   email: stringType().email(),
-  specialty: stringType().optional(),
+  designation: stringType().optional(),
   username: stringType().min(updateDoctorProfileBodyUsernameMin).max(updateDoctorProfileBodyUsernameMax)
 });
 var UpdateDoctorProfileResponse = objectType({
@@ -38982,8 +38984,18 @@ var UpdateDoctorProfileResponse = objectType({
   username: stringType(),
   name: stringType(),
   email: stringType(),
-  specialty: stringType().optional(),
-  role: enumType(["admin", "moderator"])
+  designation: stringType().optional(),
+  role: enumType(["admin", "moderator"]),
+  mustChangePassword: booleanType().optional()
+});
+var forceChangePasswordBodyNewPasswordMin = 6;
+var ForceChangePasswordBody = objectType({
+  newPassword: stringType().min(forceChangePasswordBodyNewPasswordMin),
+  confirmPassword: stringType().min(1)
+});
+var ForceChangePasswordResponse = objectType({
+  success: booleanType(),
+  message: stringType().optional()
 });
 var changeDoctorPasswordBodyNewPasswordMin = 6;
 var ChangeDoctorPasswordBody = objectType({
@@ -39591,7 +39603,8 @@ var ListUsersResponseItem = objectType({
   username: stringType(),
   name: stringType(),
   email: stringType(),
-  specialty: stringType().optional(),
+  designation: stringType().optional(),
+  profilePhoto: stringType().optional(),
   role: enumType(["admin", "moderator"]),
   createdAt: dateType()
 });
@@ -39604,7 +39617,8 @@ var CreateUserBody = objectType({
   password: stringType().min(createUserBodyPasswordMin),
   name: stringType().min(1),
   email: stringType().email(),
-  specialty: stringType().optional(),
+  designation: stringType().optional(),
+  profilePhoto: stringType().optional(),
   role: enumType(["admin", "moderator"])
 });
 var UpdateUserParams = objectType({
@@ -39618,7 +39632,8 @@ var UpdateUserBody = objectType({
   password: stringType().min(updateUserBodyPasswordMin).optional(),
   name: stringType().min(1).optional(),
   email: stringType().email().optional(),
-  specialty: stringType().optional(),
+  designation: stringType().optional(),
+  profilePhoto: stringType().optional(),
   role: enumType(["admin", "moderator"]).optional()
 });
 var UpdateUserResponse = objectType({
@@ -39626,7 +39641,8 @@ var UpdateUserResponse = objectType({
   username: stringType(),
   name: stringType(),
   email: stringType(),
-  specialty: stringType().optional(),
+  designation: stringType().optional(),
+  profilePhoto: stringType().optional(),
   role: enumType(["admin", "moderator"]),
   createdAt: dateType()
 });
@@ -58500,7 +58516,8 @@ var doctorsTable = pgTable("doctors", {
   password: text("password").notNull(),
   name: varchar("name", { length: 200 }).notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
-  specialty: varchar("specialty", { length: 200 }),
+  designation: varchar("designation", { length: 200 }),
+  profilePhoto: text("profile_photo"),
   role: varchar("role", { length: 20 }).notNull().default("admin"),
   mustChangePassword: boolean("must_change_password").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull()
@@ -60476,7 +60493,7 @@ router2.post("/login", async (req, res) => {
         username: doctor.username,
         name: doctor.name,
         email: doctor.email,
-        specialty: doctor.specialty ?? void 0,
+        designation: doctor.designation ?? void 0,
         role: doctor.role,
         mustChangePassword: doctor.mustChangePassword
       }
@@ -60510,7 +60527,7 @@ router2.get("/me", async (req, res) => {
       username: doctor.username,
       name: doctor.name,
       email: doctor.email,
-      specialty: doctor.specialty ?? void 0,
+      designation: doctor.designation ?? void 0,
       role: doctor.role,
       mustChangePassword: doctor.mustChangePassword
     });
@@ -60523,14 +60540,14 @@ var UpdateProfileBody = external_exports.object({
   name: external_exports.string().min(1),
   email: external_exports.string().email(),
   username: external_exports.string().min(3).max(100),
-  specialty: external_exports.string().optional()
+  designation: external_exports.string().optional()
 });
 var ChangePasswordBody = external_exports.object({
   currentPassword: external_exports.string().min(1),
   newPassword: external_exports.string().min(6, "New password must be at least 6 characters"),
   confirmPassword: external_exports.string().min(1)
 });
-var ForceChangePasswordBody = external_exports.object({
+var ForceChangePasswordBody2 = external_exports.object({
   newPassword: external_exports.string().min(6, "New password must be at least 6 characters"),
   confirmPassword: external_exports.string().min(1)
 });
@@ -60549,7 +60566,7 @@ router2.put("/profile", async (req, res) => {
     res.status(400).json({ error: "VALIDATION_ERROR", message: "Invalid request body" });
     return;
   }
-  const { name, email: email3, username, specialty } = parsed.data;
+  const { name, email: email3, username, designation } = parsed.data;
   try {
     const [existing] = await db.select({ id: doctorsTable.id }).from(doctorsTable).where(
       and(
@@ -60561,7 +60578,7 @@ router2.put("/profile", async (req, res) => {
       res.status(409).json({ error: "CONFLICT", message: "Username or email already taken" });
       return;
     }
-    const [updated] = await db.update(doctorsTable).set({ name, email: email3, username, specialty: specialty ?? null }).where(eq(doctorsTable.id, doctorId)).returning();
+    const [updated] = await db.update(doctorsTable).set({ name, email: email3, username, designation: designation ?? null }).where(eq(doctorsTable.id, doctorId)).returning();
     if (!updated) {
       req.session.destroy(() => {
       });
@@ -60574,7 +60591,7 @@ router2.put("/profile", async (req, res) => {
       username: updated.username,
       name: updated.name,
       email: updated.email,
-      specialty: updated.specialty ?? void 0,
+      designation: updated.designation ?? void 0,
       role: updated.role,
       mustChangePassword: updated.mustChangePassword
     });
@@ -60630,7 +60647,7 @@ router2.put("/force-change", async (req, res) => {
     res.status(401).json({ error: "UNAUTHORIZED", message: "Not authenticated" });
     return;
   }
-  const parsed = ForceChangePasswordBody.safeParse(req.body);
+  const parsed = ForceChangePasswordBody2.safeParse(req.body);
   if (!parsed.success) {
     const firstIssue = parsed.error.issues[0];
     res.status(400).json({ error: "VALIDATION_ERROR", message: firstIssue?.message ?? "Invalid request body" });
@@ -62902,7 +62919,8 @@ var CreateUserBody2 = external_exports.object({
   password: external_exports.string().min(6),
   name: external_exports.string().min(1).max(200),
   email: external_exports.string().email(),
-  specialty: external_exports.string().optional(),
+  designation: external_exports.string().optional(),
+  profilePhoto: external_exports.string().optional(),
   role: external_exports.enum(["admin", "moderator"])
 });
 var UpdateUserBody2 = external_exports.object({
@@ -62910,7 +62928,8 @@ var UpdateUserBody2 = external_exports.object({
   password: external_exports.string().min(6).optional(),
   name: external_exports.string().min(1).max(200).optional(),
   email: external_exports.string().email().optional(),
-  specialty: external_exports.string().optional(),
+  designation: external_exports.string().optional(),
+  profilePhoto: external_exports.string().optional(),
   role: external_exports.enum(["admin", "moderator"]).optional()
 });
 function mapUser(u) {
@@ -62919,7 +62938,8 @@ function mapUser(u) {
     username: u.username,
     name: u.name,
     email: u.email,
-    specialty: u.specialty ?? void 0,
+    designation: u.designation ?? void 0,
+    profilePhoto: u.profilePhoto ?? void 0,
     role: u.role,
     createdAt: u.createdAt.toISOString()
   };
@@ -62940,7 +62960,7 @@ router11.post("/", async (req, res) => {
     res.status(400).json({ error: "VALIDATION_ERROR", message: first?.message ?? "Invalid request body" });
     return;
   }
-  const { username, password, name, email: email3, specialty, role } = parsed.data;
+  const { username, password, name, email: email3, designation, profilePhoto, role } = parsed.data;
   try {
     const existing = await db.select({ id: doctorsTable.id }).from(doctorsTable).where(or(eq(doctorsTable.username, username), eq(doctorsTable.email, email3))).limit(1);
     if (existing.length > 0) {
@@ -62948,7 +62968,7 @@ router11.post("/", async (req, res) => {
       return;
     }
     const hashed = await bcryptjs_default.hash(password, 12);
-    const [created] = await db.insert(doctorsTable).values({ username, password: hashed, name, email: email3, specialty: specialty ?? null, role, mustChangePassword: true }).returning();
+    const [created] = await db.insert(doctorsTable).values({ username, password: hashed, name, email: email3, designation: designation ?? null, profilePhoto: profilePhoto ?? null, role, mustChangePassword: true }).returning();
     res.status(201).json(mapUser(created));
   } catch (err) {
     const dbErr = err;
@@ -62972,7 +62992,7 @@ router11.put("/:userId", async (req, res) => {
     res.status(400).json({ error: "VALIDATION_ERROR", message: first?.message ?? "Invalid request body" });
     return;
   }
-  const { username, password, name, email: email3, specialty, role } = parsed.data;
+  const { username, password, name, email: email3, designation, profilePhoto, role } = parsed.data;
   try {
     const [target] = await db.select().from(doctorsTable).where(eq(doctorsTable.id, userId)).limit(1);
     if (!target) {
@@ -63005,7 +63025,8 @@ router11.put("/:userId", async (req, res) => {
     if (name !== void 0) updates.name = name;
     if (email3 !== void 0) updates.email = email3;
     if (username !== void 0) updates.username = username;
-    if (specialty !== void 0) updates.specialty = specialty;
+    if (designation !== void 0) updates.designation = designation || null;
+    if (profilePhoto !== void 0) updates.profilePhoto = profilePhoto || null;
     if (role !== void 0) updates.role = role;
     if (password !== void 0) updates.password = await bcryptjs_default.hash(password, 12);
     const [updated] = await db.update(doctorsTable).set(updates).where(eq(doctorsTable.id, userId)).returning();

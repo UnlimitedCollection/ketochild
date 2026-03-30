@@ -51,7 +51,7 @@ async function seed() {
         password: hashedPassword,
         name: "Dr. Sarah Johnson",
         email: "sarah.johnson@ketokidcare.com",
-        specialty: "Pediatric Neurology",
+        designation: "Pediatric Neurology",
         role: "admin",
       })
       .returning();
@@ -76,7 +76,7 @@ async function seed() {
         password: moderatorPassword,
         name: "Dr. Alex Moderator",
         email: "alex.moderator@ketokidcare.com",
-        specialty: "Pediatric Neurology",
+        designation: "Pediatric Neurology",
         role: "moderator",
       })
       .returning();

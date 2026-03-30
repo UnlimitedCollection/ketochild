@@ -37,6 +37,7 @@ export * from "./foodApprovalRequest";
 export * from "./foodApprovalRequestStatus";
 export * from "./foodApprovalStatus";
 export * from "./foodIndicator";
+export * from "./forceChangePasswordRequest";
 export * from "./getFoodsParams";
 export * from "./getKidKetoneReadingsParams";
 export * from "./getKidMealHistoryParams";

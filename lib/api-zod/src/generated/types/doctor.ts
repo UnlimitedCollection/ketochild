@@ -12,6 +12,7 @@ export interface Doctor {
   username: string;
   name: string;
   email: string;
-  specialty?: string;
+  designation?: string;
   role: DoctorRole;
+  mustChangePassword?: boolean;
 }

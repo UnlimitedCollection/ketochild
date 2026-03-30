@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import {
   useListUsers,
   useCreateUser,
   useUpdateUser,
   useDeleteUser,
 } from "@workspace/api-client-react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Copy, Upload, ImagePlus } from "lucide-react";
 import type { UserResponse, CreateUserRequest, UpdateUserRequest } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getListUsersQueryKey } from "@workspace/api-client-react";
+import { useUpload } from "@workspace/object-storage-web";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -49,7 +50,8 @@ type UserFormData = {
   password: string;
   name: string;
   email: string;
-  specialty: string;
+  designation: string;
+  profilePhoto: string;
   role: "admin" | "moderator";
 };
 
@@ -58,7 +60,8 @@ const BLANK_FORM: UserFormData = {
   password: "",
   name: "",
   email: "",
-  specialty: "",
+  designation: "",
+  profilePhoto: "",
   role: "moderator",
 };
 
@@ -94,6 +97,11 @@ function generateSecurePassword(): string {
     .join("");
 }
 
+function getPhotoDisplayUrl(path: string): string {
+  if (path.startsWith("/objects/")) return `/api/storage${path}`;
+  return path;
+}
+
 export default function UsersPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -107,16 +115,30 @@ export default function UsersPage() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [form, setForm] = useState<UserFormData>(BLANK_FORM);
   const [formError, setFormError] = useState<string | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: users = [], isLoading } = useListUsers();
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
   const deleteUser = useDeleteUser();
 
+  const { uploadFile, isUploading } = useUpload({
+    onSuccess: (response) => {
+      setForm((prev) => ({ ...prev, profilePhoto: response.objectPath }));
+      setPhotoPreview(`/api/storage${response.objectPath}`);
+    },
+    onError: () => {
+      toast({ title: "Upload failed", description: "Could not upload profile photo.", variant: "destructive" });
+    },
+  });
+
   function openCreate() {
     setEditingId(null);
     setForm(BLANK_FORM);
     setFormError(null);
+    setPhotoPreview(null);
     setDialogOpen(true);
   }
 
@@ -127,9 +149,11 @@ export default function UsersPage() {
       password: "",
       name: user.name,
       email: user.email,
-      specialty: user.specialty ?? "",
+      designation: user.designation ?? "",
+      profilePhoto: user.profilePhoto ?? "",
       role: user.role as "admin" | "moderator",
     });
+    setPhotoPreview(user.profilePhoto ? getPhotoDisplayUrl(user.profilePhoto) : null);
     setFormError(null);
     setDialogOpen(true);
   }
@@ -149,17 +173,38 @@ export default function UsersPage() {
     setFormError(null);
   }
 
+  function handleFileSelect(file: File) {
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Invalid file", description: "Please upload an image file.", variant: "destructive" });
+      return;
+    }
+    uploadFile(file);
+  }
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleFileSelect(file);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
   function handleSave() {
     if (!form.username.trim() || form.username.length < 3) {
       setFormError("Username must be at least 3 characters.");
       return;
     }
     if (!editingId && form.password.length < 6) {
-      setFormError("Password must be at least 6 characters.");
-      return;
-    }
-    if (editingId && form.password && form.password.length < 6) {
-      setFormError("Password must be at least 6 characters.");
+      setFormError("Password must be at least 6 characters. Click Generate to create one.");
       return;
     }
     if (!form.name.trim()) {
@@ -181,8 +226,9 @@ export default function UsersPage() {
         name: form.name,
         email: form.email,
         role: form.role,
+        designation: form.designation.trim() || "",
+        profilePhoto: form.profilePhoto || "",
       };
-      if (form.specialty.trim()) body.specialty = form.specialty;
       if (form.password.trim()) body.password = form.password;
 
       updateUser.mutate(
@@ -204,7 +250,8 @@ export default function UsersPage() {
         password: form.password,
         name: form.name,
         email: form.email,
-        specialty: form.specialty || undefined,
+        designation: form.designation || undefined,
+        profilePhoto: form.profilePhoto || undefined,
         role: form.role,
       };
       createUser.mutate(
@@ -241,7 +288,14 @@ export default function UsersPage() {
     );
   }
 
-  const isMutating = createUser.isPending || updateUser.isPending;
+  function handleCopyPassword() {
+    if (form.password) {
+      navigator.clipboard.writeText(form.password);
+      toast({ title: "Copied", description: "Password copied to clipboard." });
+    }
+  }
+
+  const isMutating = createUser.isPending || updateUser.isPending || isUploading;
 
   return (
     <div className="space-y-6">
@@ -276,7 +330,7 @@ export default function UsersPage() {
                   <TableHead>Name</TableHead>
                   <TableHead>Username</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Specialty</TableHead>
+                  <TableHead>Designation</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -288,7 +342,7 @@ export default function UsersPage() {
                     <TableCell className="font-medium text-slate-800">{user.name}</TableCell>
                     <TableCell className="text-slate-600 font-mono text-sm">{user.username}</TableCell>
                     <TableCell className="text-slate-500 text-sm">{user.email}</TableCell>
-                    <TableCell className="text-slate-500 text-sm">{user.specialty || "—"}</TableCell>
+                    <TableCell className="text-slate-500 text-sm">{user.designation || "\u2014"}</TableCell>
                     <TableCell>
                       {user.role === "admin" ? (
                         <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 flex items-center gap-1 w-fit">
@@ -352,6 +406,69 @@ export default function UsersPage() {
             {formError && (
               <div className="p-3 rounded-lg bg-red-50 text-red-700 text-sm">{formError}</div>
             )}
+
+            <div className="space-y-1.5">
+              <Label>Profile Photo</Label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleFileSelect(file);
+                  e.target.value = "";
+                }}
+              />
+              {photoPreview ? (
+                <div className="flex items-center gap-4">
+                  <div className="h-20 w-20 rounded-full overflow-hidden border-2 border-slate-200 shrink-0">
+                    <img src={photoPreview} alt="Profile" className="h-full w-full object-cover" />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={isUploading}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      {isUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Upload className="h-3.5 w-3.5 mr-1" />}
+                      Change
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setPhotoPreview(null);
+                        setForm((prev) => ({ ...prev, profilePhoto: "" }));
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  disabled={isUploading}
+                  onClick={() => fileInputRef.current?.click()}
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  className={`flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-6 text-slate-400 transition-colors hover:border-primary/50 hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed ${isDragging ? "border-primary/50 bg-primary/5 text-primary" : "border-slate-200"}`}
+                >
+                  {isUploading ? (
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  ) : (
+                    <ImagePlus className="h-6 w-6" />
+                  )}
+                  <span className="text-sm">{isUploading ? "Uploading..." : "Drag & drop or click to upload photo"}</span>
+                </button>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Full Name</Label>
@@ -380,31 +497,12 @@ export default function UsersPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label>{editingId ? "New Password (optional)" : "Password"}</Label>
-              <div className="flex gap-2">
-                <Input
-                  type="text"
-                  value={form.password}
-                  onChange={(e) => handleField("password", e.target.value)}
-                  placeholder={editingId ? "Leave blank to keep" : "Min. 6 characters"}
-                  className="font-mono text-sm flex-1"
-                />
-                {!editingId && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="shrink-0 gap-1.5"
-                    onClick={() => handleField("password", generateSecurePassword())}
-                  >
-                    <RefreshCw className="h-3.5 w-3.5" />
-                    Generate
-                  </Button>
-                )}
-              </div>
-              {!editingId && (
-                <p className="text-xs text-slate-500">Generated password is visible so you can copy and share it with the new user.</p>
-              )}
+              <Label>Designation (optional)</Label>
+              <Input
+                value={form.designation}
+                onChange={(e) => handleField("designation", e.target.value)}
+                placeholder="Pediatric Neurologist"
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Role</Label>
@@ -418,14 +516,42 @@ export default function UsersPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5">
-              <Label>Specialty (optional)</Label>
-              <Input
-                value={form.specialty}
-                onChange={(e) => handleField("specialty", e.target.value)}
-                placeholder="Pediatric Neurology"
-              />
-            </div>
+            {!editingId && (
+              <div className="space-y-1.5">
+                <Label>Password</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    value={form.password}
+                    readOnly
+                    placeholder="Click Generate to create a password"
+                    className="font-mono text-sm flex-1 bg-slate-50"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0 gap-1.5"
+                    onClick={() => handleField("password", generateSecurePassword())}
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />
+                    Generate
+                  </Button>
+                  {form.password && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="shrink-0 h-9 w-9"
+                      onClick={handleCopyPassword}
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </div>
+                <p className="text-xs text-slate-500">Generate a temporary password and share it with the new user.</p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={isMutating}>
@@ -467,6 +593,13 @@ export default function UsersPage() {
           </DialogHeader>
           {viewUser && (
             <div className="space-y-4 py-2">
+              {viewUser.profilePhoto && (
+                <div className="flex justify-center">
+                  <div className="h-20 w-20 rounded-full overflow-hidden border-2 border-slate-200">
+                    <img src={getPhotoDisplayUrl(viewUser.profilePhoto)} alt={viewUser.name} className="h-full w-full object-cover" />
+                  </div>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Full Name</p>
@@ -483,8 +616,8 @@ export default function UsersPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Specialty</p>
-                  <p className="text-sm text-slate-800">{viewUser.specialty || "—"}</p>
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Designation</p>
+                  <p className="text-sm text-slate-800">{viewUser.designation || "\u2014"}</p>
                 </div>
                 <div>
                   <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Role</p>

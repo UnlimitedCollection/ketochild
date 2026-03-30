@@ -10,7 +10,7 @@ export interface UpdateDoctorProfileRequest {
   /** @minLength 1 */
   name: string;
   email: string;
-  specialty?: string;
+  designation?: string;
   /**
    * @minLength 3
    * @maxLength 100

@@ -18,6 +18,7 @@ export interface UpdateUserRequest {
   /** @minLength 1 */
   name?: string;
   email?: string;
-  specialty?: string;
+  designation?: string;
+  profilePhoto?: string;
   role?: UpdateUserRequestRole;
 }

@@ -12,7 +12,8 @@ export interface UserResponse {
   username: string;
   name: string;
   email: string;
-  specialty?: string;
+  designation?: string;
+  profilePhoto?: string;
   role: UserResponseRole;
   createdAt: Date;
 }

@@ -1,5 +1,5 @@
 import type { QueryKey, UseMutationOptions, UseMutationResult, UseQueryOptions, UseQueryResult } from "@tanstack/react-query";
-import type { AddKetoneReadingRequest, AddLibraryMealPlanItemRequest, AddMealLogRequest, AddMealPlanItemRequest, AssignMealPlanRequest, ChangeDoctorPasswordRequest, CreateFoodRequest, CreateKidRequest, CreateLibraryMealPlanRequest, CreateMealPlanRequest, CreateRecipeRequest, CreateTokenRequest, CreateUserRequest, DashboardStats, Doctor, ErrorResponse, Food, FoodApproval, FoodApprovalRequest, GetFoodsParams, GetKidKetoneReadingsParams, GetKidMealHistoryParams, GetKidMealLogParams, GetKidMealLogsParams, GetKidsParams, HealthStatus, KetoneReading, Kid, KidProfile, LibraryMealPlan, LibraryMealPlanDetail, LibraryMealPlanItem, LoginRequest, LoginResponse, MealDay, MealLog, MealLogDetail, MealPlan, MealPlanDetail, MealPlanItem, MedicalSettings, MedicalSettingsRequest, Note, NoteRequest, ParentToken, RecentActivityItem, RecipeDetail, RecipeIngredient, RecipeIngredientRequest, SuccessResponse, UpdateDoctorProfileRequest, UpdateFoodRequest, UpdateKidRequest, UpdateLibraryMealPlanRequest, UpdateMealLogImageRequest, UpdateMealPlanRequest, UpdateRecipeRequest, UpdateUserRequest, UploadUrlRequest, UploadUrlResponse, UserResponse, VisibilityRequest, WeightRecord, WeightRecordRequest } from "./api.schemas";
+import type { AddKetoneReadingRequest, AddLibraryMealPlanItemRequest, AddMealLogRequest, AddMealPlanItemRequest, AssignMealPlanRequest, ChangeDoctorPasswordRequest, CreateFoodRequest, CreateKidRequest, CreateLibraryMealPlanRequest, CreateMealPlanRequest, CreateRecipeRequest, CreateTokenRequest, CreateUserRequest, DashboardStats, Doctor, ErrorResponse, Food, FoodApproval, FoodApprovalRequest, ForceChangePasswordRequest, GetFoodsParams, GetKidKetoneReadingsParams, GetKidMealHistoryParams, GetKidMealLogParams, GetKidMealLogsParams, GetKidsParams, HealthStatus, KetoneReading, Kid, KidProfile, LibraryMealPlan, LibraryMealPlanDetail, LibraryMealPlanItem, LoginRequest, LoginResponse, MealDay, MealLog, MealLogDetail, MealPlan, MealPlanDetail, MealPlanItem, MedicalSettings, MedicalSettingsRequest, Note, NoteRequest, ParentToken, RecentActivityItem, RecipeDetail, RecipeIngredient, RecipeIngredientRequest, SuccessResponse, UpdateDoctorProfileRequest, UpdateFoodRequest, UpdateKidRequest, UpdateLibraryMealPlanRequest, UpdateMealLogImageRequest, UpdateMealPlanRequest, UpdateRecipeRequest, UpdateUserRequest, UploadUrlRequest, UploadUrlResponse, UserResponse, VisibilityRequest, WeightRecord, WeightRecordRequest } from "./api.schemas";
 import { customFetch } from "../custom-fetch";
 import type { ErrorType, BodyType } from "../custom-fetch";
 type AwaitedInput<T> = PromiseLike<T> | T;
@@ -97,7 +97,7 @@ export declare function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TErr
     queryKey: QueryKey;
 };
 /**
- * @summary Update doctor profile (name, email, specialty, username)
+ * @summary Update doctor profile (name, email, designation, username)
  */
 export declare const getUpdateDoctorProfileUrl: () => string;
 export declare const updateDoctorProfile: (updateDoctorProfileRequest: UpdateDoctorProfileRequest, options?: RequestInit) => Promise<Doctor>;
@@ -113,7 +113,7 @@ export type UpdateDoctorProfileMutationResult = NonNullable<Awaited<ReturnType<t
 export type UpdateDoctorProfileMutationBody = BodyType<UpdateDoctorProfileRequest>;
 export type UpdateDoctorProfileMutationError = ErrorType<ErrorResponse>;
 /**
- * @summary Update doctor profile (name, email, specialty, username)
+ * @summary Update doctor profile (name, email, designation, username)
  */
 export declare const useUpdateDoctorProfile: <TError = ErrorType<ErrorResponse>, TContext = unknown>(options?: {
     mutation?: UseMutationOptions<Awaited<ReturnType<typeof updateDoctorProfile>>, TError, {
@@ -122,6 +122,33 @@ export declare const useUpdateDoctorProfile: <TError = ErrorType<ErrorResponse>,
     request?: SecondParameter<typeof customFetch>;
 }) => UseMutationResult<Awaited<ReturnType<typeof updateDoctorProfile>>, TError, {
     data: BodyType<UpdateDoctorProfileRequest>;
+}, TContext>;
+/**
+ * @summary Force password change (first login — no current password required)
+ */
+export declare const getForceChangePasswordUrl: () => string;
+export declare const forceChangePassword: (forceChangePasswordRequest: ForceChangePasswordRequest, options?: RequestInit) => Promise<SuccessResponse>;
+export declare const getForceChangePasswordMutationOptions: <TError = ErrorType<ErrorResponse>, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof forceChangePassword>>, TError, {
+        data: BodyType<ForceChangePasswordRequest>;
+    }, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseMutationOptions<Awaited<ReturnType<typeof forceChangePassword>>, TError, {
+    data: BodyType<ForceChangePasswordRequest>;
+}, TContext>;
+export type ForceChangePasswordMutationResult = NonNullable<Awaited<ReturnType<typeof forceChangePassword>>>;
+export type ForceChangePasswordMutationBody = BodyType<ForceChangePasswordRequest>;
+export type ForceChangePasswordMutationError = ErrorType<ErrorResponse>;
+/**
+ * @summary Force password change (first login — no current password required)
+ */
+export declare const useForceChangePassword: <TError = ErrorType<ErrorResponse>, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof forceChangePassword>>, TError, {
+        data: BodyType<ForceChangePasswordRequest>;
+    }, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseMutationResult<Awaited<ReturnType<typeof forceChangePassword>>, TError, {
+    data: BodyType<ForceChangePasswordRequest>;
 }, TContext>;
 /**
  * @summary Change doctor password (requires current password)

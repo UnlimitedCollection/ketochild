@@ -30,8 +30,9 @@ export interface Doctor {
     username: string;
     name: string;
     email: string;
-    specialty?: string;
+    designation?: string;
     role: DoctorRole;
+    mustChangePassword?: boolean;
 }
 export interface LoginResponse {
     doctor: Doctor;
@@ -41,12 +42,18 @@ export interface UpdateDoctorProfileRequest {
     /** @minLength 1 */
     name: string;
     email: string;
-    specialty?: string;
+    designation?: string;
     /**
      * @minLength 3
      * @maxLength 100
      */
     username: string;
+}
+export interface ForceChangePasswordRequest {
+    /** @minLength 6 */
+    newPassword: string;
+    /** @minLength 1 */
+    confirmPassword: string;
 }
 export interface ChangeDoctorPasswordRequest {
     /** @minLength 1 */
@@ -665,7 +672,8 @@ export interface UserResponse {
     username: string;
     name: string;
     email: string;
-    specialty?: string;
+    designation?: string;
+    profilePhoto?: string;
     role: UserResponseRole;
     createdAt: string;
 }
@@ -685,7 +693,8 @@ export interface CreateUserRequest {
     /** @minLength 1 */
     name: string;
     email: string;
-    specialty?: string;
+    designation?: string;
+    profilePhoto?: string;
     role: CreateUserRequestRole;
 }
 export type UpdateUserRequestRole = (typeof UpdateUserRequestRole)[keyof typeof UpdateUserRequestRole];
@@ -704,7 +713,8 @@ export interface UpdateUserRequest {
     /** @minLength 1 */
     name?: string;
     email?: string;
-    specialty?: string;
+    designation?: string;
+    profilePhoto?: string;
     role?: UpdateUserRequestRole;
 }
 export type GetKidsParams = {

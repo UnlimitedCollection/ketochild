@@ -94,8 +94,8 @@ export declare const doctorsTable: import("drizzle-orm/pg-core").PgTableWithColu
         }, {}, {
             length: 255;
         }>;
-        specialty: import("drizzle-orm/pg-core").PgColumn<{
-            name: "specialty";
+        designation: import("drizzle-orm/pg-core").PgColumn<{
+            name: "designation";
             tableName: "doctors";
             dataType: "string";
             columnType: "PgVarchar";
@@ -113,6 +113,59 @@ export declare const doctorsTable: import("drizzle-orm/pg-core").PgTableWithColu
         }, {}, {
             length: 200;
         }>;
+        profilePhoto: import("drizzle-orm/pg-core").PgColumn<{
+            name: "profile_photo";
+            tableName: "doctors";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        role: import("drizzle-orm/pg-core").PgColumn<{
+            name: "role";
+            tableName: "doctors";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: 20;
+        }>;
+        mustChangePassword: import("drizzle-orm/pg-core").PgColumn<{
+            name: "must_change_password";
+            tableName: "doctors";
+            dataType: "boolean";
+            columnType: "PgBoolean";
+            data: boolean;
+            driverParam: boolean;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
         createdAt: import("drizzle-orm/pg-core").PgColumn<{
             name: "created_at";
             tableName: "doctors";
@@ -138,7 +191,10 @@ export declare const insertDoctorSchema: z.ZodObject<{
     password: z.ZodString;
     name: z.ZodString;
     email: z.ZodString;
-    specialty: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    designation: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    profilePhoto: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    role: z.ZodOptional<z.ZodString>;
+    mustChangePassword: z.ZodOptional<z.ZodBoolean>;
 }, {
     out: {};
     in: {};

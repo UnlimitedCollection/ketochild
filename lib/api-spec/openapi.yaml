@@ -104,7 +104,7 @@ paths:
     put:
       operationId: updateDoctorProfile
       tags: [auth]
-      summary: Update doctor profile (name, email, specialty, username)
+      summary: Update doctor profile (name, email, designation, username)
       requestBody:
         required: true
         content:
@@ -1794,7 +1794,7 @@ components:
           type: string
         email:
           type: string
-        specialty:
+        designation:
           type: string
         role:
           type: string
@@ -1817,7 +1817,7 @@ components:
         email:
           type: string
           format: email
-        specialty:
+        designation:
           type: string
         username:
           type: string
@@ -3092,7 +3092,9 @@ components:
           type: string
         email:
           type: string
-        specialty:
+        designation:
+          type: string
+        profilePhoto:
           type: string
         role:
           type: string
@@ -3124,7 +3126,9 @@ components:
         email:
           type: string
           format: email
-        specialty:
+        designation:
+          type: string
+        profilePhoto:
           type: string
         role:
           type: string
@@ -3152,7 +3156,9 @@ components:
         email:
           type: string
           format: email
-        specialty:
+        designation:
+          type: string
+        profilePhoto:
           type: string
         role:
           type: string
