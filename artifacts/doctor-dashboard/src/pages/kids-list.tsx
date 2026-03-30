@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link, useSearch, useLocation } from "wouter";
 import { useGetKids, useGetKid, useGetKidKetoneReadings, useDeleteKid, type GetKidsParams } from "@workspace/api-client-react";
-import { Search, Filter, Loader2, User, Eye, Flame, Clock, Trash2, Pencil, Scale, FlaskConical } from "lucide-react";
+import { Search, Filter, Loader2, User, Eye, Flame, Clock, Trash2, Pencil, Scale, FlaskConical, TrendingUp, TrendingDown, Activity, Calendar, Utensils } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,13 +9,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { MultiSelectDropdown } from "@/components/ui/multi-select-dropdown";
 import { useToast } from "@/hooks/use-toast";
 import { useCanWrite } from "@/hooks/useRole";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/use-debounce";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, differenceInDays } from "date-fns";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
 
 const KETO_STATUS_OPTIONS = [
   { label: "In Keto", value: "true" },
@@ -44,19 +45,60 @@ function KidViewDialog({ kidId, open, onOpenChange }: { kidId: number | null; op
   );
 
   const kid = profile?.kid;
+  const medical = profile?.medical;
   const recentWeights = profile?.recentWeights ?? [];
+  const recentMeals = profile?.recentMeals ?? [];
 
-  const latestWeight = recentWeights[0];
+  const oldestWeight = recentWeights[0];
+  const latestWeight = recentWeights[recentWeights.length - 1];
   const latestKetone = ketoneReadings?.[0];
+
+  const weightChartData = useMemo(
+    () => recentWeights.map((w) => ({
+      date: format(parseISO(w.date), "MMM d"),
+      weight: w.weight,
+    })),
+    [recentWeights]
+  );
+
+  const weightDelta = latestWeight && oldestWeight && recentWeights.length > 1
+    ? Number((latestWeight.weight - oldestWeight.weight).toFixed(2))
+    : null;
+
+  const mealCompletionPct = kid ? Math.round(kid.mealCompletionRate * 100) : 0;
+
+  const avgDailyCalories = useMemo(() => {
+    const filled = recentMeals.filter((m) => m.totalCalories && m.totalCalories > 0);
+    if (filled.length === 0) return null;
+    return Math.round(filled.reduce((s, m) => s + (m.totalCalories ?? 0), 0) / filled.length);
+  }, [recentMeals]);
+
+  const daysInPhase = useMemo(() => {
+    if (!kid) return null;
+    if (recentWeights.length > 0) {
+      return differenceInDays(new Date(), parseISO(recentWeights[0].date));
+    }
+    return null;
+  }, [kid, recentWeights]);
+
+  const ketoneLevel = useMemo(() => {
+    if (!latestKetone) return null;
+    const v = latestKetone.value;
+    if (v < 0.5) return { label: "Low", color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-200" };
+    if (v <= 3.0) return { label: "Optimal", color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200" };
+    if (v <= 5.0) return { label: "High", color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-200" };
+    return { label: "Very High", color: "text-red-600", bg: "bg-red-50", border: "border-red-200" };
+  }, [latestKetone]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg rounded-2xl">
+      <DialogContent className="sm:max-w-4xl rounded-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5 text-primary" />
             Patient Overview
           </DialogTitle>
+          <DialogDescription className="sr-only">Detailed patient overview with analytics</DialogDescription>
         </DialogHeader>
 
         {isLoading ? (
@@ -70,63 +112,204 @@ function KidViewDialog({ kidId, open, onOpenChange }: { kidId: number | null; op
           </div>
         ) : (
           <div className="space-y-5 pt-1">
-            {/* Name & IDs */}
             <div className="flex items-start justify-between">
               <div>
                 <h2 className="text-xl font-bold text-slate-900">{kid.name}</h2>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-600">{kid.kidCode}</span>
                   <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">Phase {kid.phase}</Badge>
+                  {kid.isHighRisk && (
+                    <Badge variant="destructive" className="bg-destructive/10 text-destructive border border-destructive/20 text-xs">High Risk</Badge>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Core info grid */}
-            <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-              <div>
-                <p className="text-slate-500 font-medium text-xs uppercase tracking-wide">Age</p>
-                <p className="font-semibold text-slate-800">{kid.ageMonths} months</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Personal Information</h3>
+                  <div className="rounded-xl bg-slate-50 border border-slate-100 p-4 space-y-3">
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-slate-500 text-xs">Age</p>
+                        <p className="font-semibold text-slate-800">{kid.ageMonths} months</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500 text-xs">Gender</p>
+                        <p className="font-semibold text-slate-800 capitalize">{kid.gender ?? '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500 text-xs">Date of Birth</p>
+                        <p className="font-semibold text-slate-800">{format(parseISO(kid.dateOfBirth), 'MMM d, yyyy')}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500 text-xs">Health Status</p>
+                        {kid.isHighRisk ? (
+                          <Badge variant="destructive" className="bg-destructive/10 text-destructive border border-destructive/20 text-xs mt-0.5">High Risk</Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs mt-0.5">Stable</Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Contact Information</h3>
+                  <div className="rounded-xl bg-slate-50 border border-slate-100 p-4 space-y-3">
+                    <div className="grid grid-cols-1 gap-3 text-sm">
+                      <div>
+                        <p className="text-slate-500 text-xs">Parent / Guardian</p>
+                        <p className="font-semibold text-slate-800">{kid.parentName}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500 text-xs">Contact</p>
+                        <p className="font-semibold text-slate-800">{kid.parentContact}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="text-slate-500 font-medium text-xs uppercase tracking-wide">Gender</p>
-                <p className="font-semibold text-slate-800 capitalize">{kid.gender ?? '—'}</p>
-              </div>
-              <div>
-                <p className="text-slate-500 font-medium text-xs uppercase tracking-wide">Date of Birth</p>
-                <p className="font-semibold text-slate-800">{format(parseISO(kid.dateOfBirth), 'MMM d, yyyy')}</p>
-              </div>
-              <div>
-                <p className="text-slate-500 font-medium text-xs uppercase tracking-wide">Health Status</p>
-                {kid.isHighRisk ? (
-                  <Badge variant="destructive" className="bg-destructive/10 text-destructive border border-destructive/20 text-xs mt-0.5">High Risk</Badge>
-                ) : (
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs mt-0.5">Stable</Badge>
-                )}
-              </div>
-              <div>
-                <p className="text-slate-500 font-medium text-xs uppercase tracking-wide">Parent / Guardian</p>
-                <p className="font-semibold text-slate-800">{kid.parentName}</p>
-              </div>
-              <div>
-                <p className="text-slate-500 font-medium text-xs uppercase tracking-wide">Parent Contact</p>
-                <p className="font-semibold text-slate-800">{kid.parentContact}</p>
+
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Clinical KPIs</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-xl bg-blue-50 border border-blue-100 p-3">
+                      <div className="flex items-center gap-1.5 text-blue-600 text-xs font-medium mb-1">
+                        <Utensils className="h-3.5 w-3.5" /> Meal Completion
+                      </div>
+                      <p className="text-xl font-bold text-blue-700">{mealCompletionPct}%</p>
+                      <div className="mt-1.5 h-1.5 w-full bg-blue-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${mealCompletionPct}%` }} />
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl bg-purple-50 border border-purple-100 p-3">
+                      <div className="flex items-center gap-1.5 text-purple-600 text-xs font-medium mb-1">
+                        <Activity className="h-3.5 w-3.5" /> Keto Ratio
+                      </div>
+                      <p className="text-xl font-bold text-purple-700">
+                        {medical?.ketoRatio ? `${medical.ketoRatio}:1` : '—'}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl bg-amber-50 border border-amber-100 p-3">
+                      <div className="flex items-center gap-1.5 text-amber-600 text-xs font-medium mb-1">
+                        <Flame className="h-3.5 w-3.5" /> Daily Calories
+                      </div>
+                      <div className="text-sm">
+                        {medical?.dailyCalories ? (
+                          <>
+                            <p className="text-xl font-bold text-amber-700">{medical.dailyCalories}</p>
+                            {avgDailyCalories !== null && (
+                              <p className="text-xs text-amber-600 mt-0.5">Avg actual: {avgDailyCalories}</p>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-xl font-bold text-amber-700">—</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl bg-emerald-50 border border-emerald-100 p-3">
+                      <div className="flex items-center gap-1.5 text-emerald-600 text-xs font-medium mb-1">
+                        <Scale className="h-3.5 w-3.5" /> Weight Change
+                      </div>
+                      {weightDelta !== null ? (
+                        <div className="flex items-center gap-1">
+                          {weightDelta > 0 ? (
+                            <TrendingUp className="h-4 w-4 text-emerald-600" />
+                          ) : weightDelta < 0 ? (
+                            <TrendingDown className="h-4 w-4 text-red-500" />
+                          ) : null}
+                          <p className={`text-xl font-bold ${weightDelta > 0 ? 'text-emerald-700' : weightDelta < 0 ? 'text-red-600' : 'text-slate-700'}`}>
+                            {weightDelta > 0 ? '+' : ''}{weightDelta} kg
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-xl font-bold text-slate-400">—</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 flex items-center gap-3">
+                  <Calendar className="h-4 w-4 text-slate-500" />
+                  <div className="text-sm">
+                    <span className="text-slate-500">Days in Current Phase: </span>
+                    <span className="font-bold text-slate-800">{daysInPhase !== null ? daysInPhase : '—'}</span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Status & readings */}
+            <div>
+              <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Weight Trend</h3>
+              <div className="rounded-xl bg-slate-50 border border-slate-100 p-4">
+                {weightChartData.length >= 2 ? (
+                  <div className="h-[160px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={weightChartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="weightGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.2} />
+                            <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                        <XAxis
+                          dataKey="date"
+                          tick={{ fontSize: 10, fill: "#94a3b8" }}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis
+                          tick={{ fontSize: 10, fill: "#94a3b8" }}
+                          tickLine={false}
+                          axisLine={false}
+                          domain={["dataMin - 0.5", "dataMax + 0.5"]}
+                          unit=" kg"
+                        />
+                        <RechartsTooltip
+                          contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)", fontSize: "12px" }}
+                          formatter={(v: number) => [`${v} kg`, "Weight"]}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="weight"
+                          stroke="#0ea5e9"
+                          strokeWidth={2.5}
+                          fill="url(#weightGrad)"
+                          dot={{ r: 3, fill: "#0ea5e9", strokeWidth: 2, stroke: "#fff" }}
+                          activeDot={{ r: 5, fill: "#0d9488", strokeWidth: 0 }}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="h-[80px] flex flex-col items-center justify-center text-slate-400">
+                    <Scale className="h-5 w-5 mb-1 opacity-50" />
+                    <p className="text-xs">Not enough weight data for trend chart</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 flex flex-col gap-1">
-                <div className="flex items-center gap-1 text-slate-500 text-xs">
+              <div className="rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 p-3.5 flex flex-col gap-1.5">
+                <div className="flex items-center gap-1.5 text-slate-600 text-xs font-medium">
                   <Flame className="h-3.5 w-3.5" /> Keto Status
                 </div>
                 {kid.inKetoStatus ? (
-                  <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 w-fit gap-1 text-xs">In Keto</Badge>
+                  <Badge className="bg-emerald-100 text-emerald-700 border border-emerald-200 w-fit gap-1 text-xs font-semibold shadow-sm">In Keto</Badge>
                 ) : (
-                  <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 w-fit text-xs">Not in Keto</Badge>
+                  <Badge variant="outline" className="bg-orange-100 text-orange-700 border-orange-200 w-fit text-xs font-semibold shadow-sm">Not in Keto</Badge>
                 )}
               </div>
-              <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 flex flex-col gap-1">
-                <div className="flex items-center gap-1 text-slate-500 text-xs">
+              <div className="rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 p-3.5 flex flex-col gap-1.5">
+                <div className="flex items-center gap-1.5 text-slate-600 text-xs font-medium">
                   <Scale className="h-3.5 w-3.5" /> Latest Weight
                 </div>
                 <p className="font-bold text-slate-800 text-sm">
@@ -136,15 +319,22 @@ function KidViewDialog({ kidId, open, onOpenChange }: { kidId: number | null; op
                   <p className="text-xs text-slate-400">{format(parseISO(latestWeight.date), 'MMM d')}</p>
                 )}
               </div>
-              <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 flex flex-col gap-1">
-                <div className="flex items-center gap-1 text-slate-500 text-xs">
+              <div className="rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 p-3.5 flex flex-col gap-1.5">
+                <div className="flex items-center gap-1.5 text-slate-600 text-xs font-medium">
                   <FlaskConical className="h-3.5 w-3.5" /> Last Ketone
                 </div>
                 <p className="font-bold text-slate-800 text-sm">
                   {latestKetone ? `${latestKetone.value} ${latestKetone.unit}` : '—'}
                 </p>
                 {latestKetone && (
-                  <p className="text-xs text-slate-400">{format(parseISO(latestKetone.date), 'MMM d')}</p>
+                  <div className="flex items-center gap-2">
+                    {ketoneLevel && (
+                      <Badge variant="outline" className={`${ketoneLevel.bg} ${ketoneLevel.color} ${ketoneLevel.border} text-xs w-fit`}>
+                        {ketoneLevel.label}
+                      </Badge>
+                    )}
+                    <p className="text-xs text-slate-400">{format(parseISO(latestKetone.date), 'MMM d')}</p>
+                  </div>
                 )}
               </div>
             </div>
