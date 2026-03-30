@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useSearch, useLocation } from "wouter";
 import { useGetKids, useGetKid, useGetKidKetoneReadings, useDeleteKid } from "@workspace/api-client-react";
-import { Search, Filter, Loader2, User, ChevronRight, Flame, Clock, Trash2, Pencil, Scale, FlaskConical } from "lucide-react";
+import { Search, Filter, Loader2, User, Eye, Flame, Clock, Trash2, Pencil, Scale, FlaskConical } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -379,8 +379,9 @@ export default function KidsListPage() {
                           variant="ghost"
                           className="rounded-lg text-primary hover:text-primary hover:bg-primary/10"
                           onClick={() => setViewingKidId(kid.id)}
+                          aria-label="View patient"
                         >
-                          View <ChevronRight className="h-4 w-4 ml-1" />
+                          <Eye className="h-4 w-4" />
                         </Button>
                         {canWrite && (
                           <Button
