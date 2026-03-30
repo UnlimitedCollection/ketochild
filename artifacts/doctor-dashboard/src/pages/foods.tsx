@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { getGetFoodsQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -535,11 +536,13 @@ export default function FoodsPage() {
 
             <div className="space-y-1.5">
               <Label htmlFor="food-desc">Description</Label>
-              <Input
+              <Textarea
                 id="food-desc"
                 placeholder="Brief description of the food item"
                 value={form.description}
                 onChange={(e) => handleFormChange("description", e.target.value)}
+                className="resize-none rounded-xl"
+                rows={4}
               />
             </div>
 

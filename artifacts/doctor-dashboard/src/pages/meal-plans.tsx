@@ -674,7 +674,7 @@ function PlanFormDialog({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="resize-none rounded-xl"
-              rows={2}
+              rows={4}
             />
           </div>
           <div className="space-y-1.5">
