@@ -38,7 +38,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2, Plus, Search, Pencil, Trash2, Flame, Apple, EyeOff, ImageUp, X } from "lucide-react";
+import { Loader2, Plus, Search, Pencil, Trash2, Flame, Apple, Eye, EyeOff, ImageUp, X } from "lucide-react";
 
 type FoodFormData = {
   name: string;
@@ -81,6 +81,18 @@ export default function FoodsPage() {
   const [togglingId, setTogglingId] = useState<number | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [viewingFood, setViewingFood] = useState<null | {
+    id: number;
+    name: string;
+    category: string;
+    carbs: number;
+    fat: number;
+    protein: number;
+    calories: number;
+    description?: string | null;
+    imageUrl?: string | null;
+    isActive?: boolean | null;
+  }>(null);
 
   const { uploadFile, isUploading } = useUpload({
     onSuccess: (response) => {
@@ -396,8 +408,8 @@ export default function FoodsPage() {
                           )}
                         </TableCell>
                         <TableCell>
-                          {canWrite && (
-                            <div className="flex items-center justify-end gap-1">
+                          <div className="flex items-center justify-end gap-1">
+                            {canWrite && (
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -406,6 +418,16 @@ export default function FoodsPage() {
                               >
                                 <Pencil className="h-4 w-4" />
                               </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-slate-500 hover:text-primary"
+                              onClick={() => setViewingFood(food)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            {canWrite && (
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -414,8 +436,8 @@ export default function FoodsPage() {
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -606,6 +628,69 @@ export default function FoodsPage() {
               {isMutating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {editingId !== null ? "Save Changes" : "Add Food"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Food Details */}
+      <Dialog open={viewingFood !== null} onOpenChange={(open) => { if (!open) setViewingFood(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Food Details</DialogTitle>
+          </DialogHeader>
+          {viewingFood && (
+            <div className="space-y-4">
+              {viewingFood.imageUrl && (
+                <div className="flex justify-center">
+                  <img
+                    src={viewingFood.imageUrl.startsWith("/objects/") ? `/api/storage${viewingFood.imageUrl}` : viewingFood.imageUrl}
+                    alt={viewingFood.name}
+                    className="h-40 w-40 rounded-lg object-cover border"
+                  />
+                </div>
+              )}
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Name</p>
+                <p className="font-semibold text-base">{viewingFood.name}</p>
+              </div>
+              {viewingFood.description && (
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Description</p>
+                  <p className="text-sm">{viewingFood.description}</p>
+                </div>
+              )}
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Macro Type</p>
+                <Badge variant="outline">{viewingFood.category}</Badge>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-md border p-3 text-center">
+                  <p className="text-xs text-muted-foreground">Calories</p>
+                  <p className="font-semibold">{viewingFood.calories}</p>
+                </div>
+                <div className="rounded-md border p-3 text-center">
+                  <p className="text-xs text-muted-foreground">Carbs (g)</p>
+                  <p className="font-semibold">{viewingFood.carbs}</p>
+                </div>
+                <div className="rounded-md border p-3 text-center">
+                  <p className="text-xs text-muted-foreground">Fat (g)</p>
+                  <p className="font-semibold">{viewingFood.fat}</p>
+                </div>
+                <div className="rounded-md border p-3 text-center">
+                  <p className="text-xs text-muted-foreground">Protein (g)</p>
+                  <p className="font-semibold">{viewingFood.protein}</p>
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Status</p>
+                <Badge variant={viewingFood.isActive !== false ? "default" : "secondary"}>
+                  {viewingFood.isActive !== false ? "Active" : "Inactive"}
+                </Badge>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewingFood(null)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
