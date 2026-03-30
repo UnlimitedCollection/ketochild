@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Loader2, Plus, Search, ClipboardList, Pencil, Trash2, ChevronDown, ChevronUp,
-  Coffee, Sun, Moon, Apple as AppleIcon, BookOpen, Users,
+  Coffee, Sun, Moon, Apple as AppleIcon, BookOpen, Users, Eye, X,
 } from "lucide-react";
 
 type MealType = "breakfast" | "lunch" | "dinner" | "snack";
@@ -52,6 +52,7 @@ export default function MealPlansPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editPlan, setEditPlan] = useState<LibraryMealPlan | null>(null);
   const [deletePlanId, setDeletePlanId] = useState<number | null>(null);
+  const [viewPlan, setViewPlan] = useState<LibraryMealPlan | null>(null);
   const [expandedMeal, setExpandedMeal] = useState<MealType | null>("breakfast");
   const [addItemMeal, setAddItemMeal] = useState<MealType | null>(null);
 
@@ -283,8 +284,8 @@ export default function MealPlansPage() {
                           <Badge variant="outline" className="mt-1.5 text-xs">Phase {plan.targetPhase}</Badge>
                         )}
                       </div>
-                      {canWrite && (
-                        <div className="flex gap-1 shrink-0">
+                      <div className="flex gap-1 shrink-0">
+                        {canWrite && (
                           <Button
                             variant="ghost"
                             size="icon"
@@ -293,6 +294,17 @@ export default function MealPlansPage() {
                           >
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-slate-400 hover:text-primary"
+                          onClick={(e) => { e.stopPropagation(); setViewPlan(plan); }}
+                          title="View details"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </Button>
+                        {canWrite && (
                           <Button
                             variant="ghost"
                             size="icon"
@@ -301,8 +313,8 @@ export default function MealPlansPage() {
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -464,6 +476,14 @@ export default function MealPlansPage() {
         />
       )}
 
+      {/* View Detail */}
+      {viewPlan && (
+        <MealPlanDetailDialog
+          plan={viewPlan}
+          onClose={() => setViewPlan(null)}
+        />
+      )}
+
       {/* Delete Confirm */}
       <AlertDialog open={deletePlanId !== null} onOpenChange={() => setDeletePlanId(null)}>
         <AlertDialogContent>
@@ -485,6 +505,122 @@ export default function MealPlansPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+// ── Meal Plan Detail Dialog ───────────────────────────────────────────────────
+
+function MealPlanDetailDialog({
+  plan,
+  onClose,
+}: {
+  plan: LibraryMealPlan;
+  onClose: () => void;
+}) {
+  const { data: detail, isLoading } = useGetLibraryMealPlan(plan.id, {
+    query: { queryKey: getGetLibraryMealPlanQueryKey(plan.id), enabled: true },
+  });
+
+  const totalNutrition = detail?.items
+    ? detail.items.reduce(
+        (acc, i) => ({
+          calories: acc.calories + (i.calories ?? 0),
+          carbs: acc.carbs + (i.carbs ?? 0),
+          fat: acc.fat + (i.fat ?? 0),
+          protein: acc.protein + (i.protein ?? 0),
+        }),
+        { calories: 0, carbs: 0, fat: 0, protein: 0 }
+      )
+    : null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[88vh] flex flex-col overflow-hidden">
+        <div className="flex items-start justify-between px-6 py-4 border-b border-slate-100">
+          <div>
+            <h2 className="text-base font-bold text-slate-900">{plan.name}</h2>
+            {plan.targetPhase && (
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Phase {plan.targetPhase}</span>
+            )}
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 mt-0.5">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto flex-1 px-6 py-4 space-y-4">
+          {plan.description && (
+            <p className="text-sm text-slate-600">{plan.description}</p>
+          )}
+
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-7 w-7 animate-spin text-primary" />
+            </div>
+          ) : detail ? (
+            <>
+              {totalNutrition && (
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { label: "Calories", value: `${Math.round(totalNutrition.calories)}`, unit: "kcal", color: "text-orange-600", bg: "bg-orange-50" },
+                    { label: "Carbs",    value: totalNutrition.carbs.toFixed(1),   unit: "g", color: "text-yellow-600", bg: "bg-yellow-50" },
+                    { label: "Fat",      value: totalNutrition.fat.toFixed(1),     unit: "g", color: "text-blue-600",   bg: "bg-blue-50"   },
+                    { label: "Protein",  value: totalNutrition.protein.toFixed(1), unit: "g", color: "text-green-600",  bg: "bg-green-50"  },
+                  ].map(({ label, value, unit, color, bg }) => (
+                    <div key={label} className={`rounded-xl py-3 text-center border border-slate-100 ${bg}`}>
+                      <p className={`text-sm font-bold ${color}`}>{value}<span className="text-xs font-normal ml-0.5">{unit}</span></p>
+                      <p className="text-xs text-slate-400">{label}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {MEAL_CONFIG.map(({ value: mealType, label, icon: Icon, color }) => {
+                const items = detail.items?.filter((i) => i.mealType === mealType) ?? [];
+                if (items.length === 0) return null;
+                return (
+                  <div key={mealType}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={`flex h-7 w-7 items-center justify-center rounded-lg border ${color}`}>
+                        <Icon className="h-3.5 w-3.5" />
+                      </div>
+                      <h3 className="text-sm font-semibold text-slate-700">{label}</h3>
+                      <span className="text-xs text-slate-400">({items.length} item{items.length !== 1 ? "s" : ""})</span>
+                    </div>
+                    <div className="space-y-1.5 pl-9">
+                      {items.map((item) => (
+                        <div key={item.id} className="flex items-center justify-between px-3 py-2 bg-slate-50 rounded-lg border border-slate-100">
+                          <div>
+                            <p className="text-sm font-medium text-slate-800">{item.foodName}</p>
+                            <p className="text-xs text-slate-400">
+                              {item.portionGrams}{item.unit} · {Math.round(item.calories ?? 0)} kcal
+                              {" · "}C:{(item.carbs ?? 0).toFixed(1)}g · F:{(item.fat ?? 0).toFixed(1)}g · P:{(item.protein ?? 0).toFixed(1)}g
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {(!detail.items || detail.items.length === 0) && (
+                <p className="text-sm text-slate-400 text-center py-4">No food items in this plan yet.</p>
+              )}
+            </>
+          ) : null}
+        </div>
+
+        <div className="px-6 py-4 border-t border-slate-100">
+          <button
+            onClick={onClose}
+            className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50"
+          >
+            Close
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

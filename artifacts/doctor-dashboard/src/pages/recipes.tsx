@@ -22,6 +22,7 @@ import {
   Beef,
   Wheat,
   Info,
+  Eye,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCanWrite } from "@/hooks/useRole";
@@ -667,22 +668,29 @@ export default function RecipesPage() {
                   </div>
 
                   {canWrite && (
-                    <>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setEditId(r.id); setShowForm(true); }}
-                        className="p-1.5 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg opacity-0 group-hover:opacity-100 transition"
-                        title="Edit"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setConfirmDelete(r.id); }}
-                        className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setEditId(r.id); setShowForm(true); }}
+                      className="p-1.5 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg opacity-0 group-hover:opacity-100 transition"
+                      title="Edit"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                  )}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setViewId(r.id); }}
+                    className="p-1.5 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg opacity-0 group-hover:opacity-100 transition"
+                    title="View details"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </button>
+                  {canWrite && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setConfirmDelete(r.id); }}
+                      className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition"
+                      title="Delete"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   )}
                   <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-slate-500 transition" />
                 </div>
