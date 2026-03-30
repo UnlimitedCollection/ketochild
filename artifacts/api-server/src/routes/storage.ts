@@ -23,7 +23,12 @@ router.post("/storage/uploads/request-url", async (req: Request, res: Response) 
     res.json(RequestUploadUrlResponse.parse({ uploadURL, objectPath }));
   } catch (error) {
     req.log.error({ err: error }, "Error generating upload URL");
-    res.status(500).json({ error: "Failed to generate upload URL" });
+    const message = error instanceof Error ? error.message : "";
+    if (message.includes("401") || message.includes("PRIVATE_OBJECT_DIR")) {
+      res.status(503).json({ error: "Storage service is temporarily unavailable. You can still create the user without a photo." });
+    } else {
+      res.status(500).json({ error: "Failed to generate upload URL" });
+    }
   }
 });
 

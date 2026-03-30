@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import type { UppyFile } from "@uppy/core";
 
 interface UploadMetadata {
@@ -59,6 +59,9 @@ export function useUpload(options: UseUploadOptions = {}) {
   const [error, setError] = useState<Error | null>(null);
   const [progress, setProgress] = useState(0);
 
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
+
   const requestUploadUrl = useCallback(
     async (file: File): Promise<UploadResponse> => {
       const response = await fetch(`${basePath}/uploads/request-url`, {
@@ -75,12 +78,15 @@ export function useUpload(options: UseUploadOptions = {}) {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to get upload URL");
+        const errorMessage = errorData.error || "Failed to get upload URL";
+        const err = new Error(errorMessage);
+        (err as any).statusCode = response.status;
+        throw err;
       }
 
       return response.json();
     },
-    []
+    [basePath]
   );
 
   const uploadToPresignedUrl = useCallback(
@@ -114,18 +120,18 @@ export function useUpload(options: UseUploadOptions = {}) {
         await uploadToPresignedUrl(file, uploadResponse.uploadURL);
 
         setProgress(100);
-        options.onSuccess?.(uploadResponse);
+        optionsRef.current.onSuccess?.(uploadResponse);
         return uploadResponse;
       } catch (err) {
         const error = err instanceof Error ? err : new Error("Upload failed");
         setError(error);
-        options.onError?.(error);
+        optionsRef.current.onError?.(error);
         return null;
       } finally {
         setIsUploading(false);
       }
     },
-    [requestUploadUrl, uploadToPresignedUrl, options]
+    [requestUploadUrl, uploadToPresignedUrl]
   );
 
   const getUploadParameters = useCallback(

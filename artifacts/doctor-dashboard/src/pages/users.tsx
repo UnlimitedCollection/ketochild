@@ -133,7 +133,14 @@ export default function UsersPage() {
     },
     onError: (err) => {
       const msg = err instanceof Error ? err.message : "Could not upload profile photo.";
-      toast({ title: "Upload failed", description: msg.includes("401") || msg.includes("sign") ? "Storage service is not available. You can still create the user without a photo." : `Could not upload profile photo: ${msg}`, variant: "destructive" });
+      const isStorageUnavailable = msg.includes("temporarily unavailable") || msg.includes("401") || (err as any)?.statusCode === 503;
+      toast({
+        title: "Upload failed",
+        description: isStorageUnavailable
+          ? "Storage service is not available. You can still create the user without a photo."
+          : `Could not upload profile photo: ${msg}`,
+        variant: "destructive",
+      });
     },
   });
 
