@@ -223,7 +223,7 @@ export default function KidsListPage() {
         </div>
         {canWrite && (
           <Button asChild className="rounded-xl shadow-sm">
-            <Link href="/kids/new">Register New Patient</Link>
+            <Link href="/kids/new">+ New Patient</Link>
           </Button>
         )}
       </div>
