@@ -671,10 +671,12 @@ function PlanFormDialog({
             <Textarea
               placeholder="Optional notes about this plan..."
               value={description}
+              maxLength={1000}
               onChange={(e) => setDescription(e.target.value)}
               className="resize-none rounded-xl"
               rows={4}
             />
+            <p className="text-xs text-slate-400 text-right">{description.length} / 1000</p>
           </div>
           <div className="space-y-1.5">
             <Label>Target Phase</Label>

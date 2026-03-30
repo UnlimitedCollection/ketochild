@@ -88,6 +88,11 @@ router.post("/", async (req, res) => {
     return;
   }
 
+  if (description && description.length > 1000) {
+    res.status(400).json({ error: "BAD_REQUEST", message: "Description must be 1000 characters or fewer" });
+    return;
+  }
+
   try {
     const [recipe] = await db
       .insert(recipesTable)
@@ -180,6 +185,11 @@ router.put("/:recipeId", async (req, res) => {
     category?: string;
     ingredients?: IngredientInput[];
   };
+
+  if (description && description.length > 1000) {
+    res.status(400).json({ error: "BAD_REQUEST", message: "Description must be 1000 characters or fewer" });
+    return;
+  }
 
   try {
     const recipeWhere = isAdmin

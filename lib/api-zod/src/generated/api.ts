@@ -772,9 +772,11 @@ export const ListRecipesResponse = zod.array(ListRecipesResponseItem);
 /**
  * @summary Create a new recipe with ingredients
  */
+export const createRecipeBodyDescriptionMax = 1000;
+
 export const CreateRecipeBody = zod.object({
   name: zod.string(),
-  description: zod.string().optional(),
+  description: zod.string().max(createRecipeBodyDescriptionMax).optional(),
   category: zod.string().optional(),
   ingredients: zod
     .array(
@@ -839,9 +841,11 @@ export const UpdateRecipeParams = zod.object({
   recipeId: zod.coerce.number(),
 });
 
+export const updateRecipeBodyDescriptionMax = 1000;
+
 export const UpdateRecipeBody = zod.object({
   name: zod.string().optional(),
-  description: zod.string().optional(),
+  description: zod.string().max(updateRecipeBodyDescriptionMax).optional(),
   category: zod.string().optional(),
   ingredients: zod
     .array(
@@ -1195,9 +1199,11 @@ export const GetLibraryMealPlansResponse = zod.array(
 /**
  * @summary Create a new library meal plan
  */
+export const createLibraryMealPlanBodyDescriptionMax = 1000;
+
 export const CreateLibraryMealPlanBody = zod.object({
   name: zod.string(),
-  description: zod.string().optional(),
+  description: zod.string().max(createLibraryMealPlanBodyDescriptionMax).optional(),
   targetPhase: zod.number().optional(),
 });
 
@@ -1240,9 +1246,11 @@ export const UpdateLibraryMealPlanParams = zod.object({
   planId: zod.coerce.number(),
 });
 
+export const updateLibraryMealPlanBodyDescriptionMax = 1000;
+
 export const UpdateLibraryMealPlanBody = zod.object({
   name: zod.string().optional(),
-  description: zod.string().optional(),
+  description: zod.string().max(updateLibraryMealPlanBodyDescriptionMax).optional(),
   targetPhase: zod.number().optional(),
 });
 
@@ -1376,6 +1384,8 @@ export const GetFoodsResponse = zod.array(GetFoodsResponseItem);
 /**
  * @summary Create a new food item
  */
+export const createFoodBodyDescriptionMax = 1000;
+
 export const CreateFoodBody = zod.object({
   name: zod.string(),
   category: zod.string(),
@@ -1384,7 +1394,7 @@ export const CreateFoodBody = zod.object({
   protein: zod.number(),
   calories: zod.number(),
   imageUrl: zod.string().optional(),
-  description: zod.string().optional(),
+  description: zod.string().max(createFoodBodyDescriptionMax).optional(),
   indicator: zod.enum(["vegi", "fruit", "non-vegi", "recipe"]).optional(),
 });
 
@@ -1413,9 +1423,11 @@ export const CreateKidMealPlanParams = zod.object({
   kidId: zod.coerce.number(),
 });
 
+export const createKidMealPlanBodyDescriptionMax = 1000;
+
 export const CreateKidMealPlanBody = zod.object({
   name: zod.string(),
-  description: zod.string().optional(),
+  description: zod.string().max(createKidMealPlanBodyDescriptionMax).optional(),
   isActive: zod.boolean().optional(),
 });
 
@@ -1460,9 +1472,11 @@ export const UpdateKidMealPlanParams = zod.object({
   planId: zod.coerce.number(),
 });
 
+export const updateKidMealPlanBodyDescriptionMax = 1000;
+
 export const UpdateKidMealPlanBody = zod.object({
   name: zod.string().optional(),
-  description: zod.string().optional(),
+  description: zod.string().max(updateKidMealPlanBodyDescriptionMax).optional(),
   isActive: zod.boolean().optional(),
 });
 
@@ -1551,6 +1565,8 @@ export const UpdateFoodParams = zod.object({
   foodId: zod.coerce.number(),
 });
 
+export const updateFoodBodyDescriptionMax = 1000;
+
 export const UpdateFoodBody = zod.object({
   name: zod.string().optional(),
   category: zod.string().optional(),
@@ -1559,7 +1575,7 @@ export const UpdateFoodBody = zod.object({
   protein: zod.number().optional(),
   calories: zod.number().optional(),
   imageUrl: zod.string().optional(),
-  description: zod.string().optional(),
+  description: zod.string().max(updateFoodBodyDescriptionMax).optional(),
   indicator: zod.enum(["vegi", "fruit", "non-vegi", "recipe"]).optional(),
   isActive: zod.boolean().optional(),
 });

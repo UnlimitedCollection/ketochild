@@ -39486,9 +39486,10 @@ var ListRecipesResponseItem = objectType({
   totalCalories: numberType()
 });
 var ListRecipesResponse = arrayType(ListRecipesResponseItem);
+var createRecipeBodyDescriptionMax = 1e3;
 var CreateRecipeBody = objectType({
   name: stringType(),
-  description: stringType().optional(),
+  description: stringType().max(createRecipeBodyDescriptionMax).optional(),
   category: stringType().optional(),
   ingredients: arrayType(
     objectType({
@@ -39535,9 +39536,10 @@ var GetRecipeResponse = objectType({
 var UpdateRecipeParams = objectType({
   recipeId: coerce.number()
 });
+var updateRecipeBodyDescriptionMax = 1e3;
 var UpdateRecipeBody = objectType({
   name: stringType().optional(),
-  description: stringType().optional(),
+  description: stringType().max(updateRecipeBodyDescriptionMax).optional(),
   category: stringType().optional(),
   ingredients: arrayType(
     objectType({
@@ -39785,9 +39787,10 @@ var GetLibraryMealPlansResponseItem = objectType({
 var GetLibraryMealPlansResponse = arrayType(
   GetLibraryMealPlansResponseItem
 );
+var createLibraryMealPlanBodyDescriptionMax = 1e3;
 var CreateLibraryMealPlanBody = objectType({
   name: stringType(),
-  description: stringType().optional(),
+  description: stringType().max(createLibraryMealPlanBodyDescriptionMax).optional(),
   targetPhase: numberType().optional()
 });
 var GetLibraryMealPlanParams = objectType({
@@ -39820,9 +39823,10 @@ var GetLibraryMealPlanResponse = objectType({
 var UpdateLibraryMealPlanParams = objectType({
   planId: coerce.number()
 });
+var updateLibraryMealPlanBodyDescriptionMax = 1e3;
 var UpdateLibraryMealPlanBody = objectType({
   name: stringType().optional(),
-  description: stringType().optional(),
+  description: stringType().max(updateLibraryMealPlanBodyDescriptionMax).optional(),
   targetPhase: numberType().optional()
 });
 var UpdateLibraryMealPlanResponse = objectType({
@@ -39919,6 +39923,7 @@ var GetFoodsResponseItem = objectType({
   isActive: booleanType()
 });
 var GetFoodsResponse = arrayType(GetFoodsResponseItem);
+var createFoodBodyDescriptionMax = 1e3;
 var CreateFoodBody = objectType({
   name: stringType(),
   category: stringType(),
@@ -39927,7 +39932,7 @@ var CreateFoodBody = objectType({
   protein: numberType(),
   calories: numberType(),
   imageUrl: stringType().optional(),
-  description: stringType().optional(),
+  description: stringType().max(createFoodBodyDescriptionMax).optional(),
   indicator: enumType(["vegi", "fruit", "non-vegi", "recipe"]).optional()
 });
 var GetKidMealPlansParams = objectType({
@@ -39946,9 +39951,10 @@ var GetKidMealPlansResponse = arrayType(GetKidMealPlansResponseItem);
 var CreateKidMealPlanParams = objectType({
   kidId: coerce.number()
 });
+var createKidMealPlanBodyDescriptionMax = 1e3;
 var CreateKidMealPlanBody = objectType({
   name: stringType(),
-  description: stringType().optional(),
+  description: stringType().max(createKidMealPlanBodyDescriptionMax).optional(),
   isActive: booleanType().optional()
 });
 var GetKidMealPlanParams = objectType({
@@ -39983,9 +39989,10 @@ var UpdateKidMealPlanParams = objectType({
   kidId: coerce.number(),
   planId: coerce.number()
 });
+var updateKidMealPlanBodyDescriptionMax = 1e3;
 var UpdateKidMealPlanBody = objectType({
   name: stringType().optional(),
-  description: stringType().optional(),
+  description: stringType().max(updateKidMealPlanBodyDescriptionMax).optional(),
   isActive: booleanType().optional()
 });
 var UpdateKidMealPlanResponse = objectType({
@@ -40048,6 +40055,7 @@ var GetFoodResponse = objectType({
 var UpdateFoodParams = objectType({
   foodId: coerce.number()
 });
+var updateFoodBodyDescriptionMax = 1e3;
 var UpdateFoodBody = objectType({
   name: stringType().optional(),
   category: stringType().optional(),
@@ -40056,7 +40064,7 @@ var UpdateFoodBody = objectType({
   protein: numberType().optional(),
   calories: numberType().optional(),
   imageUrl: stringType().optional(),
-  description: stringType().optional(),
+  description: stringType().max(updateFoodBodyDescriptionMax).optional(),
   indicator: enumType(["vegi", "fruit", "non-vegi", "recipe"]).optional(),
   isActive: booleanType().optional()
 });
@@ -62736,6 +62744,10 @@ router10.post("/", async (req, res) => {
     res.status(400).json({ error: "BAD_REQUEST", message: "Recipe name is required" });
     return;
   }
+  if (description && description.length > 1e3) {
+    res.status(400).json({ error: "BAD_REQUEST", message: "Description must be 1000 characters or fewer" });
+    return;
+  }
   try {
     const [recipe] = await db.insert(recipesTable).values({
       doctorId,
@@ -62798,6 +62810,10 @@ router10.put("/:recipeId", async (req, res) => {
     return;
   }
   const { name, description, category, ingredients } = req.body;
+  if (description && description.length > 1e3) {
+    res.status(400).json({ error: "BAD_REQUEST", message: "Description must be 1000 characters or fewer" });
+    return;
+  }
   try {
     const recipeWhere = isAdmin ? eq(recipesTable.id, recipeId) : and(eq(recipesTable.id, recipeId), eq(recipesTable.doctorId, doctorId));
     const [existing] = await db.select().from(recipesTable).where(recipeWhere);

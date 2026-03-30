@@ -540,10 +540,12 @@ export default function FoodsPage() {
                 id="food-desc"
                 placeholder="Brief description of the food item"
                 value={form.description}
+                maxLength={1000}
                 onChange={(e) => handleFormChange("description", e.target.value)}
                 className="resize-none rounded-xl"
                 rows={4}
               />
+              <p className="text-xs text-slate-400 text-right">{form.description.length} / 1000</p>
             </div>
 
             <div className="space-y-1.5">
