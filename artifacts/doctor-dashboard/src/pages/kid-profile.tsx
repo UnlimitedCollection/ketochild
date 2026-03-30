@@ -109,6 +109,9 @@ export default function KidProfilePage() {
                     <span className="font-mono bg-slate-100 px-2 py-0.5 rounded">{kid.kidCode}</span>
                     <span>{kid.ageMonths} months old</span>
                     <span className="capitalize">{kid.gender}</span>
+                    <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 text-sm py-1 px-3">
+                      Phase {kid.phase}
+                    </Badge>
                   </div>
                 </div>
                 <div className="flex items-start gap-2">
@@ -125,16 +128,11 @@ export default function KidProfilePage() {
                       </Button>
                     </>
                   )}
-                  <div className="flex flex-col items-end gap-2 ml-2">
-                    <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 text-sm py-1 px-3">
-                      Phase {kid.phase}
+                  {kid.isHighRisk && (
+                    <Badge variant="destructive" className="bg-destructive/10 text-destructive border border-destructive/20 text-xs ml-2">
+                      High Risk
                     </Badge>
-                    {kid.isHighRisk && (
-                      <Badge variant="destructive" className="bg-destructive/10 text-destructive border border-destructive/20 text-xs">
-                        High Risk
-                      </Badge>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
