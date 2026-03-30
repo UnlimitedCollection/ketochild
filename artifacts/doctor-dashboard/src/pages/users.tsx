@@ -129,8 +129,9 @@ export default function UsersPage() {
       setForm((prev) => ({ ...prev, profilePhoto: response.objectPath }));
       setPhotoPreview(`/api/storage${response.objectPath}`);
     },
-    onError: () => {
-      toast({ title: "Upload failed", description: "Could not upload profile photo.", variant: "destructive" });
+    onError: (err) => {
+      const msg = err instanceof Error ? err.message : "Could not upload profile photo.";
+      toast({ title: "Upload failed", description: msg.includes("401") || msg.includes("sign") ? "Storage service is not available. You can still create the user without a photo." : `Could not upload profile photo: ${msg}`, variant: "destructive" });
     },
   });
 
@@ -175,10 +176,38 @@ export default function UsersPage() {
 
   function handleFileSelect(file: File) {
     if (!file.type.startsWith("image/")) {
-      toast({ title: "Invalid file", description: "Please upload an image file.", variant: "destructive" });
+      toast({ title: "Invalid file", description: "Please upload an image file (JPG, PNG, or WebP).", variant: "destructive" });
       return;
     }
-    uploadFile(file);
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast({ title: "File too large", description: "Profile photo must be under 5 MB.", variant: "destructive" });
+      return;
+    }
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      if (img.width < 100 || img.height < 100) {
+        toast({ title: "Image too small", description: "Minimum size is 100 × 100 pixels.", variant: "destructive" });
+        return;
+      }
+      if (img.width > 4096 || img.height > 4096) {
+        toast({ title: "Image too large", description: "Maximum dimensions are 4096 × 4096 pixels.", variant: "destructive" });
+        return;
+      }
+      const ratio = img.width / img.height;
+      if (ratio < 0.5 || ratio > 2) {
+        toast({ title: "Invalid aspect ratio", description: "Photo should be roughly square (between 1:2 and 2:1 ratio).", variant: "destructive" });
+        return;
+      }
+      uploadFile(file);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      toast({ title: "Invalid image", description: "Could not read the image file. Please try another.", variant: "destructive" });
+    };
+    img.src = objectUrl;
   }
 
   const handleDrop = useCallback((e: React.DragEvent) => {
