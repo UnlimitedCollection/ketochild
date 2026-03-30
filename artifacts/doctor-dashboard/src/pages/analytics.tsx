@@ -301,7 +301,7 @@ export default function AnalyticsPage() {
                 <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Days Tracked</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Compliance</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Risk</th>
-                <th className="text-right px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Profile</th>
+                <th className="text-center px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Profile</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -345,14 +345,16 @@ export default function AnalyticsPage() {
                       {p.risk === "good" ? "Good" : p.risk === "moderate" ? "Moderate" : "High Risk"}
                     </span>
                   </td>
-                  <td className="px-6 py-3 text-right">
-                    <Link
-                      href={`/kids/${p.id}`}
-                      className="text-blue-600 hover:text-blue-800 transition-colors"
-                      aria-label="View patient profile"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Link>
+                  <td className="px-6 py-3">
+                    <div className="flex justify-center">
+                      <Link
+                        href={`/kids/${p.id}`}
+                        className="text-blue-600 hover:text-blue-800 transition-colors"
+                        aria-label="View patient profile"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}
