@@ -1,0 +1,1 @@
+{"version":3,"file":"getKidsParams.d.ts","sourceRoot":"","sources":["../../../src/generated/types/getKidsParams.ts"],"names":[],"mappings":"AAAA;;;;;;GAMG;AACH,OAAO,KAAK,EAAE,YAAY,EAAE,MAAM,gBAAgB,CAAC;AAEnD,MAAM,MAAM,aAAa,GAAG;IAC1B;;OAEG;IACH,MAAM,CAAC,EAAE,MAAM,CAAC;IAChB;;OAEG;IACH,KAAK,CAAC,EAAE,YAAY,CAAC;IACrB;;OAEG;IACH,QAAQ,CAAC,EAAE,OAAO,CAAC;CACpB,CAAC"}
