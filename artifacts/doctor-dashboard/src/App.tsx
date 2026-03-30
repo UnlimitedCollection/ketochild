@@ -25,6 +25,7 @@ import SettingsPage from "@/pages/settings";
 import UsersPage from "@/pages/users";
 import SetPasswordPage from "@/pages/set-password";
 import AnalyticsPage from "@/pages/analytics";
+import KidAnalyticsPage from "@/pages/kid-analytics";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -109,6 +110,7 @@ function Router() {
       <Route path="/" component={() => <ProtectedRoute component={DashboardPage} />} />
       <Route path="/kids" component={() => <ProtectedRoute component={KidsListPage} />} />
       <Route path="/kids/new" component={() => <AdminRoute component={AddKidPage} />} />
+      <Route path="/kids/:id/analytics" component={() => <ProtectedRoute component={KidAnalyticsPage} />} />
       <Route path="/kids/:id" component={() => <ProtectedRoute component={KidProfilePage} />} />
       <Route path="/high-risk" component={() => <ProtectedRoute component={HighRiskPage} />} />
       <Route path="/foods" component={() => <ProtectedRoute component={FoodsPage} />} />

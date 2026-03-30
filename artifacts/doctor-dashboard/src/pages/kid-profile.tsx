@@ -26,7 +26,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCanWrite } from "@/hooks/useRole";
-import { Activity, User, Scale, Calendar, FileText, Trash2, Settings, Plus, Loader2, BarChart2, TrendingUp, Flame, FlaskConical, AlertTriangle, ClipboardList, CheckCircle2, Circle, ChevronDown, ChevronUp, Coffee, Sun, Moon, Apple as AppleIcon, LayoutGrid, Camera, ThumbsUp, ThumbsDown, Minus, ImageIcon, X, Search, Pencil } from "lucide-react";
+import { Activity, User, Scale, Calendar, FileText, Trash2, Settings, Plus, Loader2, BarChart2, TrendingUp, Flame, FlaskConical, AlertTriangle, ClipboardList, CheckCircle2, Circle, ChevronDown, ChevronUp, Coffee, Sun, Moon, Apple as AppleIcon, LayoutGrid, Camera, ThumbsUp, ThumbsDown, Minus, ImageIcon, X, Search, Pencil, LineChart as LineChartIcon } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function KidProfilePage() {
@@ -112,6 +112,9 @@ export default function KidProfilePage() {
                   </div>
                 </div>
                 <div className="flex items-start gap-2">
+                  <Button size="sm" variant="outline" className="rounded-lg gap-1.5 text-primary border-primary/30 hover:bg-primary/5" onClick={() => setLocation(`/kids/${kidId}/analytics`)}>
+                    <LineChartIcon className="h-3.5 w-3.5" /> Analysis
+                  </Button>
                   {canWrite && (
                     <>
                       <Button size="sm" variant="outline" className="rounded-lg gap-1.5" onClick={() => setEditOpen(true)}>
