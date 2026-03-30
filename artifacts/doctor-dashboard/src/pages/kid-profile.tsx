@@ -527,7 +527,7 @@ function AddWeightDialog({ kidId }: { kidId: number }) {
 const medicalSchema = z.object({
   phase: z.coerce.number().min(1).max(4),
   ketoRatio: z.coerce.number().positive(),
-  dailyCalories: z.coerce.number().positive(),
+  dailyCalories: z.coerce.number().min(0).max(3000),
   dailyCarbs: z.coerce.number().min(0),
   dailyFat: z.coerce.number().min(0),
   dailyProtein: z.coerce.number().min(0),
@@ -619,25 +619,37 @@ function MedicalSettingsForm({ kidId, initialData }: { kidId: number, initialDat
                   </FormItem>
                 )} />
 
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField control={form.control} name="ketoRatio" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Keto Ratio (e.g. 3.0 = 3:1)</FormLabel>
-                      <FormControl><Input type="number" step="0.1" className="rounded-xl" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="dailyCalories" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Daily Calories</FormLabel>
-                      <FormControl><Input type="number" className="rounded-xl" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                </div>
+                <FormField control={form.control} name="ketoRatio" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Keto Ratio (e.g. 3.0 = 3:1)</FormLabel>
+                    <FormControl><Input type="number" step="0.1" className="rounded-xl" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
 
                 {/* Macro Sliders */}
                 <div className="space-y-5 pt-2">
+                  <FormField control={form.control} name="dailyCalories" render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center justify-between mb-1">
+                        <FormLabel className="text-sm font-medium text-slate-700">Daily Calories</FormLabel>
+                        <span className="text-sm font-bold text-primary tabular-nums">{Number(field.value) || 0} kcal</span>
+                      </div>
+                      <FormControl>
+                        <Slider
+                          min={0} max={3000} step={10}
+                          value={[Number(field.value) || 0]}
+                          onValueChange={(vals) => field.onChange(vals[0])}
+                          className="py-1"
+                        />
+                      </FormControl>
+                      <div className="flex justify-between text-[10px] text-slate-400 mt-0.5">
+                        <span>0 kcal</span><span>3000 kcal</span>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
                   <FormField control={form.control} name="dailyFat" render={({ field }) => (
                     <FormItem>
                       <div className="flex items-center justify-between mb-1">
