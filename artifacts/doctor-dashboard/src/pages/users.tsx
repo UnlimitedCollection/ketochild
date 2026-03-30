@@ -41,7 +41,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2, Plus, Pencil, Trash2, ShieldCheck, Shield } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, ShieldCheck, Shield, Eye } from "lucide-react";
 import { useGetMe } from "@workspace/api-client-react";
 
 type UserFormData = {
@@ -101,6 +101,8 @@ export default function UsersPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [viewUser, setViewUser] = useState<UserResponse | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [form, setForm] = useState<UserFormData>(BLANK_FORM);
@@ -135,6 +137,11 @@ export default function UsersPage() {
   function openDelete(userId: number) {
     setDeletingId(userId);
     setDeleteDialogOpen(true);
+  }
+
+  function openView(user: UserResponse) {
+    setViewUser(user);
+    setViewDialogOpen(true);
   }
 
   function handleField(field: keyof UserFormData, value: string) {
@@ -308,6 +315,14 @@ export default function UsersPage() {
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openView(user)}
+                          className="h-8 w-8 p-0 hover:bg-slate-100 hover:text-slate-700"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </Button>
                         {user.id !== me?.id && (
                           <Button
                             variant="ghost"
@@ -444,6 +459,63 @@ export default function UsersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>User Details</DialogTitle>
+          </DialogHeader>
+          {viewUser && (
+            <div className="space-y-4 py-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Full Name</p>
+                  <p className="text-sm text-slate-800 font-medium">{viewUser.name}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Username</p>
+                  <p className="text-sm text-slate-800 font-mono">{viewUser.username}</p>
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Email</p>
+                <p className="text-sm text-slate-800">{viewUser.email}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Specialty</p>
+                  <p className="text-sm text-slate-800">{viewUser.specialty || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Role</p>
+                  <div>
+                    {viewUser.role === "admin" ? (
+                      <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 flex items-center gap-1 w-fit">
+                        <ShieldCheck className="h-3 w-3" />
+                        Admin
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 flex items-center gap-1 w-fit">
+                        <Shield className="h-3 w-3" />
+                        Moderator
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Created</p>
+                <p className="text-sm text-slate-800">{new Date(viewUser.createdAt).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}</p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewDialogOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
