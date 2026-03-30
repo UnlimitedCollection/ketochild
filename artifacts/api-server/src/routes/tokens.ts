@@ -6,6 +6,31 @@ import crypto from "crypto";
 
 const router: IRouter = Router();
 
+function generateToken(): string {
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const bytes = crypto.randomBytes(7);
+  const l1 = letters[bytes[0] % 26];
+  const l2 = letters[bytes[1] % 26];
+  const l3 = letters[bytes[2] % 26];
+  const digits = (
+    ((bytes[3] << 24) | (bytes[4] << 16) | (bytes[5] << 8) | bytes[6]) >>> 0
+  ) % 10000;
+  return `${l1}${l2}${l3}-${String(digits).padStart(4, "0")}`;
+}
+
+async function generateUniqueToken(existingId?: number, maxAttempts = 5): Promise<string> {
+  for (let i = 0; i < maxAttempts; i++) {
+    const candidate = generateToken();
+    const conflict = await db
+      .select({ id: parentTokensTable.id })
+      .from(parentTokensTable)
+      .where(eq(parentTokensTable.token, candidate));
+    const isSelf = existingId !== undefined && conflict.length === 1 && conflict[0].id === existingId;
+    if (conflict.length === 0 || isSelf) return candidate;
+  }
+  throw new Error("Could not generate a unique token after multiple attempts");
+}
+
 function computeStatus(token: typeof parentTokensTable.$inferSelect): string {
   if (token.status === "revoked") return "revoked";
   if (new Date(token.expiresAt) < new Date()) return "expired";
@@ -77,13 +102,13 @@ router.post("/", async (req, res) => {
       return;
     }
 
-    const tokenStr = crypto.randomBytes(16).toString("hex");
-    const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
-
     const existing = await db
       .select()
       .from(parentTokensTable)
       .where(eq(parentTokensTable.kidId, kidId));
+
+    const tokenStr = await generateUniqueToken(existing[0]?.id);
+    const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
 
     let result;
     if (existing.length > 0) {
@@ -136,7 +161,7 @@ router.put("/:tokenId/reset", async (req, res) => {
       return;
     }
 
-    const newToken = crypto.randomBytes(16).toString("hex");
+    const newToken = await generateUniqueToken(tokenId);
     const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
 
     const [updated] = await db

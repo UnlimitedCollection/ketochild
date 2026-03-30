@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useListTokens, useCreateToken, useResetToken, useRevokeToken } from "@workspace/api-client-react";
 import { useGetKids } from "@workspace/api-client-react";
 import type { ParentToken } from "@workspace/api-client-react";
@@ -31,9 +31,23 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+const SHORT_TOKEN_RE = /^[A-Z]{3}-\d{4}$/;
+
+function maskToken(token: string): string {
+  if (SHORT_TOKEN_RE.test(token)) {
+    return "•••-••••";
+  }
+  return token.slice(0, 4) + "••••••••••••••••••••••••" + token.slice(-4);
+}
+
 function TokenCell({ token, status }: { token: string; status: string }) {
-  const [visible, setVisible] = useState(false);
+  const isShort = SHORT_TOKEN_RE.test(token);
+  const [visible, setVisible] = useState(isShort);
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (isShort) setVisible(true);
+  }, [token, isShort]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(token).catch(() => {});
@@ -41,17 +55,18 @@ function TokenCell({ token, status }: { token: string; status: string }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const display = visible
-    ? token
-    : token.slice(0, 4) + "••••••••••••••••••••••••" + token.slice(-4);
+  const display = visible ? token : maskToken(token);
 
   const isInactive = status === "expired" || status === "revoked";
 
   return (
     <div className="flex items-center gap-2 min-w-0">
       <span
-        className="font-mono text-xs truncate"
-        style={{ color: isInactive ? GRAY : "#1e293b" }}
+        className="font-mono font-bold tracking-widest truncate"
+        style={{
+          color: isInactive ? GRAY : "#1e293b",
+          fontSize: isShort ? "1rem" : "0.75rem",
+        }}
       >
         {display}
       </span>
