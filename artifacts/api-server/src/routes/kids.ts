@@ -914,7 +914,6 @@ router.get("/:kidId/meal-log", async (req, res) => {
       breakfast: [],
       lunch: [],
       dinner: [],
-      snack: [],
     };
 
     for (const entry of entries) {
@@ -941,7 +940,6 @@ router.get("/:kidId/meal-log", async (req, res) => {
       breakfast: grouped.breakfast.map(toDto),
       lunch: grouped.lunch.map(toDto),
       dinner: grouped.dinner.map(toDto),
-      snack: grouped.snack.map(toDto),
     });
   } catch (err) {
     req.log.error({ err }, "Get meal log detail error");

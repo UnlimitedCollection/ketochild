@@ -13,5 +13,4 @@ export const MealEntryMealType = {
   breakfast: "breakfast",
   lunch: "lunch",
   dinner: "dinner",
-  snack: "snack",
 } as const;

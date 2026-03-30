@@ -2274,7 +2274,7 @@ components:
           format: date
         mealType:
           type: string
-          enum: [breakfast, lunch, dinner, snack]
+          enum: [breakfast, lunch, dinner]
         isCompleted:
           type: boolean
         calories:
@@ -2377,7 +2377,7 @@ components:
           format: date
         mealType:
           type: string
-          enum: [breakfast, lunch, dinner, snack]
+          enum: [breakfast, lunch, dinner]
         isCompleted:
           type: boolean
           default: true
@@ -2407,7 +2407,7 @@ components:
           format: date
         mealType:
           type: string
-          enum: [breakfast, lunch, dinner, snack]
+          enum: [breakfast, lunch, dinner]
         foodName:
           type: string
         quantity:
@@ -2449,16 +2449,11 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/MealEntry"
-        snack:
-          type: array
-          items:
-            $ref: "#/components/schemas/MealEntry"
       required:
         - date
         - breakfast
         - lunch
         - dinner
-        - snack
 
     KetoneReading:
       type: object
@@ -2633,7 +2628,7 @@ components:
           type: integer
         mealType:
           type: string
-          enum: [breakfast, lunch, dinner, snack]
+          enum: [breakfast, lunch, dinner]
         foodName:
           type: string
         portionGrams:
@@ -2711,7 +2706,7 @@ components:
       properties:
         mealType:
           type: string
-          enum: [breakfast, lunch, dinner, snack]
+          enum: [breakfast, lunch, dinner]
         foodName:
           type: string
         portionGrams:
@@ -2752,7 +2747,7 @@ components:
           type: integer
         mealType:
           type: string
-          enum: [breakfast, lunch, dinner, snack]
+          enum: [breakfast, lunch, dinner]
         foodId:
           type: integer
         foodName:
@@ -2855,7 +2850,7 @@ components:
       properties:
         mealType:
           type: string
-          enum: [breakfast, lunch, dinner, snack]
+          enum: [breakfast, lunch, dinner]
         foodId:
           type: integer
         foodName:

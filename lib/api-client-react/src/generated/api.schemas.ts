@@ -314,7 +314,6 @@ export const MealLogMealType = {
   breakfast: "breakfast",
   lunch: "lunch",
   dinner: "dinner",
-  snack: "snack",
 } as const;
 
 export interface MealLog {
@@ -392,7 +391,6 @@ export const AddMealLogRequestMealType = {
   breakfast: "breakfast",
   lunch: "lunch",
   dinner: "dinner",
-  snack: "snack",
 } as const;
 
 export interface AddMealLogRequest {
@@ -413,7 +411,6 @@ export const MealEntryMealType = {
   breakfast: "breakfast",
   lunch: "lunch",
   dinner: "dinner",
-  snack: "snack",
 } as const;
 
 export interface MealEntry {
@@ -435,7 +432,6 @@ export interface MealLogDetail {
   breakfast: MealEntry[];
   lunch: MealEntry[];
   dinner: MealEntry[];
-  snack: MealEntry[];
 }
 
 export type KetoneReadingReadingType =
@@ -558,7 +554,6 @@ export const LibraryMealPlanItemMealType = {
   breakfast: "breakfast",
   lunch: "lunch",
   dinner: "dinner",
-  snack: "snack",
 } as const;
 
 export interface LibraryMealPlanItem {
@@ -605,7 +600,6 @@ export const AddLibraryMealPlanItemRequestMealType = {
   breakfast: "breakfast",
   lunch: "lunch",
   dinner: "dinner",
-  snack: "snack",
 } as const;
 
 export interface AddLibraryMealPlanItemRequest {
@@ -631,7 +625,6 @@ export const MealPlanItemMealType = {
   breakfast: "breakfast",
   lunch: "lunch",
   dinner: "dinner",
-  snack: "snack",
 } as const;
 
 export interface MealPlanItem {
@@ -688,7 +681,6 @@ export const AddMealPlanItemRequestMealType = {
   breakfast: "breakfast",
   lunch: "lunch",
   dinner: "dinner",
-  snack: "snack",
 } as const;
 
 export interface AddMealPlanItemRequest {

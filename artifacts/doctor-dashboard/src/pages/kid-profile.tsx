@@ -26,7 +26,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCanWrite } from "@/hooks/useRole";
-import { Activity, User, Scale, Calendar, FileText, Trash2, Settings, Plus, Loader2, BarChart2, TrendingUp, Flame, FlaskConical, AlertTriangle, ClipboardList, CheckCircle2, Circle, ChevronDown, ChevronUp, Coffee, Sun, Moon, Apple as AppleIcon, LayoutGrid, Camera, ThumbsUp, ThumbsDown, Minus, ImageIcon, X, Search, Pencil, LineChart as LineChartIcon } from "lucide-react";
+import { Activity, User, Scale, Calendar, FileText, Trash2, Settings, Plus, Loader2, BarChart2, TrendingUp, Flame, FlaskConical, AlertTriangle, ClipboardList, CheckCircle2, Circle, ChevronDown, ChevronUp, Coffee, Sun, Moon, LayoutGrid, Camera, ThumbsUp, ThumbsDown, Minus, ImageIcon, X, Search, Pencil, LineChart as LineChartIcon } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function KidProfilePage() {
@@ -1043,12 +1043,11 @@ type MedicalData = {
   dailyProtein?: number;
 };
 
-const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
+const MEAL_TYPES = ["breakfast", "lunch", "dinner"] as const;
 const MEAL_LABELS: Record<string, { label: string; icon: string }> = {
   breakfast: { label: "Breakfast", icon: "🌅" },
   lunch: { label: "Lunch", icon: "☀️" },
   dinner: { label: "Dinner", icon: "🌙" },
-  snack: { label: "Snack", icon: "🍎" },
 };
 
 function MealPhotoUpload({ kidId, log }: { kidId: number; log: { id: number; imageUrl?: string | null } }) {
@@ -1125,7 +1124,7 @@ function MealDayDetailDialog({ kidId, date, onClose }: { kidId: number; date: st
   const { data: logs, isLoading } = useGetKidMealLogs(kidId, { date });
   const addLog = useAddMealLog();
   const deleteLog = useDeleteMealLog();
-  const [mealType, setMealType] = useState<"breakfast" | "lunch" | "dinner" | "snack">("breakfast");
+  const [mealType, setMealType] = useState<"breakfast" | "lunch" | "dinner">("breakfast");
   const [isCompleted, setIsCompleted] = useState(true);
   const [calories, setCalories] = useState("");
   const [carbs, setCarbs] = useState("");
@@ -1277,11 +1276,10 @@ function MealDayDetailDialog({ kidId, date, onClose }: { kidId: number; date: st
   );
 }
 
-const MEAL_SLOT_CONFIG: { key: "breakfast" | "lunch" | "dinner" | "snack"; label: string; icon: string; color: string }[] = [
+const MEAL_SLOT_CONFIG: { key: "breakfast" | "lunch" | "dinner"; label: string; icon: string; color: string }[] = [
   { key: "breakfast", label: "Breakfast", icon: "🌅", color: "text-amber-700 bg-amber-50 border-amber-200" },
   { key: "lunch", label: "Lunch", icon: "☀️", color: "text-blue-700 bg-blue-50 border-blue-200" },
   { key: "dinner", label: "Dinner", icon: "🌙", color: "text-violet-700 bg-violet-50 border-violet-200" },
-  { key: "snack", label: "Snack", icon: "🍎", color: "text-emerald-700 bg-emerald-50 border-emerald-200" },
 ];
 
 function MealDayAccordion({ kidId, date, onManage }: { kidId: number; date: string; onManage: () => void }) {
@@ -1670,7 +1668,6 @@ const MEAL_TYPE_CONFIG = [
   { value: "breakfast", label: "Breakfast", icon: Coffee, color: "text-amber-600 bg-amber-50 border-amber-100" },
   { value: "lunch", label: "Lunch", icon: Sun, color: "text-blue-600 bg-blue-50 border-blue-100" },
   { value: "dinner", label: "Dinner", icon: Moon, color: "text-indigo-600 bg-indigo-50 border-indigo-100" },
-  { value: "snack", label: "Snack", icon: AppleIcon, color: "text-green-600 bg-green-50 border-green-100" },
 ] as const;
 
 type MealType = typeof MEAL_TYPE_CONFIG[number]["value"];

@@ -130,6 +130,25 @@ export declare const doctorsTable: import("drizzle-orm/pg-core").PgTableWithColu
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        mobile: import("drizzle-orm/pg-core").PgColumn<{
+            name: "mobile";
+            tableName: "doctors";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: 20;
+        }>;
         role: import("drizzle-orm/pg-core").PgColumn<{
             name: "role";
             tableName: "doctors";
@@ -193,6 +212,7 @@ export declare const insertDoctorSchema: z.ZodObject<{
     email: z.ZodString;
     designation: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     profilePhoto: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    mobile: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     role: z.ZodOptional<z.ZodString>;
     mustChangePassword: z.ZodOptional<z.ZodBoolean>;
 }, {

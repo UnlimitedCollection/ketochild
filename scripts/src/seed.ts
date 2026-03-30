@@ -189,7 +189,7 @@ async function seed() {
           { mealType: "lunch",     foodName: "Broccoli with Butter",            portionGrams: 80,  unit: "g", calories: 85,  carbs: 4,   fat: 6,    protein: 2 },
           { mealType: "dinner",    foodName: "Salmon with Cream Cheese",        portionGrams: 140, unit: "g", calories: 320, carbs: 2,   fat: 25,   protein: 22 },
           { mealType: "dinner",    foodName: "Spinach Salad with Olive Oil",    portionGrams: 60,  unit: "g", calories: 70,  carbs: 1,   fat: 6,    protein: 1.5 },
-          { mealType: "snack",     foodName: "Macadamia Nuts",                  portionGrams: 25,  unit: "g", calories: 180, carbs: 1.3, fat: 19,   protein: 2 },
+          { mealType: "breakfast", foodName: "Macadamia Nuts",                  portionGrams: 25,  unit: "g", calories: 180, carbs: 1.3, fat: 19,   protein: 2 },
         ],
       },
       {
@@ -203,7 +203,7 @@ async function seed() {
           { mealType: "lunch",     foodName: "Cheddar Cheese",                  portionGrams: 30,  unit: "g", calories: 121, carbs: 0.4, fat: 10,   protein: 7.5 },
           { mealType: "dinner",    foodName: "Chicken Thigh with Cream Sauce",  portionGrams: 200, unit: "g", calories: 420, carbs: 3,   fat: 34,   protein: 28 },
           { mealType: "dinner",    foodName: "Zucchini with Olive Oil",         portionGrams: 100, unit: "g", calories: 50,  carbs: 3,   fat: 3.5,  protein: 1.2 },
-          { mealType: "snack",     foodName: "Walnuts and Cream Cheese",        portionGrams: 40,  unit: "g", calories: 195, carbs: 2.8, fat: 18,   protein: 5 },
+          { mealType: "breakfast", foodName: "Walnuts and Cream Cheese",        portionGrams: 40,  unit: "g", calories: 195, carbs: 2.8, fat: 18,   protein: 5 },
         ],
       },
       {
@@ -217,7 +217,7 @@ async function seed() {
           { mealType: "lunch",     foodName: "Avocado with Olive Oil",          portionGrams: 80,  unit: "g", calories: 210, carbs: 2,   fat: 20,   protein: 1.6 },
           { mealType: "dinner",    foodName: "Salmon with Butter Sauce",        portionGrams: 150, unit: "g", calories: 420, carbs: 0.5, fat: 35,   protein: 28 },
           { mealType: "dinner",    foodName: "Macadamia Nut Cream",             portionGrams: 50,  unit: "g", calories: 359, carbs: 2.5, fat: 38,   protein: 4 },
-          { mealType: "snack",     foodName: "Coconut Oil Fat Bomb",            portionGrams: 30,  unit: "g", calories: 259, carbs: 0,   fat: 28,   protein: 0.5 },
+          { mealType: "breakfast", foodName: "Coconut Oil Fat Bomb",            portionGrams: 30,  unit: "g", calories: 259, carbs: 0,   fat: 28,   protein: 0.5 },
         ],
       },
       {
@@ -231,7 +231,7 @@ async function seed() {
           { mealType: "lunch",     foodName: "Mixed Greens with Olive Oil",     portionGrams: 80,  unit: "g", calories: 75,  carbs: 4,   fat: 6,    protein: 1.5 },
           { mealType: "dinner",    foodName: "Beef Ribeye with Vegetables",     portionGrams: 180, unit: "g", calories: 520, carbs: 8,   fat: 38,   protein: 35 },
           { mealType: "dinner",    foodName: "Broccoli with Cheddar",           portionGrams: 100, unit: "g", calories: 145, carbs: 5,   fat: 11,   protein: 7 },
-          { mealType: "snack",     foodName: "Pecans and Raspberries",          portionGrams: 40,  unit: "g", calories: 200, carbs: 5,   fat: 18,   protein: 3 },
+          { mealType: "breakfast", foodName: "Pecans and Raspberries",          portionGrams: 40,  unit: "g", calories: 200, carbs: 5,   fat: 18,   protein: 3 },
         ],
       },
       {
@@ -245,7 +245,7 @@ async function seed() {
           { mealType: "lunch",     foodName: "Cream Cheese with Celery",        portionGrams: 80,  unit: "g", calories: 175, carbs: 2.4, fat: 16,   protein: 4 },
           { mealType: "dinner",    foodName: "Lamb Chops with Herb Butter",     portionGrams: 180, unit: "g", calories: 530, carbs: 0,   fat: 42,   protein: 38 },
           { mealType: "dinner",    foodName: "Asparagus with Parmesan",         portionGrams: 100, unit: "g", calories: 90,  carbs: 4,   fat: 5,    protein: 6 },
-          { mealType: "snack",     foodName: "Hemp Seeds with Heavy Cream",     portionGrams: 45,  unit: "g", calories: 270, carbs: 1.5, fat: 24,   protein: 10 },
+          { mealType: "breakfast", foodName: "Hemp Seeds with Heavy Cream",     portionGrams: 45,  unit: "g", calories: 270, carbs: 1.5, fat: 24,   protein: 10 },
         ],
       },
     ];

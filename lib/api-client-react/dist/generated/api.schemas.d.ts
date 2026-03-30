@@ -261,7 +261,6 @@ export declare const MealLogMealType: {
     readonly breakfast: "breakfast";
     readonly lunch: "lunch";
     readonly dinner: "dinner";
-    readonly snack: "snack";
 };
 export interface MealLog {
     id: number;
@@ -324,7 +323,6 @@ export declare const AddMealLogRequestMealType: {
     readonly breakfast: "breakfast";
     readonly lunch: "lunch";
     readonly dinner: "dinner";
-    readonly snack: "snack";
 };
 export interface AddMealLogRequest {
     date: string;
@@ -341,7 +339,6 @@ export declare const MealEntryMealType: {
     readonly breakfast: "breakfast";
     readonly lunch: "lunch";
     readonly dinner: "dinner";
-    readonly snack: "snack";
 };
 export interface MealEntry {
     id: number;
@@ -361,7 +358,6 @@ export interface MealLogDetail {
     breakfast: MealEntry[];
     lunch: MealEntry[];
     dinner: MealEntry[];
-    snack: MealEntry[];
 }
 export type KetoneReadingReadingType = (typeof KetoneReadingReadingType)[keyof typeof KetoneReadingReadingType];
 export declare const KetoneReadingReadingType: {
@@ -461,7 +457,6 @@ export declare const LibraryMealPlanItemMealType: {
     readonly breakfast: "breakfast";
     readonly lunch: "lunch";
     readonly dinner: "dinner";
-    readonly snack: "snack";
 };
 export interface LibraryMealPlanItem {
     id: number;
@@ -501,7 +496,6 @@ export declare const AddLibraryMealPlanItemRequestMealType: {
     readonly breakfast: "breakfast";
     readonly lunch: "lunch";
     readonly dinner: "dinner";
-    readonly snack: "snack";
 };
 export interface AddLibraryMealPlanItemRequest {
     mealType: AddLibraryMealPlanItemRequestMealType;
@@ -522,7 +516,6 @@ export declare const MealPlanItemMealType: {
     readonly breakfast: "breakfast";
     readonly lunch: "lunch";
     readonly dinner: "dinner";
-    readonly snack: "snack";
 };
 export interface MealPlanItem {
     id: number;
@@ -571,7 +564,6 @@ export declare const AddMealPlanItemRequestMealType: {
     readonly breakfast: "breakfast";
     readonly lunch: "lunch";
     readonly dinner: "dinner";
-    readonly snack: "snack";
 };
 export interface AddMealPlanItemRequest {
     mealType: AddMealPlanItemRequestMealType;
@@ -674,6 +666,7 @@ export interface UserResponse {
     email: string;
     designation?: string;
     profilePhoto?: string;
+    mobile?: string;
     role: UserResponseRole;
     createdAt: string;
 }
@@ -695,6 +688,8 @@ export interface CreateUserRequest {
     email: string;
     designation?: string;
     profilePhoto?: string;
+    /** @pattern ^\d{10}$ */
+    mobile?: string;
     role: CreateUserRequestRole;
 }
 export type UpdateUserRequestRole = (typeof UpdateUserRequestRole)[keyof typeof UpdateUserRequestRole];
@@ -715,6 +710,8 @@ export interface UpdateUserRequest {
     email?: string;
     designation?: string;
     profilePhoto?: string;
+    /** @pattern ^\d{10}$ */
+    mobile?: string;
     role?: UpdateUserRequestRole;
 }
 export type GetKidsParams = {

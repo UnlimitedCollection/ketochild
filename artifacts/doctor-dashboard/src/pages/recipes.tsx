@@ -33,7 +33,7 @@ const RED   = "#ae0010";
 const AMBER = "#855300";
 
 const CATEGORIES = [
-  "Breakfast", "Lunch", "Dinner", "Snack", "Dessert", "Smoothie", "Sauce", "Other",
+  "Breakfast", "Lunch", "Dinner", "Dessert", "Smoothie", "Sauce", "Other",
 ];
 
 interface IngredientRow {

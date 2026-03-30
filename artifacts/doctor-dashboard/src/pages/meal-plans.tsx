@@ -34,16 +34,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Loader2, Plus, Search, ClipboardList, Pencil, Trash2, ChevronDown, ChevronUp,
-  Coffee, Sun, Moon, Apple as AppleIcon, BookOpen, Users, Eye, X,
+  Coffee, Sun, Moon, BookOpen, Users, Eye, X,
 } from "lucide-react";
 
-type MealType = "breakfast" | "lunch" | "dinner" | "snack";
+type MealType = "breakfast" | "lunch" | "dinner";
 
 const MEAL_CONFIG: { value: MealType; label: string; icon: typeof Coffee; color: string }[] = [
   { value: "breakfast", label: "Breakfast", icon: Coffee, color: "bg-amber-50 text-amber-600 border-amber-100" },
   { value: "lunch", label: "Lunch", icon: Sun, color: "bg-sky-50 text-sky-600 border-sky-100" },
   { value: "dinner", label: "Dinner", icon: Moon, color: "bg-indigo-50 text-indigo-600 border-indigo-100" },
-  { value: "snack", label: "Snack", icon: AppleIcon, color: "bg-green-50 text-green-600 border-green-100" },
 ];
 
 export default function MealPlansPage() {

@@ -12,5 +12,4 @@ export interface MealLogDetail {
   breakfast: MealEntry[];
   lunch: MealEntry[];
   dinner: MealEntry[];
-  snack: MealEntry[];
 }

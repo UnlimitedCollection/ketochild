@@ -567,7 +567,7 @@ export const GetKidMealLogsResponseItem = zod.object({
   id: zod.number(),
   kidId: zod.number(),
   date: zod.date(),
-  mealType: zod.enum(["breakfast", "lunch", "dinner", "snack"]),
+  mealType: zod.enum(["breakfast", "lunch", "dinner"]),
   isCompleted: zod.boolean(),
   calories: zod.number().optional(),
   carbs: zod.number().optional(),
@@ -590,7 +590,7 @@ export const addMealLogBodyIsCompletedDefault = true;
 
 export const AddMealLogBody = zod.object({
   date: zod.date(),
-  mealType: zod.enum(["breakfast", "lunch", "dinner", "snack"]),
+  mealType: zod.enum(["breakfast", "lunch", "dinner"]),
   isCompleted: zod.boolean().default(addMealLogBodyIsCompletedDefault),
   calories: zod.number().optional(),
   carbs: zod.number().optional(),
@@ -631,7 +631,7 @@ export const UpdateMealLogImageResponse = zod.object({
   id: zod.number(),
   kidId: zod.number(),
   date: zod.date(),
-  mealType: zod.enum(["breakfast", "lunch", "dinner", "snack"]),
+  mealType: zod.enum(["breakfast", "lunch", "dinner"]),
   isCompleted: zod.boolean(),
   calories: zod.number().optional(),
   carbs: zod.number().optional(),
@@ -1074,7 +1074,7 @@ export const GetKidMealLogResponse = zod.object({
       id: zod.number(),
       kidId: zod.number(),
       date: zod.date(),
-      mealType: zod.enum(["breakfast", "lunch", "dinner", "snack"]),
+      mealType: zod.enum(["breakfast", "lunch", "dinner"]),
       foodName: zod.string(),
       quantity: zod.number(),
       unit: zod.string(),
@@ -1089,7 +1089,7 @@ export const GetKidMealLogResponse = zod.object({
       id: zod.number(),
       kidId: zod.number(),
       date: zod.date(),
-      mealType: zod.enum(["breakfast", "lunch", "dinner", "snack"]),
+      mealType: zod.enum(["breakfast", "lunch", "dinner"]),
       foodName: zod.string(),
       quantity: zod.number(),
       unit: zod.string(),
@@ -1104,22 +1104,7 @@ export const GetKidMealLogResponse = zod.object({
       id: zod.number(),
       kidId: zod.number(),
       date: zod.date(),
-      mealType: zod.enum(["breakfast", "lunch", "dinner", "snack"]),
-      foodName: zod.string(),
-      quantity: zod.number(),
-      unit: zod.string(),
-      calories: zod.number().optional(),
-      carbs: zod.number().optional(),
-      fat: zod.number().optional(),
-      protein: zod.number().optional(),
-    }),
-  ),
-  snack: zod.array(
-    zod.object({
-      id: zod.number(),
-      kidId: zod.number(),
-      date: zod.date(),
-      mealType: zod.enum(["breakfast", "lunch", "dinner", "snack"]),
+      mealType: zod.enum(["breakfast", "lunch", "dinner"]),
       foodName: zod.string(),
       quantity: zod.number(),
       unit: zod.string(),
@@ -1235,7 +1220,7 @@ export const GetLibraryMealPlanResponse = zod.object({
     zod.object({
       id: zod.number(),
       planId: zod.number(),
-      mealType: zod.enum(["breakfast", "lunch", "dinner", "snack"]),
+      mealType: zod.enum(["breakfast", "lunch", "dinner"]),
       foodName: zod.string(),
       portionGrams: zod.number(),
       unit: zod.string(),
@@ -1293,7 +1278,7 @@ export const AddLibraryMealPlanItemParams = zod.object({
 export const addLibraryMealPlanItemBodyUnitDefault = `g`;
 
 export const AddLibraryMealPlanItemBody = zod.object({
-  mealType: zod.enum(["breakfast", "lunch", "dinner", "snack"]),
+  mealType: zod.enum(["breakfast", "lunch", "dinner"]),
   foodName: zod.string(),
   portionGrams: zod.number(),
   unit: zod.string().default(addLibraryMealPlanItemBodyUnitDefault),
@@ -1336,7 +1321,7 @@ export const GetKidAssignedMealPlanResponse = zod.object({
     zod.object({
       id: zod.number(),
       planId: zod.number(),
-      mealType: zod.enum(["breakfast", "lunch", "dinner", "snack"]),
+      mealType: zod.enum(["breakfast", "lunch", "dinner"]),
       foodName: zod.string(),
       portionGrams: zod.number(),
       unit: zod.string(),
@@ -1454,7 +1439,7 @@ export const GetKidMealPlanResponse = zod.object({
     zod.object({
       id: zod.number(),
       planId: zod.number(),
-      mealType: zod.enum(["breakfast", "lunch", "dinner", "snack"]),
+      mealType: zod.enum(["breakfast", "lunch", "dinner"]),
       foodId: zod.number(),
       foodName: zod.string(),
       portionGrams: zod.number(),
@@ -1513,7 +1498,7 @@ export const AddMealPlanItemParams = zod.object({
 });
 
 export const AddMealPlanItemBody = zod.object({
-  mealType: zod.enum(["breakfast", "lunch", "dinner", "snack"]),
+  mealType: zod.enum(["breakfast", "lunch", "dinner"]),
   foodId: zod.number(),
   foodName: zod.string(),
   portionGrams: zod.number(),
