@@ -5,7 +5,7 @@
  * Keto Diet Doctor Dashboard API
  * OpenAPI spec version: 0.1.0
  */
-import type { GetKidsPhase } from "./getKidsPhase";
+import type { GetKidsPhaseItem } from "./getKidsPhaseItem";
 
 export type GetKidsParams = {
   /**
@@ -13,11 +13,15 @@ export type GetKidsParams = {
    */
   search?: string;
   /**
-   * Filter by phase
+   * Filter by phase (supports multiple values)
    */
-  phase?: GetKidsPhase;
+  phase?: GetKidsPhaseItem[];
   /**
    * Filter high-risk children only
    */
   highRisk?: boolean;
+  /**
+   * Filter by keto status (true = in keto, false = not in keto)
+   */
+  ketoStatus?: boolean;
 };

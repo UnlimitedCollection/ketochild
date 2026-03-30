@@ -15,7 +15,7 @@ import {
   libraryMealPlanItemsTable,
   kidFoodApprovalsTable,
 } from "@workspace/db";
-import { eq, and, desc, asc, gte, sql } from "drizzle-orm";
+import { eq, and, desc, asc, gte, sql, inArray } from "drizzle-orm";
 import { calcAgeMonths } from "../lib/utils";
 import {
   CreateKidBody,
@@ -126,16 +126,23 @@ router.param("kidId", async (req, res, next, kidIdStr) => {
 router.get("/", async (req, res) => {
   const doctorId = req.session.doctorId!;
   const isPrivileged = req.session.doctorRole === "moderator" || req.session.doctorRole === "admin";
-  const query = GetKidsQueryParams.safeParse(req.query);
-  const search = query.success ? query.data.search : undefined;
-  const phase = query.success ? query.data.phase : undefined;
-  const highRisk = query.success ? query.data.highRisk : undefined;
+
+  const rawPhase = req.query.phase;
+  const phaseArray = rawPhase
+    ? (Array.isArray(rawPhase) ? rawPhase : [rawPhase]).map(Number).filter((n) => [1, 2, 3, 4].includes(n)) as (1 | 2 | 3 | 4)[]
+    : undefined;
+
+  const search = typeof req.query.search === "string" ? req.query.search : undefined;
+  const highRisk = req.query.highRisk !== undefined ? req.query.highRisk === "true" : undefined;
+  const ketoStatus = req.query.ketoStatus !== undefined ? req.query.ketoStatus === "true" : undefined;
 
   try {
     let kidsQuery = db.select().from(kidsTable).$dynamic();
 
     const conditions = isPrivileged ? [] : [eq(kidsTable.doctorId, doctorId)];
-    if (phase) conditions.push(eq(kidsTable.phase, phase));
+    if (phaseArray && phaseArray.length > 0) {
+      conditions.push(inArray(kidsTable.phase, phaseArray));
+    }
     if (conditions.length > 0) {
       kidsQuery = kidsQuery.where(and(...conditions));
     }
@@ -159,6 +166,7 @@ router.get("/", async (req, res) => {
         const isHighRisk = completionRate < 0.6;
 
         if (highRisk !== undefined && isHighRisk !== highRisk) return null;
+        if (ketoStatus !== undefined && inKetoStatus !== ketoStatus) return null;
 
         return {
           id: kid.id,

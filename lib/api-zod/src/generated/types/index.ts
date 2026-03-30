@@ -44,7 +44,7 @@ export * from "./getKidMealHistoryParams";
 export * from "./getKidMealLogParams";
 export * from "./getKidMealLogsParams";
 export * from "./getKidsParams";
-export * from "./getKidsPhase";
+export * from "./getKidsPhaseItem";
 export * from "./healthStatus";
 export * from "./highRiskKid";
 export * from "./ketoneReading";

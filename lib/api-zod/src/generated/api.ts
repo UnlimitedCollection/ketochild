@@ -177,13 +177,24 @@ export const GetKidsQueryParams = zod.object({
     .optional()
     .describe("Search by name, kid ID, parent name"),
   phase: zod
-    .union([zod.literal(1), zod.literal(2), zod.literal(3), zod.literal(4)])
+    .array(
+      zod.union([
+        zod.literal(1),
+        zod.literal(2),
+        zod.literal(3),
+        zod.literal(4),
+      ]),
+    )
     .optional()
-    .describe("Filter by phase"),
+    .describe("Filter by phase (supports multiple values)"),
   highRisk: zod.coerce
     .boolean()
     .optional()
     .describe("Filter high-risk children only"),
+  ketoStatus: zod.coerce
+    .boolean()
+    .optional()
+    .describe("Filter by keto status (true = in keto, false = not in keto)"),
 });
 
 export const GetKidsResponseItem = zod.object({

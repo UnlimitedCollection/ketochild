@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useSearch, useLocation } from "wouter";
-import { useGetKids, useGetKid, useGetKidKetoneReadings, useDeleteKid } from "@workspace/api-client-react";
+import { useGetKids, useGetKid, useGetKidKetoneReadings, useDeleteKid, type GetKidsParams } from "@workspace/api-client-react";
 import { Search, Filter, Loader2, User, Eye, Flame, Clock, Trash2, Pencil, Scale, FlaskConical } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,11 +10,29 @@ import { Card } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { MultiSelectDropdown } from "@/components/ui/multi-select-dropdown";
 import { useToast } from "@/hooks/use-toast";
 import { useCanWrite } from "@/hooks/useRole";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/use-debounce";
 import { format, parseISO } from "date-fns";
+
+const KETO_STATUS_OPTIONS = [
+  { label: "In Keto", value: "true" },
+  { label: "Not In Keto", value: "false" },
+];
+
+const RISK_OPTIONS = [
+  { label: "High Risk", value: "true" },
+  { label: "Normal", value: "false" },
+];
+
+const PHASE_OPTIONS = [
+  { label: "Phase 1", value: "1" },
+  { label: "Phase 2", value: "2" },
+  { label: "Phase 3", value: "3" },
+  { label: "Phase 4", value: "4" },
+];
 
 function KidViewDialog({ kidId, open, onOpenChange }: { kidId: number | null; open: boolean; onOpenChange: (v: boolean) => void }) {
   const enabled = open && kidId !== null;
@@ -162,11 +180,36 @@ export default function KidsListPage() {
   }, [searchQuery]);
 
   const canWrite = useCanWrite();
-  const [activePhase, setActivePhase] = useState<number | undefined>(undefined);
+  const [selectedPhases, setSelectedPhases] = useState<string[]>([]);
+  const [selectedKetoStatus, setSelectedKetoStatus] = useState<string[]>([]);
+  const [selectedRisk, setSelectedRisk] = useState<string[]>([]);
+
+  const hasActiveFilters = selectedPhases.length > 0 || selectedKetoStatus.length > 0 || selectedRisk.length > 0;
+
+  const clearAllFilters = () => {
+    setSelectedPhases([]);
+    setSelectedKetoStatus([]);
+    setSelectedRisk([]);
+  };
+
+  const apiParams = useMemo((): GetKidsParams => {
+    const params: GetKidsParams = {};
+    if (debouncedSearch) params.search = debouncedSearch;
+    if (selectedPhases.length > 0) {
+      params.phase = selectedPhases.map(Number) as GetKidsParams["phase"];
+    }
+    if (selectedRisk.length === 1) {
+      params.highRisk = selectedRisk[0] === "true";
+    }
+    if (selectedKetoStatus.length === 1) {
+      params.ketoStatus = selectedKetoStatus[0] === "true";
+    }
+    return params;
+  }, [debouncedSearch, selectedPhases, selectedRisk, selectedKetoStatus]);
 
   const { data: kids, isLoading } = useGetKids(
-    { search: debouncedSearch || undefined, phase: activePhase as 1 | 2 | 3 | 4 | undefined },
-    { query: { queryKey: ["/api/kids", debouncedSearch, activePhase] } }
+    apiParams,
+    { query: { queryKey: ["/api/kids", debouncedSearch, selectedPhases, selectedRisk, selectedKetoStatus] } }
   );
 
   const deleteKidMutation = useDeleteKid({
@@ -241,22 +284,27 @@ export default function KidsListPage() {
           </div>
           
           <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
-            <div className="flex items-center gap-2 text-sm text-slate-500 mr-2 shrink-0">
-              <Filter className="h-4 w-4" /> Filter Phase:
-            </div>
-            {[1, 2, 3, 4].map((phase) => (
-              <Button
-                key={phase}
-                variant={activePhase === phase ? "default" : "outline"}
-                size="sm"
-                onClick={() => setActivePhase(activePhase === phase ? undefined : phase)}
-                className={`rounded-lg shrink-0 ${activePhase === phase ? 'shadow-md shadow-primary/20' : 'bg-white'}`}
-              >
-                Phase {phase}
-              </Button>
-            ))}
-            {activePhase !== undefined && (
-              <Button variant="ghost" size="sm" onClick={() => setActivePhase(undefined)} className="text-slate-500 shrink-0">
+            <Filter className="h-4 w-4 text-slate-400 shrink-0" />
+            <MultiSelectDropdown
+              label="Keto Status"
+              options={KETO_STATUS_OPTIONS}
+              selected={selectedKetoStatus}
+              onSelectionChange={setSelectedKetoStatus}
+            />
+            <MultiSelectDropdown
+              label="Risk"
+              options={RISK_OPTIONS}
+              selected={selectedRisk}
+              onSelectionChange={setSelectedRisk}
+            />
+            <MultiSelectDropdown
+              label="Phase"
+              options={PHASE_OPTIONS}
+              selected={selectedPhases}
+              onSelectionChange={setSelectedPhases}
+            />
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-slate-500 shrink-0">
                 Clear
               </Button>
             )}

@@ -39054,8 +39054,16 @@ var GetDashboardRecentActivityResponse = arrayType(
 );
 var GetKidsQueryParams = objectType({
   search: coerce.string().optional().describe("Search by name, kid ID, parent name"),
-  phase: unionType([literalType(1), literalType(2), literalType(3), literalType(4)]).optional().describe("Filter by phase"),
-  highRisk: coerce.boolean().optional().describe("Filter high-risk children only")
+  phase: arrayType(
+    unionType([
+      literalType(1),
+      literalType(2),
+      literalType(3),
+      literalType(4)
+    ])
+  ).optional().describe("Filter by phase (supports multiple values)"),
+  highRisk: coerce.boolean().optional().describe("Filter high-risk children only"),
+  ketoStatus: coerce.boolean().optional().describe("Filter by keto status (true = in keto, false = not in keto)")
 });
 var GetKidsResponseItem = objectType({
   id: numberType(),
@@ -61047,14 +61055,17 @@ router5.param("kidId", async (req, res, next, kidIdStr) => {
 router5.get("/", async (req, res) => {
   const doctorId = req.session.doctorId;
   const isPrivileged = req.session.doctorRole === "moderator" || req.session.doctorRole === "admin";
-  const query = GetKidsQueryParams.safeParse(req.query);
-  const search = query.success ? query.data.search : void 0;
-  const phase = query.success ? query.data.phase : void 0;
-  const highRisk = query.success ? query.data.highRisk : void 0;
+  const rawPhase = req.query.phase;
+  const phaseArray = rawPhase ? (Array.isArray(rawPhase) ? rawPhase : [rawPhase]).map(Number).filter((n) => [1, 2, 3, 4].includes(n)) : void 0;
+  const search = typeof req.query.search === "string" ? req.query.search : void 0;
+  const highRisk = req.query.highRisk !== void 0 ? req.query.highRisk === "true" : void 0;
+  const ketoStatus = req.query.ketoStatus !== void 0 ? req.query.ketoStatus === "true" : void 0;
   try {
     let kidsQuery = db.select().from(kidsTable).$dynamic();
     const conditions = isPrivileged ? [] : [eq(kidsTable.doctorId, doctorId)];
-    if (phase) conditions.push(eq(kidsTable.phase, phase));
+    if (phaseArray && phaseArray.length > 0) {
+      conditions.push(inArray(kidsTable.phase, phaseArray));
+    }
     if (conditions.length > 0) {
       kidsQuery = kidsQuery.where(and(...conditions));
     }
@@ -61074,6 +61085,7 @@ router5.get("/", async (req, res) => {
         ]);
         const isHighRisk = completionRate < 0.6;
         if (highRisk !== void 0 && isHighRisk !== highRisk) return null;
+        if (ketoStatus !== void 0 && inKetoStatus !== ketoStatus) return null;
         return {
           id: kid.id,
           name: kid.name,

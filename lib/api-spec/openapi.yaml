@@ -240,15 +240,24 @@ paths:
           description: Search by name, kid ID, parent name
         - name: phase
           in: query
+          style: form
+          explode: true
           schema:
-            type: integer
-            enum: [1, 2, 3, 4]
-          description: Filter by phase
+            type: array
+            items:
+              type: integer
+              enum: [1, 2, 3, 4]
+          description: Filter by phase (supports multiple values)
         - name: highRisk
           in: query
           schema:
             type: boolean
           description: Filter high-risk children only
+        - name: ketoStatus
+          in: query
+          schema:
+            type: boolean
+          description: Filter by keto status (true = in keto, false = not in keto)
       responses:
         "200":
           description: List of kids

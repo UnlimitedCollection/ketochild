@@ -870,18 +870,23 @@ export type GetKidsParams = {
    */
   search?: string;
   /**
-   * Filter by phase
+   * Filter by phase (supports multiple values)
    */
-  phase?: GetKidsPhase;
+  phase?: GetKidsPhaseItem[];
   /**
    * Filter high-risk children only
    */
   highRisk?: boolean;
+  /**
+   * Filter by keto status (true = in keto, false = not in keto)
+   */
+  ketoStatus?: boolean;
 };
 
-export type GetKidsPhase = (typeof GetKidsPhase)[keyof typeof GetKidsPhase];
+export type GetKidsPhaseItem =
+  (typeof GetKidsPhaseItem)[keyof typeof GetKidsPhaseItem];
 
-export const GetKidsPhase = {
+export const GetKidsPhaseItem = {
   NUMBER_1: 1,
   NUMBER_2: 2,
   NUMBER_3: 3,
