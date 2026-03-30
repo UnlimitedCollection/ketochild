@@ -39344,7 +39344,7 @@ var GetKidMealLogsResponseItem = objectType({
   id: numberType(),
   kidId: numberType(),
   date: dateType(),
-  mealType: enumType(["breakfast", "lunch", "dinner", "snack"]),
+  mealType: enumType(["breakfast", "lunch", "dinner"]),
   isCompleted: booleanType(),
   calories: numberType().optional(),
   carbs: numberType().optional(),
@@ -39361,7 +39361,7 @@ var AddMealLogParams = objectType({
 var addMealLogBodyIsCompletedDefault = true;
 var AddMealLogBody = objectType({
   date: dateType(),
-  mealType: enumType(["breakfast", "lunch", "dinner", "snack"]),
+  mealType: enumType(["breakfast", "lunch", "dinner"]),
   isCompleted: booleanType().default(addMealLogBodyIsCompletedDefault),
   calories: numberType().optional(),
   carbs: numberType().optional(),
@@ -39388,7 +39388,7 @@ var UpdateMealLogImageResponse = objectType({
   id: numberType(),
   kidId: numberType(),
   date: dateType(),
-  mealType: enumType(["breakfast", "lunch", "dinner", "snack"]),
+  mealType: enumType(["breakfast", "lunch", "dinner"]),
   isCompleted: booleanType(),
   calories: numberType().optional(),
   carbs: numberType().optional(),
@@ -39692,7 +39692,7 @@ var GetKidMealLogResponse = objectType({
       id: numberType(),
       kidId: numberType(),
       date: dateType(),
-      mealType: enumType(["breakfast", "lunch", "dinner", "snack"]),
+      mealType: enumType(["breakfast", "lunch", "dinner"]),
       foodName: stringType(),
       quantity: numberType(),
       unit: stringType(),
@@ -39707,7 +39707,7 @@ var GetKidMealLogResponse = objectType({
       id: numberType(),
       kidId: numberType(),
       date: dateType(),
-      mealType: enumType(["breakfast", "lunch", "dinner", "snack"]),
+      mealType: enumType(["breakfast", "lunch", "dinner"]),
       foodName: stringType(),
       quantity: numberType(),
       unit: stringType(),
@@ -39722,22 +39722,7 @@ var GetKidMealLogResponse = objectType({
       id: numberType(),
       kidId: numberType(),
       date: dateType(),
-      mealType: enumType(["breakfast", "lunch", "dinner", "snack"]),
-      foodName: stringType(),
-      quantity: numberType(),
-      unit: stringType(),
-      calories: numberType().optional(),
-      carbs: numberType().optional(),
-      fat: numberType().optional(),
-      protein: numberType().optional()
-    })
-  ),
-  snack: arrayType(
-    objectType({
-      id: numberType(),
-      kidId: numberType(),
-      date: dateType(),
-      mealType: enumType(["breakfast", "lunch", "dinner", "snack"]),
+      mealType: enumType(["breakfast", "lunch", "dinner"]),
       foodName: stringType(),
       quantity: numberType(),
       unit: stringType(),
@@ -39820,7 +39805,7 @@ var GetLibraryMealPlanResponse = objectType({
     objectType({
       id: numberType(),
       planId: numberType(),
-      mealType: enumType(["breakfast", "lunch", "dinner", "snack"]),
+      mealType: enumType(["breakfast", "lunch", "dinner"]),
       foodName: stringType(),
       portionGrams: numberType(),
       unit: stringType(),
@@ -39861,7 +39846,7 @@ var AddLibraryMealPlanItemParams = objectType({
 });
 var addLibraryMealPlanItemBodyUnitDefault = `g`;
 var AddLibraryMealPlanItemBody = objectType({
-  mealType: enumType(["breakfast", "lunch", "dinner", "snack"]),
+  mealType: enumType(["breakfast", "lunch", "dinner"]),
   foodName: stringType(),
   portionGrams: numberType(),
   unit: stringType().default(addLibraryMealPlanItemBodyUnitDefault),
@@ -39894,7 +39879,7 @@ var GetKidAssignedMealPlanResponse = objectType({
     objectType({
       id: numberType(),
       planId: numberType(),
-      mealType: enumType(["breakfast", "lunch", "dinner", "snack"]),
+      mealType: enumType(["breakfast", "lunch", "dinner"]),
       foodName: stringType(),
       portionGrams: numberType(),
       unit: stringType(),
@@ -39982,7 +39967,7 @@ var GetKidMealPlanResponse = objectType({
     objectType({
       id: numberType(),
       planId: numberType(),
-      mealType: enumType(["breakfast", "lunch", "dinner", "snack"]),
+      mealType: enumType(["breakfast", "lunch", "dinner"]),
       foodId: numberType(),
       foodName: stringType(),
       portionGrams: numberType(),
@@ -40025,7 +40010,7 @@ var AddMealPlanItemParams = objectType({
   planId: coerce.number()
 });
 var AddMealPlanItemBody = objectType({
-  mealType: enumType(["breakfast", "lunch", "dinner", "snack"]),
+  mealType: enumType(["breakfast", "lunch", "dinner"]),
   foodId: numberType(),
   foodName: stringType(),
   portionGrams: numberType(),
@@ -61643,8 +61628,7 @@ router5.get("/:kidId/meal-log", async (req, res) => {
     const grouped = {
       breakfast: [],
       lunch: [],
-      dinner: [],
-      snack: []
+      dinner: []
     };
     for (const entry of entries) {
       const slot = entry.mealType;
@@ -61667,8 +61651,7 @@ router5.get("/:kidId/meal-log", async (req, res) => {
       date: dateStr,
       breakfast: grouped.breakfast.map(toDto),
       lunch: grouped.lunch.map(toDto),
-      dinner: grouped.dinner.map(toDto),
-      snack: grouped.snack.map(toDto)
+      dinner: grouped.dinner.map(toDto)
     });
   } catch (err) {
     req.log.error({ err }, "Get meal log detail error");
