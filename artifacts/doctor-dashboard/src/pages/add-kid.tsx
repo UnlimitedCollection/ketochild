@@ -16,7 +16,7 @@ const createKidSchema = z.object({
   dateOfBirth: z.string().nonempty("Date of birth is required"),
   gender: z.enum(["male", "female"]),
   parentName: z.string().min(2, "Parent name required"),
-  parentContact: z.string().min(5, "Contact info required"),
+  parentContact: z.string().regex(/^\d{10}$/, "Mobile number must be exactly 10 digits"),
   phase: z.coerce.number().min(1).max(4),
 });
 
@@ -116,8 +116,8 @@ export default function AddKidPage() {
 
                 <FormField control={form.control} name="parentContact" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Contact Info (Phone/Email)</FormLabel>
-                    <FormControl><Input className="rounded-xl bg-slate-50" placeholder="e.g. 555-0123" {...field} /></FormControl>
+                    <FormLabel>Mobile Number</FormLabel>
+                    <FormControl><Input className="rounded-xl bg-slate-50" placeholder="e.g. 07XXXXXXXX" maxLength={10} {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />

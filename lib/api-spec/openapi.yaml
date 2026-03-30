@@ -3096,6 +3096,8 @@ components:
           type: string
         profilePhoto:
           type: string
+        mobile:
+          type: string
         role:
           type: string
           enum: [admin, moderator]
@@ -3130,6 +3132,9 @@ components:
           type: string
         profilePhoto:
           type: string
+        mobile:
+          type: string
+          pattern: "^\\d{10}$"
         role:
           type: string
           enum: [admin, moderator]
@@ -3160,6 +3165,9 @@ components:
           type: string
         profilePhoto:
           type: string
+        mobile:
+          type: string
+          pattern: "^\\d{10}$"
         role:
           type: string
           enum: [admin, moderator]

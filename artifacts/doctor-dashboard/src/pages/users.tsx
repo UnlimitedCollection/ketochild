@@ -49,6 +49,7 @@ type UserFormData = {
   username: string;
   password: string;
   name: string;
+  mobile: string;
   email: string;
   designation: string;
   profilePhoto: string;
@@ -59,6 +60,7 @@ const BLANK_FORM: UserFormData = {
   username: "",
   password: "",
   name: "",
+  mobile: "",
   email: "",
   designation: "",
   profilePhoto: "",
@@ -149,6 +151,7 @@ export default function UsersPage() {
       username: user.username,
       password: "",
       name: user.name,
+      mobile: user.mobile ?? "",
       email: user.email,
       designation: user.designation ?? "",
       profilePhoto: user.profilePhoto ?? "",
@@ -240,6 +243,10 @@ export default function UsersPage() {
       setFormError("Name is required.");
       return;
     }
+    if (form.mobile.trim() && !/^\d{10}$/.test(form.mobile.trim())) {
+      setFormError("Mobile number must be exactly 10 digits (e.g. 07XXXXXXXX).");
+      return;
+    }
     if (!form.email.trim() || !form.email.includes("@")) {
       setFormError("A valid email is required.");
       return;
@@ -257,6 +264,7 @@ export default function UsersPage() {
         role: form.role,
         designation: form.designation.trim() || "",
         profilePhoto: form.profilePhoto || "",
+        mobile: form.mobile.trim() || undefined,
       };
       if (form.password.trim()) body.password = form.password;
 
@@ -281,6 +289,7 @@ export default function UsersPage() {
         email: form.email,
         designation: form.designation || undefined,
         profilePhoto: form.profilePhoto || undefined,
+        mobile: form.mobile.trim() || undefined,
         role: form.role,
       };
       createUser.mutate(
@@ -517,6 +526,15 @@ export default function UsersPage() {
               </div>
             </div>
             <div className="space-y-1.5">
+              <Label>Mobile Number</Label>
+              <Input
+                value={form.mobile}
+                onChange={(e) => handleField("mobile", e.target.value)}
+                placeholder="e.g. 07XXXXXXXX"
+                maxLength={10}
+              />
+            </div>
+            <div className="space-y-1.5">
               <Label>Email</Label>
               <Input
                 type="email"
@@ -639,9 +657,15 @@ export default function UsersPage() {
                   <p className="text-sm text-slate-800 font-mono">{viewUser.username}</p>
                 </div>
               </div>
-              <div>
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Email</p>
-                <p className="text-sm text-slate-800">{viewUser.email}</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Mobile Number</p>
+                  <p className="text-sm text-slate-800">{viewUser.mobile || "\u2014"}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Email</p>
+                  <p className="text-sm text-slate-800">{viewUser.email}</p>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

@@ -940,6 +940,7 @@ export const ListUsersResponseItem = zod.object({
   email: zod.string(),
   designation: zod.string().optional(),
   profilePhoto: zod.string().optional(),
+  mobile: zod.string().optional(),
   role: zod.enum(["admin", "moderator"]),
   createdAt: zod.date(),
 });
@@ -953,6 +954,8 @@ export const createUserBodyUsernameMax = 100;
 
 export const createUserBodyPasswordMin = 6;
 
+export const createUserBodyMobileRegExp = new RegExp("^\\d{10}$");
+
 export const CreateUserBody = zod.object({
   username: zod
     .string()
@@ -963,6 +966,7 @@ export const CreateUserBody = zod.object({
   email: zod.string().email(),
   designation: zod.string().optional(),
   profilePhoto: zod.string().optional(),
+  mobile: zod.string().regex(createUserBodyMobileRegExp).optional(),
   role: zod.enum(["admin", "moderator"]),
 });
 
@@ -978,6 +982,8 @@ export const updateUserBodyUsernameMax = 100;
 
 export const updateUserBodyPasswordMin = 6;
 
+export const updateUserBodyMobileRegExp = new RegExp("^\\d{10}$");
+
 export const UpdateUserBody = zod.object({
   username: zod
     .string()
@@ -989,6 +995,7 @@ export const UpdateUserBody = zod.object({
   email: zod.string().email().optional(),
   designation: zod.string().optional(),
   profilePhoto: zod.string().optional(),
+  mobile: zod.string().regex(updateUserBodyMobileRegExp).optional(),
   role: zod.enum(["admin", "moderator"]).optional(),
 });
 
@@ -999,6 +1006,7 @@ export const UpdateUserResponse = zod.object({
   email: zod.string(),
   designation: zod.string().optional(),
   profilePhoto: zod.string().optional(),
+  mobile: zod.string().optional(),
   role: zod.enum(["admin", "moderator"]),
   createdAt: zod.date(),
 });

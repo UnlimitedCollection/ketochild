@@ -807,6 +807,7 @@ export interface UserResponse {
   email: string;
   designation?: string;
   profilePhoto?: string;
+  mobile?: string;
   role: UserResponseRole;
   createdAt: string;
 }
@@ -832,6 +833,8 @@ export interface CreateUserRequest {
   email: string;
   designation?: string;
   profilePhoto?: string;
+  /** @pattern ^\d{10}$ */
+  mobile?: string;
   role: CreateUserRequestRole;
 }
 
@@ -856,6 +859,8 @@ export interface UpdateUserRequest {
   email?: string;
   designation?: string;
   profilePhoto?: string;
+  /** @pattern ^\d{10}$ */
+  mobile?: string;
   role?: UpdateUserRequestRole;
 }
 

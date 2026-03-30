@@ -39605,6 +39605,7 @@ var ListUsersResponseItem = objectType({
   email: stringType(),
   designation: stringType().optional(),
   profilePhoto: stringType().optional(),
+  mobile: stringType().optional(),
   role: enumType(["admin", "moderator"]),
   createdAt: dateType()
 });
@@ -39612,6 +39613,7 @@ var ListUsersResponse = arrayType(ListUsersResponseItem);
 var createUserBodyUsernameMin = 3;
 var createUserBodyUsernameMax = 100;
 var createUserBodyPasswordMin = 6;
+var createUserBodyMobileRegExp = new RegExp("^\\d{10}$");
 var CreateUserBody = objectType({
   username: stringType().min(createUserBodyUsernameMin).max(createUserBodyUsernameMax),
   password: stringType().min(createUserBodyPasswordMin),
@@ -39619,6 +39621,7 @@ var CreateUserBody = objectType({
   email: stringType().email(),
   designation: stringType().optional(),
   profilePhoto: stringType().optional(),
+  mobile: stringType().regex(createUserBodyMobileRegExp).optional(),
   role: enumType(["admin", "moderator"])
 });
 var UpdateUserParams = objectType({
@@ -39627,6 +39630,7 @@ var UpdateUserParams = objectType({
 var updateUserBodyUsernameMin = 3;
 var updateUserBodyUsernameMax = 100;
 var updateUserBodyPasswordMin = 6;
+var updateUserBodyMobileRegExp = new RegExp("^\\d{10}$");
 var UpdateUserBody = objectType({
   username: stringType().min(updateUserBodyUsernameMin).max(updateUserBodyUsernameMax).optional(),
   password: stringType().min(updateUserBodyPasswordMin).optional(),
@@ -39634,6 +39638,7 @@ var UpdateUserBody = objectType({
   email: stringType().email().optional(),
   designation: stringType().optional(),
   profilePhoto: stringType().optional(),
+  mobile: stringType().regex(updateUserBodyMobileRegExp).optional(),
   role: enumType(["admin", "moderator"]).optional()
 });
 var UpdateUserResponse = objectType({
@@ -39643,6 +39648,7 @@ var UpdateUserResponse = objectType({
   email: stringType(),
   designation: stringType().optional(),
   profilePhoto: stringType().optional(),
+  mobile: stringType().optional(),
   role: enumType(["admin", "moderator"]),
   createdAt: dateType()
 });
@@ -58518,6 +58524,7 @@ var doctorsTable = pgTable("doctors", {
   email: varchar("email", { length: 255 }).notNull().unique(),
   designation: varchar("designation", { length: 200 }),
   profilePhoto: text("profile_photo"),
+  mobile: varchar("mobile", { length: 20 }),
   role: varchar("role", { length: 20 }).notNull().default("admin"),
   mustChangePassword: boolean("must_change_password").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull()
@@ -62921,6 +62928,7 @@ var CreateUserBody2 = external_exports.object({
   email: external_exports.string().email(),
   designation: external_exports.string().optional(),
   profilePhoto: external_exports.string().optional(),
+  mobile: external_exports.string().regex(/^\d{10}$/, "Mobile number must be exactly 10 digits").optional(),
   role: external_exports.enum(["admin", "moderator"])
 });
 var UpdateUserBody2 = external_exports.object({
@@ -62930,6 +62938,7 @@ var UpdateUserBody2 = external_exports.object({
   email: external_exports.string().email().optional(),
   designation: external_exports.string().optional(),
   profilePhoto: external_exports.string().optional(),
+  mobile: external_exports.union([external_exports.string().regex(/^\d{10}$/, "Mobile number must be exactly 10 digits"), external_exports.literal("")]).optional(),
   role: external_exports.enum(["admin", "moderator"]).optional()
 });
 function mapUser(u) {
@@ -62940,6 +62949,7 @@ function mapUser(u) {
     email: u.email,
     designation: u.designation ?? void 0,
     profilePhoto: u.profilePhoto ?? void 0,
+    mobile: u.mobile ?? void 0,
     role: u.role,
     createdAt: u.createdAt.toISOString()
   };
@@ -62960,7 +62970,7 @@ router11.post("/", async (req, res) => {
     res.status(400).json({ error: "VALIDATION_ERROR", message: first?.message ?? "Invalid request body" });
     return;
   }
-  const { username, password, name, email: email3, designation, profilePhoto, role } = parsed.data;
+  const { username, password, name, email: email3, designation, profilePhoto, mobile, role } = parsed.data;
   try {
     const existing = await db.select({ id: doctorsTable.id }).from(doctorsTable).where(or(eq(doctorsTable.username, username), eq(doctorsTable.email, email3))).limit(1);
     if (existing.length > 0) {
@@ -62968,7 +62978,7 @@ router11.post("/", async (req, res) => {
       return;
     }
     const hashed = await bcryptjs_default.hash(password, 12);
-    const [created] = await db.insert(doctorsTable).values({ username, password: hashed, name, email: email3, designation: designation ?? null, profilePhoto: profilePhoto ?? null, role, mustChangePassword: true }).returning();
+    const [created] = await db.insert(doctorsTable).values({ username, password: hashed, name, email: email3, designation: designation ?? null, profilePhoto: profilePhoto ?? null, mobile: mobile ?? null, role, mustChangePassword: true }).returning();
     res.status(201).json(mapUser(created));
   } catch (err) {
     const dbErr = err;
@@ -62992,7 +63002,7 @@ router11.put("/:userId", async (req, res) => {
     res.status(400).json({ error: "VALIDATION_ERROR", message: first?.message ?? "Invalid request body" });
     return;
   }
-  const { username, password, name, email: email3, designation, profilePhoto, role } = parsed.data;
+  const { username, password, name, email: email3, designation, profilePhoto, mobile, role } = parsed.data;
   try {
     const [target] = await db.select().from(doctorsTable).where(eq(doctorsTable.id, userId)).limit(1);
     if (!target) {
@@ -63027,6 +63037,7 @@ router11.put("/:userId", async (req, res) => {
     if (username !== void 0) updates.username = username;
     if (designation !== void 0) updates.designation = designation || null;
     if (profilePhoto !== void 0) updates.profilePhoto = profilePhoto || null;
+    if (mobile !== void 0) updates.mobile = mobile || null;
     if (role !== void 0) updates.role = role;
     if (password !== void 0) updates.password = await bcryptjs_default.hash(password, 12);
     const [updated] = await db.update(doctorsTable).set(updates).where(eq(doctorsTable.id, userId)).returning();

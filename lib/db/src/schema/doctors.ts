@@ -10,6 +10,7 @@ export const doctorsTable = pgTable("doctors", {
   email: varchar("email", { length: 255 }).notNull().unique(),
   designation: varchar("designation", { length: 200 }),
   profilePhoto: text("profile_photo"),
+  mobile: varchar("mobile", { length: 20 }),
   role: varchar("role", { length: 20 }).notNull().default("admin"),
   mustChangePassword: boolean("must_change_password").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
