@@ -4,7 +4,7 @@ import { PrintLayout } from "@/components/print-layout";
 import { PrintButton } from "@/components/print-button";
 import { PrintFilterDialog, type PrintFilterResult } from "@/components/print-filter-dialog";
 import { useParams, Link, useLocation } from "wouter";
-import { useGetKid, useAddWeightRecord, useUpdateKidMedical, useUpdateKid, useDeleteKid, useGetKidMealHistory, useGetKidKetoneReadings, useAddKetoneReading, useDeleteKetoneReading, useGetKidMealLogs, useAddMealLog, useDeleteMealLog, useGetKidMealLog, useGetKidAssignedMealPlan, useAssignKidMealPlan, useGetLibraryMealPlans, useGetFoods, useGetKidFoodApprovals, useUpsertKidFoodApproval, useUpdateMealLogImage, getGetKidAssignedMealPlanQueryKey, useListMealTypes, type LibraryMealPlanDetail, type LibraryMealPlanItem, type FoodApproval, type MedicalSettingsRequest, type UpdateKidRequest } from "@workspace/api-client-react";
+import { useGetKid, useAddWeightRecord, useDeleteWeightRecord, useUpdateKidMedical, useUpdateKid, useDeleteKid, useGetKidMealHistory, useGetKidKetoneReadings, useAddKetoneReading, useDeleteKetoneReading, useGetKidMealLogs, useAddMealLog, useDeleteMealLog, useGetKidMealLog, useGetKidAssignedMealPlan, useAssignKidMealPlan, useGetLibraryMealPlans, useGetFoods, useGetKidFoodApprovals, useUpsertKidFoodApproval, useUpdateMealLogImage, getGetKidAssignedMealPlanQueryKey, useListMealTypes, type LibraryMealPlanDetail, type LibraryMealPlanItem, type FoodApproval, type MedicalSettingsRequest, type UpdateKidRequest } from "@workspace/api-client-react";
 import { useUpload } from "@workspace/object-storage-web";
 import { z } from "zod";
 import { useForm, useWatch } from "react-hook-form";
@@ -274,6 +274,9 @@ export default function KidProfilePage() {
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
+                )}
+                {recentWeights.length > 0 && (
+                  <WeightReadingsList kidId={kidId} weights={recentWeights} canWrite={canWrite} />
                 )}
               </CardContent>
             </Card>
@@ -712,6 +715,70 @@ function AddWeightDialog({ kidId }: { kidId: number }) {
         </Form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function WeightReadingsList({ kidId, weights, canWrite }: { kidId: number; weights: Array<{ id: number; weight: number; date: string; note?: string | null }>; canWrite: boolean }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const deleteWeight = useDeleteWeightRecord();
+  const [confirmId, setConfirmId] = useState<number | null>(null);
+
+  async function onDelete(id: number) {
+    try {
+      await deleteWeight.mutateAsync({ kidId, recordId: id });
+      queryClient.invalidateQueries({ queryKey: [`/api/kids/${kidId}`] });
+      toast({ title: "Weight record deleted" });
+    } catch {
+      toast({ title: "Failed to delete", variant: "destructive" });
+    } finally {
+      setConfirmId(null);
+    }
+  }
+
+  return (
+    <>
+      <div className="mt-4 max-h-[200px] overflow-y-auto rounded-xl border border-slate-200">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-slate-50/80">
+              <TableHead className="text-xs">Date</TableHead>
+              <TableHead className="text-xs">Weight</TableHead>
+              <TableHead className="text-xs">Note</TableHead>
+              {canWrite && <TableHead className="text-xs w-10"></TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {weights.map((w) => (
+              <TableRow key={w.id} className="hover:bg-slate-50/50 transition-colors">
+                <TableCell className="text-sm text-slate-800">{format(parseISO(w.date), 'MMM d, yyyy')}</TableCell>
+                <TableCell className="text-sm font-bold text-slate-900">{w.weight} <span className="text-xs text-slate-400 font-normal">kg</span></TableCell>
+                <TableCell className="text-sm text-slate-500">{w.note || "—"}</TableCell>
+                {canWrite && (
+                  <TableCell>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-destructive" onClick={() => setConfirmId(w.id)} disabled={deleteWeight.isPending}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                )}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      <AlertDialog open={confirmId !== null} onOpenChange={(open) => { if (!open) setConfirmId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete weight record?</AlertDialogTitle>
+            <AlertDialogDescription>This will permanently remove this weight reading. This action cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => confirmId && onDelete(confirmId)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 

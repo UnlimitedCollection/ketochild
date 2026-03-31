@@ -402,6 +402,30 @@ paths:
                 items:
                   $ref: "#/components/schemas/WeightRecord"
 
+  /kids/{kidId}/weight/{recordId}:
+    delete:
+      operationId: deleteWeightRecord
+      tags: [kids]
+      summary: Delete a weight record
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: recordId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Weight record deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
   /kids/{kidId}/medical:
     get:
       operationId: getKidMedical

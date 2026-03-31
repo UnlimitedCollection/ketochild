@@ -39223,6 +39223,14 @@ var GetWeightHistoryResponseItem = objectType({
   note: stringType().optional()
 });
 var GetWeightHistoryResponse = arrayType(GetWeightHistoryResponseItem);
+var DeleteWeightRecordParams = objectType({
+  kidId: coerce.number(),
+  recordId: coerce.number()
+});
+var DeleteWeightRecordResponse = objectType({
+  success: booleanType(),
+  message: stringType().optional()
+});
 var GetKidMedicalParams = objectType({
   kidId: coerce.number()
 });
@@ -61395,6 +61403,17 @@ router5.post("/:kidId/weight", async (req, res) => {
     });
   } catch (err) {
     req.log.error({ err }, "Add weight error");
+    res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
+  }
+});
+router5.delete("/:kidId/weight/:recordId", async (req, res) => {
+  try {
+    const kidId = parseInt(req.params.kidId, 10);
+    const recordId = parseInt(req.params.recordId, 10);
+    await db.delete(weightRecordsTable).where(and(eq(weightRecordsTable.id, recordId), eq(weightRecordsTable.kidId, kidId)));
+    res.json({ success: true, message: "Weight record deleted" });
+  } catch (err) {
+    req.log.error({ err }, "Delete weight record error");
     res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
   }
 });

@@ -400,6 +400,19 @@ export const GetWeightHistoryResponseItem = zod.object({
 export const GetWeightHistoryResponse = zod.array(GetWeightHistoryResponseItem);
 
 /**
+ * @summary Delete a weight record
+ */
+export const DeleteWeightRecordParams = zod.object({
+  kidId: zod.coerce.number(),
+  recordId: zod.coerce.number(),
+});
+
+export const DeleteWeightRecordResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string().optional(),
+});
+
+/**
  * @summary Get kid medical settings
  */
 export const GetKidMedicalParams = zod.object({

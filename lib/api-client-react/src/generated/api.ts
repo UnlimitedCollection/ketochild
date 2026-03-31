@@ -1414,6 +1414,94 @@ export function useGetWeightHistory<
 }
 
 /**
+ * @summary Delete a weight record
+ */
+export const getDeleteWeightRecordUrl = (kidId: number, recordId: number) => {
+  return `/api/kids/${kidId}/weight/${recordId}`;
+};
+
+export const deleteWeightRecord = async (
+  kidId: number,
+  recordId: number,
+  options?: RequestInit,
+): Promise<SuccessResponse> => {
+  return customFetch<SuccessResponse>(
+    getDeleteWeightRecordUrl(kidId, recordId),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getDeleteWeightRecordMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteWeightRecord>>,
+    TError,
+    { kidId: number; recordId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteWeightRecord>>,
+  TError,
+  { kidId: number; recordId: number },
+  TContext
+> => {
+  const mutationKey = ["deleteWeightRecord"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteWeightRecord>>,
+    { kidId: number; recordId: number }
+  > = (props) => {
+    const { kidId, recordId } = props ?? {};
+
+    return deleteWeightRecord(kidId, recordId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteWeightRecordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteWeightRecord>>
+>;
+
+export type DeleteWeightRecordMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a weight record
+ */
+export const useDeleteWeightRecord = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteWeightRecord>>,
+    TError,
+    { kidId: number; recordId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteWeightRecord>>,
+  TError,
+  { kidId: number; recordId: number },
+  TContext
+> => {
+  return useMutation(getDeleteWeightRecordMutationOptions(options));
+};
+
+/**
  * @summary Get kid medical settings
  */
 export const getGetKidMedicalUrl = (kidId: number) => {
