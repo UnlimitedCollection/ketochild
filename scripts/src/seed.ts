@@ -179,7 +179,17 @@ async function seed() {
   }
 
   // ── 3b. Seed default meal types ────────────────────────────────────────────
-  const defaultMealTypes = ["Breakfast", "Morning Snack", "Lunch", "Snack", "Dinner"];
+  // Remove legacy snack meal types if they exist
+  const snackMealTypeNames = ["Morning Snack", "Snack"];
+  const snackMealTypes = await db.select().from(mealTypesTable).where(inArray(mealTypesTable.name, snackMealTypeNames));
+  if (snackMealTypes.length > 0) {
+    const snackIds = snackMealTypes.map((mt) => mt.id);
+    await db.delete(mealTypeRecipesTable).where(inArray(mealTypeRecipesTable.mealTypeId, snackIds));
+    await db.delete(mealTypesTable).where(inArray(mealTypesTable.id, snackIds));
+    console.log(`Removed legacy snack meal types: ${snackMealTypes.map((mt) => mt.name).join(", ")}`);
+  }
+
+  const defaultMealTypes = ["Breakfast", "Lunch", "Dinner"];
   for (const name of defaultMealTypes) {
     await db.insert(mealTypesTable).values({ name }).onConflictDoNothing();
   }
@@ -268,7 +278,7 @@ async function seed() {
         items: [
           { mealType: "breakfast", foodName: "Scrambled Eggs with Cream Cheese",  portionGrams: 130, unit: "g", calories: 295, carbs: 2.1, fat: 24,   protein: 17 },
           { mealType: "breakfast", foodName: "Avocado",                            portionGrams: 70,  unit: "g", calories: 112, carbs: 1.4, fat: 10.5, protein: 1.4 },
-          { mealType: "snack",     foodName: "Macadamia Nuts",                    portionGrams: 30,  unit: "g", calories: 215, carbs: 1.5, fat: 22.8, protein: 2.4 },
+          { mealType: "lunch",     foodName: "Macadamia Nuts",                    portionGrams: 30,  unit: "g", calories: 215, carbs: 1.5, fat: 22.8, protein: 2.4 },
           { mealType: "lunch",     foodName: "Eggplant with Mozzarella",          portionGrams: 200, unit: "g", calories: 250, carbs: 9,   fat: 16,   protein: 12 },
           { mealType: "lunch",     foodName: "Olive Oil Dressed Greens",          portionGrams: 80,  unit: "g", calories: 95,  carbs: 2.4, fat: 8.5,  protein: 1.2 },
           { mealType: "dinner",    foodName: "Cauliflower with Cheddar Sauce",    portionGrams: 220, unit: "g", calories: 310, carbs: 9,   fat: 24,   protein: 14 },
@@ -282,7 +292,7 @@ async function seed() {
         items: [
           { mealType: "breakfast", foodName: "Eggs Fried in Coconut Oil",         portionGrams: 120, unit: "g", calories: 290, carbs: 0.7, fat: 25,   protein: 15 },
           { mealType: "breakfast", foodName: "Avocado",                            portionGrams: 80,  unit: "g", calories: 128, carbs: 1.6, fat: 12,   protein: 1.6 },
-          { mealType: "snack",     foodName: "Walnuts",                           portionGrams: 25,  unit: "g", calories: 164, carbs: 1.8, fat: 16.3, protein: 3.8 },
+          { mealType: "lunch",     foodName: "Walnuts",                           portionGrams: 25,  unit: "g", calories: 164, carbs: 1.8, fat: 16.3, protein: 3.8 },
           { mealType: "lunch",     foodName: "Chicken Breast with Avocado Oil",   portionGrams: 160, unit: "g", calories: 320, carbs: 0,   fat: 22,   protein: 30 },
           { mealType: "lunch",     foodName: "Kale Salad with Avocado",           portionGrams: 100, unit: "g", calories: 140, carbs: 4.4, fat: 10,   protein: 4.3 },
           { mealType: "dinner",    foodName: "Salmon with Avocado Oil Drizzle",   portionGrams: 160, unit: "g", calories: 390, carbs: 0,   fat: 31,   protein: 29 },
@@ -296,7 +306,7 @@ async function seed() {
         items: [
           { mealType: "breakfast", foodName: "Soft Scrambled Eggs with Butter",   portionGrams: 80,  unit: "g", calories: 185, carbs: 0.6, fat: 16,   protein: 10 },
           { mealType: "breakfast", foodName: "Heavy Cream",                        portionGrams: 20,  unit: "g", calories: 68,  carbs: 0.7, fat: 7,    protein: 0.4 },
-          { mealType: "snack",     foodName: "Cream Cheese",                      portionGrams: 20,  unit: "g", calories: 68,  carbs: 0.8, fat: 6.6,  protein: 1.2 },
+          { mealType: "breakfast", foodName: "Cream Cheese",                      portionGrams: 20,  unit: "g", calories: 68,  carbs: 0.8, fat: 6.6,  protein: 1.2 },
           { mealType: "lunch",     foodName: "Pureed Cauliflower with Butter",    portionGrams: 100, unit: "g", calories: 110, carbs: 5,   fat: 8.1,  protein: 1.9 },
           { mealType: "lunch",     foodName: "Flaked Salmon with Olive Oil",      portionGrams: 80,  unit: "g", calories: 200, carbs: 0,   fat: 15,   protein: 16 },
           { mealType: "dinner",    foodName: "Ground Beef with Butter",           portionGrams: 80,  unit: "g", calories: 265, carbs: 0,   fat: 22,   protein: 15 },
@@ -310,7 +320,7 @@ async function seed() {
         items: [
           { mealType: "breakfast", foodName: "Bacon, Eggs, and Avocado",          portionGrams: 200, unit: "g", calories: 490, carbs: 2,   fat: 42,   protein: 30 },
           { mealType: "breakfast", foodName: "Greek Yogurt with Nuts",            portionGrams: 100, unit: "g", calories: 200, carbs: 5,   fat: 14,   protein: 12 },
-          { mealType: "snack",     foodName: "Almond Butter and Celery",          portionGrams: 60,  unit: "g", calories: 200, carbs: 3.6, fat: 16,   protein: 6.5 },
+          { mealType: "lunch",     foodName: "Almond Butter and Celery",          portionGrams: 60,  unit: "g", calories: 200, carbs: 3.6, fat: 16,   protein: 6.5 },
           { mealType: "lunch",     foodName: "Beef Ribeye Strips Salad",          portionGrams: 200, unit: "g", calories: 520, carbs: 4,   fat: 40,   protein: 35 },
           { mealType: "lunch",     foodName: "Cheddar Cheese Block",              portionGrams: 40,  unit: "g", calories: 161, carbs: 0.5, fat: 13.2, protein: 10 },
           { mealType: "dinner",    foodName: "Chicken Thigh with Cream Sauce",    portionGrams: 220, unit: "g", calories: 462, carbs: 3.3, fat: 37.4, protein: 30.8 },
@@ -322,12 +332,12 @@ async function seed() {
         description: "Modified Atkins approach with structured snacks for children who need frequent small meals throughout the day.",
         targetPhase: null,
         items: [
-          { mealType: "breakfast",     foodName: "Keto Egg Muffins",                 portionGrams: 120, unit: "g", calories: 280, carbs: 2,   fat: 22,   protein: 18 },
-          { mealType: "morning snack", foodName: "Macadamia Nuts",                   portionGrams: 20,  unit: "g", calories: 144, carbs: 1,   fat: 15.2, protein: 1.6 },
-          { mealType: "morning snack", foodName: "Cream Cheese",                     portionGrams: 20,  unit: "g", calories: 68,  carbs: 0.8, fat: 6.6,  protein: 1.2 },
-          { mealType: "lunch",         foodName: "Chicken Thigh with Spinach",       portionGrams: 180, unit: "g", calories: 350, carbs: 1.5, fat: 26,   protein: 27 },
-          { mealType: "snack",         foodName: "Pumpkin Seeds with Olive Oil",     portionGrams: 25,  unit: "g", calories: 145, carbs: 0.8, fat: 12.3, protein: 7.5 },
-          { mealType: "dinner",        foodName: "Salmon with Butter and Broccoli",  portionGrams: 200, unit: "g", calories: 450, carbs: 4.4, fat: 34,   protein: 30 },
+          { mealType: "breakfast", foodName: "Keto Egg Muffins",                 portionGrams: 120, unit: "g", calories: 280, carbs: 2,   fat: 22,   protein: 18 },
+          { mealType: "breakfast", foodName: "Macadamia Nuts",                   portionGrams: 20,  unit: "g", calories: 144, carbs: 1,   fat: 15.2, protein: 1.6 },
+          { mealType: "breakfast", foodName: "Cream Cheese",                     portionGrams: 20,  unit: "g", calories: 68,  carbs: 0.8, fat: 6.6,  protein: 1.2 },
+          { mealType: "lunch",     foodName: "Chicken Thigh with Spinach",       portionGrams: 180, unit: "g", calories: 350, carbs: 1.5, fat: 26,   protein: 27 },
+          { mealType: "lunch",     foodName: "Pumpkin Seeds with Olive Oil",     portionGrams: 25,  unit: "g", calories: 145, carbs: 0.8, fat: 12.3, protein: 7.5 },
+          { mealType: "dinner",    foodName: "Salmon with Butter and Broccoli",  portionGrams: 200, unit: "g", calories: 450, carbs: 4.4, fat: 34,   protein: 30 },
         ],
       },
     ];
@@ -1212,10 +1222,10 @@ async function seed() {
     "lunch":     ["Lunch"],
     "dinner":    ["Dinner"],
     "main course": ["Lunch", "Dinner"],
-    "snack":     ["Morning Snack", "Snack"],
+    "snack":     ["Breakfast", "Lunch"],
     "soup":      ["Lunch", "Dinner"],
     "side":      ["Lunch", "Dinner"],
-    "dessert":   ["Snack", "Dinner"],
+    "dessert":   ["Dinner"],
   };
 
   let mealTypeRecipeLinks = 0;
