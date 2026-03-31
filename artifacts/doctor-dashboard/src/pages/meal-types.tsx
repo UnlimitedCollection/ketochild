@@ -12,6 +12,7 @@ import {
   Loader2,
   Plus,
   Pencil,
+  Eye,
   Trash2,
   X,
   UtensilsCrossed,
@@ -389,6 +390,12 @@ export default function MealTypesPage() {
                           title="Edit"
                         >
                           <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          className="p-1.5 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg opacity-0 group-hover:opacity-100 transition"
+                          title="View"
+                        >
+                          <Eye className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => setConfirmDeleteId(mt.id)}
