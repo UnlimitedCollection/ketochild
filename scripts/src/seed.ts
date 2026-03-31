@@ -16,6 +16,8 @@ import {
   ketoneReadingsTable,
   kidFoodApprovalsTable,
   mealTypesTable,
+  recipesTable,
+  recipeIngredientsTable,
 } from "@workspace/db";
 import { eq, inArray } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -284,7 +286,7 @@ async function seed() {
     console.log(`Library meal plans already seeded (${existingPlans.length} found), skipping.`);
   }
 
-  // ── 5. Deterministic 15 unique kids ───────────────────────────────────────
+  // ── 5. Deterministic 30 unique kids ───────────────────────────────────────
   const existingKids = await db.select({ id: kidsTable.id, name: kidsTable.name }).from(kidsTable).where(eq(kidsTable.doctorId, doctorId));
   if (existingKids.length > 0) {
     const existingKidIds = existingKids.map((k) => k.id);
@@ -306,24 +308,43 @@ async function seed() {
   }
 
   const kidsData = [
-    { name: "Emma Thompson",    dateOfBirth: "2019-03-15", gender: "female", parentName: "Mary Thompson",    parentContact: "+1-555-0101", phase: 2, baseWeight: 12.4 },
-    { name: "Liam Carter",      dateOfBirth: "2018-07-22", gender: "male",   parentName: "John Carter",      parentContact: "+1-555-0102", phase: 1, baseWeight: 14.8 },
-    { name: "Olivia Martinez",  dateOfBirth: "2020-01-10", gender: "female", parentName: "Rosa Martinez",    parentContact: "+1-555-0103", phase: 3, baseWeight: 11.2 },
-    { name: "Noah Williams",    dateOfBirth: "2017-11-05", gender: "male",   parentName: "James Williams",   parentContact: "+1-555-0104", phase: 4, baseWeight: 18.6 },
-    { name: "Ava Brown",        dateOfBirth: "2019-09-28", gender: "female", parentName: "Lisa Brown",       parentContact: "+1-555-0105", phase: 2, baseWeight: 13.0 },
-    { name: "Ethan Davis",      dateOfBirth: "2018-04-17", gender: "male",   parentName: "Robert Davis",     parentContact: "+44-7700-900106", phase: 1, baseWeight: 15.2 },
-    { name: "Sophia Wilson",    dateOfBirth: "2020-06-03", gender: "female", parentName: "Jennifer Wilson",  parentContact: "+1-555-0107", phase: 2, baseWeight: 10.8 },
-    { name: "Mason Miller",     dateOfBirth: "2016-12-19", gender: "male",   parentName: "David Miller",     parentContact: "+1-555-0108", phase: 3, baseWeight: 20.4 },
-    { name: "Isabella Moore",   dateOfBirth: "2019-05-11", gender: "female", parentName: "Sarah Moore",      parentContact: "+1-555-0109", phase: 1, baseWeight: 13.6 },
-    { name: "Lucas Taylor",     dateOfBirth: "2017-08-30", gender: "male",   parentName: "Mark Taylor",      parentContact: "+44-7700-900110", phase: 4, baseWeight: 19.2 },
-    { name: "Mia Anderson",     dateOfBirth: "2021-02-14", gender: "female", parentName: "Karen Anderson",   parentContact: "+1-555-0111", phase: 1, baseWeight: 9.4 },
-    { name: "Aiden Jackson",    dateOfBirth: "2018-10-07", gender: "male",   parentName: "Paul Jackson",     parentContact: "+1-555-0112", phase: 2, baseWeight: 16.0 },
-    { name: "Charlotte White",  dateOfBirth: "2020-04-22", gender: "female", parentName: "Nancy White",      parentContact: "+1-555-0113", phase: 3, baseWeight: 11.8 },
-    { name: "James Harris",     dateOfBirth: "2017-01-18", gender: "male",   parentName: "Brian Harris",     parentContact: "+61-4-0000-0114", phase: 4, baseWeight: 21.0 },
-    { name: "Amelia Clark",     dateOfBirth: "2019-12-09", gender: "female", parentName: "Susan Clark",      parentContact: "+1-555-0115", phase: 2, baseWeight: 13.8 },
+    { name: "Emma Thompson",      dateOfBirth: "2019-03-15", gender: "female", parentName: "Mary Thompson",      parentContact: "+1-555-0101", phase: 2, baseWeight: 12.4 },
+    { name: "Liam Carter",        dateOfBirth: "2018-07-22", gender: "male",   parentName: "John Carter",        parentContact: "+1-555-0102", phase: 1, baseWeight: 14.8 },
+    { name: "Olivia Martinez",    dateOfBirth: "2020-01-10", gender: "female", parentName: "Rosa Martinez",      parentContact: "+1-555-0103", phase: 3, baseWeight: 11.2 },
+    { name: "Noah Williams",      dateOfBirth: "2017-11-05", gender: "male",   parentName: "James Williams",     parentContact: "+1-555-0104", phase: 4, baseWeight: 18.6 },
+    { name: "Ava Brown",          dateOfBirth: "2019-09-28", gender: "female", parentName: "Lisa Brown",         parentContact: "+1-555-0105", phase: 2, baseWeight: 13.0 },
+    { name: "Ethan Davis",        dateOfBirth: "2018-04-17", gender: "male",   parentName: "Robert Davis",       parentContact: "+44-7700-900106", phase: 1, baseWeight: 15.2 },
+    { name: "Sophia Wilson",      dateOfBirth: "2020-06-03", gender: "female", parentName: "Jennifer Wilson",    parentContact: "+1-555-0107", phase: 2, baseWeight: 10.8 },
+    { name: "Mason Miller",       dateOfBirth: "2016-12-19", gender: "male",   parentName: "David Miller",       parentContact: "+1-555-0108", phase: 3, baseWeight: 20.4 },
+    { name: "Isabella Moore",     dateOfBirth: "2019-05-11", gender: "female", parentName: "Sarah Moore",        parentContact: "+1-555-0109", phase: 1, baseWeight: 13.6 },
+    { name: "Lucas Taylor",       dateOfBirth: "2017-08-30", gender: "male",   parentName: "Mark Taylor",        parentContact: "+44-7700-900110", phase: 4, baseWeight: 19.2 },
+    { name: "Mia Anderson",       dateOfBirth: "2021-02-14", gender: "female", parentName: "Karen Anderson",     parentContact: "+1-555-0111", phase: 1, baseWeight: 9.4 },
+    { name: "Aiden Jackson",      dateOfBirth: "2018-10-07", gender: "male",   parentName: "Paul Jackson",       parentContact: "+1-555-0112", phase: 2, baseWeight: 16.0 },
+    { name: "Charlotte White",    dateOfBirth: "2020-04-22", gender: "female", parentName: "Nancy White",        parentContact: "+1-555-0113", phase: 3, baseWeight: 11.8 },
+    { name: "James Harris",       dateOfBirth: "2017-01-18", gender: "male",   parentName: "Brian Harris",       parentContact: "+61-4-0000-0114", phase: 4, baseWeight: 21.0 },
+    { name: "Amelia Clark",       dateOfBirth: "2019-12-09", gender: "female", parentName: "Susan Clark",        parentContact: "+1-555-0115", phase: 2, baseWeight: 13.8 },
+    { name: "Henry Baker",        dateOfBirth: "2018-02-28", gender: "male",   parentName: "Tom Baker",          parentContact: "+1-555-0116", phase: 1, baseWeight: 15.6 },
+    { name: "Zoe Nguyen",         dateOfBirth: "2020-08-14", gender: "female", parentName: "Linh Nguyen",        parentContact: "+1-555-0117", phase: 3, baseWeight: 10.6 },
+    { name: "Jack Robinson",      dateOfBirth: "2017-06-21", gender: "male",   parentName: "Steve Robinson",     parentContact: "+1-555-0118", phase: 4, baseWeight: 19.8 },
+    { name: "Lily Patel",         dateOfBirth: "2019-11-03", gender: "female", parentName: "Priya Patel",        parentContact: "+44-7700-900119", phase: 2, baseWeight: 12.0 },
+    { name: "Owen Kim",           dateOfBirth: "2021-04-09", gender: "male",   parentName: "Soo-Jin Kim",        parentContact: "+1-555-0120", phase: 1, baseWeight: 9.8 },
+    { name: "Ella Gonzalez",      dateOfBirth: "2018-09-17", gender: "female", parentName: "Maria Gonzalez",     parentContact: "+1-555-0121", phase: 3, baseWeight: 14.4 },
+    { name: "Leo Murphy",         dateOfBirth: "2016-05-30", gender: "male",   parentName: "Sean Murphy",        parentContact: "+353-85-000122", phase: 4, baseWeight: 22.0 },
+    { name: "Grace Chen",         dateOfBirth: "2020-12-01", gender: "female", parentName: "Wei Chen",           parentContact: "+1-555-0123", phase: 1, baseWeight: 10.2 },
+    { name: "Daniel Evans",       dateOfBirth: "2019-07-25", gender: "male",   parentName: "Craig Evans",        parentContact: "+44-7700-900124", phase: 2, baseWeight: 13.4 },
+    { name: "Chloe Rivera",       dateOfBirth: "2017-03-12", gender: "female", parentName: "Ana Rivera",         parentContact: "+1-555-0125", phase: 3, baseWeight: 17.6 },
+    { name: "Ryan Scott",         dateOfBirth: "2018-12-08", gender: "male",   parentName: "Kevin Scott",        parentContact: "+1-555-0126", phase: 1, baseWeight: 14.0 },
+    { name: "Hannah Lewis",       dateOfBirth: "2020-10-19", gender: "female", parentName: "Angela Lewis",       parentContact: "+1-555-0127", phase: 2, baseWeight: 11.4 },
+    { name: "Caleb Walker",       dateOfBirth: "2016-08-06", gender: "male",   parentName: "Mike Walker",        parentContact: "+1-555-0128", phase: 4, baseWeight: 21.6 },
+    { name: "Aria Sanchez",       dateOfBirth: "2021-01-23", gender: "female", parentName: "Carmen Sanchez",     parentContact: "+1-555-0129", phase: 1, baseWeight: 9.0 },
+    { name: "Benjamin Young",     dateOfBirth: "2019-04-02", gender: "male",   parentName: "Peter Young",        parentContact: "+61-4-0000-0130", phase: 3, baseWeight: 13.2 },
   ];
 
-  const completionRates = [0.90, 0.42, 0.85, 0.95, 0.28, 0.70, 0.88, 0.62, 0.75, 0.45, 0.92, 0.55, 0.82, 0.38, 0.78];
+  const completionRates = [
+    0.90, 0.42, 0.85, 0.95, 0.28, 0.70, 0.88, 0.62, 0.75, 0.45,
+    0.92, 0.55, 0.82, 0.38, 0.78, 0.65, 0.91, 0.50, 0.73, 0.88,
+    0.35, 0.80, 0.60, 0.77, 0.85, 0.48, 0.70, 0.93, 0.55, 0.82,
+  ];
 
   const phaseSettings: Record<number, { ketoRatio: number; dailyCalories: number; dailyCarbs: number; dailyFat: number; dailyProtein: number }> = {
     1: { ketoRatio: 2, dailyCalories: 1000, dailyCarbs: 25, dailyFat: 85,  dailyProtein: 35 },
@@ -388,7 +409,11 @@ async function seed() {
 
     // Meal days — 35 days
     const rate = completionRates[i] ?? 0.7;
-    const carbMultipliers = [0.7, 0.8, 0.9, 1.0, 1.0, 1.1, 1.2, 1.4, 1.6, 1.8, 1.0, 1.3, 0.9, 1.5, 1.1];
+    const carbMultipliers = [
+      0.7, 0.8, 0.9, 1.0, 1.0, 1.1, 1.2, 1.4, 1.6, 1.8,
+      1.0, 1.3, 0.9, 1.5, 1.1, 0.8, 1.0, 1.3, 0.9, 0.7,
+      1.4, 1.6, 1.1, 0.8, 1.2, 1.5, 0.9, 1.0, 1.3, 1.1,
+    ];
     const carbMultiplier = carbMultipliers[i] ?? 1.0;
     const filledDayCount = Math.round(35 * Math.min(rate + 0.1, 1.0));
 
@@ -416,7 +441,11 @@ async function seed() {
     }
 
     // Meal logs within the last 24 hours for varied 24h completion rates
-    const last24hRates = [0.80, 0.20, 1.00, 0.60, 0.00, 0.40, 0.80, 0.60, 1.00, 0.20, 0.80, 0.40, 0.60, 0.00, 1.00];
+    const last24hRates = [
+      0.80, 0.20, 1.00, 0.60, 0.00, 0.40, 0.80, 0.60, 1.00, 0.20,
+      0.80, 0.40, 0.60, 0.00, 1.00, 0.60, 0.80, 0.20, 1.00, 0.40,
+      0.00, 0.80, 0.60, 1.00, 0.40, 0.20, 0.80, 1.00, 0.60, 0.40,
+    ];
     const last24hRate = last24hRates[i] ?? 0.5;
     const mealTypes = ["breakfast", "morning_snack", "lunch", "afternoon_snack", "dinner"];
     for (let m = 0; m < mealTypes.length; m++) {
@@ -454,6 +483,21 @@ async function seed() {
     "Seizure-free for 3 weeks following intensification to 4:1 ratio. Ketones averaging 3.8 mmol/L. Exceptional response.",
     "Longstanding keto patient — 4 years on diet. Considering weaning protocol. Will discuss with neurology team.",
     "Stable phase 2 patient. Parents report improved energy and concentration at school. Meal completion rate improving steadily.",
+    "Phase 1 induction progressing well. Urinary ketones detected day 3. Family adapting to meal weighing routine. No adverse symptoms reported.",
+    "Patient on 4:1 ratio showing strong seizure control. Mild constipation reported — increased fiber via approved vegetables. Hydration counseling given.",
+    "Phase 4 patient, 2 years on protocol. Growth velocity normal. Bone density scan scheduled. Continue current maintenance plan.",
+    "Phase 2 transition smooth. Ketone levels stable at 2.4 mmol/L. Parents confident with carb calculations. Next review in 4 weeks.",
+    "Newest patient — just started phase 1. Initial baseline labs completed. Family orientation session done. Meal plan distributed.",
+    "Patient showing excellent 4:1 compliance. Seizure diary shows 80% reduction from baseline. Some food refusal — discussed strategies with parents.",
+    "Long-term phase 4 patient. Considering transition to modified Atkins. EEG review pending. Diet well tolerated for 3+ years.",
+    "Phase 1 patient, week 2. Ketones rising to 1.5 mmol/L. Mild lethargy reported — advised on electrolyte supplementation.",
+    "Phase 2 patient with good adherence. Parents requesting more recipe variety. Shared additional keto recipe resources.",
+    "High-ratio protocol (4:1) for refractory epilepsy. Blood glucose stable. Weight gain adequate. Continue current approach.",
+    "Phase 1 patient adapting slowly. Meal completion at 48%. Parents struggling with portion accuracy. Scheduled dietitian follow-up.",
+    "Phase 2 patient — steady improvement over 3 months. Ketones averaging 2.2 mmol/L. School nurse informed about diet requirements.",
+    "Phase 4 maintenance — excellent long-term compliance. Annual labs within normal limits. Discuss potential weaning timeline at next visit.",
+    "Youngest phase 1 patient. Very small portions. Parents extremely careful with measurements. Good ketone response at 1.3 mmol/L.",
+    "Phase 3 intensification initiated. Increasing fat ratio from 3:1 to 4:1. Blood monitoring frequency increased to twice weekly.",
   ];
 
   for (let i = 0; i < createdKids.length; i++) {
@@ -466,6 +510,345 @@ async function seed() {
   }
 
   console.log(`Kids seeded: ${createdKids.length} total`);
+
+  // ── 6. Seed 30 keto recipes with ingredients ─────────────────────────────
+  const existingRecipes = await db.select({ id: recipesTable.id }).from(recipesTable).where(eq(recipesTable.doctorId, doctorId));
+  if (existingRecipes.length > 0) {
+    const existingRecipeIds = existingRecipes.map((r) => r.id);
+    await db.delete(recipeIngredientsTable).where(inArray(recipeIngredientsTable.recipeId, existingRecipeIds));
+    await db.delete(recipesTable).where(inArray(recipesTable.id, existingRecipeIds));
+    console.log(`Removed ${existingRecipeIds.length} existing recipes for deterministic reseed...`);
+  }
+
+  const recipesData: { name: string; description: string; category: string; ingredients: { foodName: string; portionGrams: number; unit: string; carbs: number; fat: number; protein: number; calories: number }[] }[] = [
+    {
+      name: "Keto Bacon Egg Cups",
+      description: "Crispy bacon cups filled with baked eggs and cheese — a perfect high-fat breakfast.",
+      category: "Breakfast",
+      ingredients: [
+        { foodName: "Bacon", portionGrams: 60, unit: "g", carbs: 0.4, fat: 25, protein: 22, calories: 325 },
+        { foodName: "Whole Eggs", portionGrams: 100, unit: "g", carbs: 0.6, fat: 10, protein: 13, calories: 155 },
+        { foodName: "Cheddar Cheese", portionGrams: 20, unit: "g", carbs: 0.3, fat: 6.6, protein: 5, calories: 81 },
+      ],
+    },
+    {
+      name: "Creamy Spinach Chicken",
+      description: "Pan-seared chicken thighs smothered in a creamy spinach and parmesan sauce.",
+      category: "Main Course",
+      ingredients: [
+        { foodName: "Chicken Thigh", portionGrams: 150, unit: "g", carbs: 0, fat: 13.5, protein: 39, calories: 314 },
+        { foodName: "Spinach", portionGrams: 80, unit: "g", carbs: 1.1, fat: 0.3, protein: 2.3, calories: 18 },
+        { foodName: "Heavy Cream", portionGrams: 40, unit: "g", carbs: 1.4, fat: 14, protein: 0.8, calories: 136 },
+        { foodName: "Parmesan", portionGrams: 15, unit: "g", carbs: 0.5, fat: 4.4, protein: 5.7, calories: 65 },
+      ],
+    },
+    {
+      name: "MCT Fat Bombs",
+      description: "No-bake chocolate fat bombs with MCT oil and coconut for rapid ketone production.",
+      category: "Snack",
+      ingredients: [
+        { foodName: "MCT Oil", portionGrams: 20, unit: "g", carbs: 0, fat: 20, protein: 0, calories: 172 },
+        { foodName: "Coconut Oil", portionGrams: 15, unit: "g", carbs: 0, fat: 15, protein: 0, calories: 129 },
+        { foodName: "Almond Butter", portionGrams: 20, unit: "g", carbs: 1.4, fat: 10, protein: 4.2, calories: 123 },
+      ],
+    },
+    {
+      name: "Cauliflower Mac and Cheese",
+      description: "Steamed cauliflower baked in a rich cheddar and cream cheese sauce — kid-friendly comfort food.",
+      category: "Main Course",
+      ingredients: [
+        { foodName: "Cauliflower", portionGrams: 150, unit: "g", carbs: 7.5, fat: 0.5, protein: 2.9, calories: 38 },
+        { foodName: "Cheddar Cheese", portionGrams: 40, unit: "g", carbs: 0.5, fat: 13.2, protein: 10, calories: 161 },
+        { foodName: "Cream Cheese", portionGrams: 30, unit: "g", carbs: 1.2, fat: 9.9, protein: 1.8, calories: 103 },
+        { foodName: "Butter", portionGrams: 10, unit: "g", carbs: 0, fat: 8.1, protein: 0.1, calories: 72 },
+      ],
+    },
+    {
+      name: "Salmon Avocado Bowl",
+      description: "Flaked baked salmon served over sliced avocado with olive oil drizzle.",
+      category: "Main Course",
+      ingredients: [
+        { foodName: "Salmon", portionGrams: 140, unit: "g", carbs: 0, fat: 18.2, protein: 35, calories: 291 },
+        { foodName: "Avocado", portionGrams: 80, unit: "g", carbs: 1.6, fat: 12, protein: 1.6, calories: 128 },
+        { foodName: "Olive Oil", portionGrams: 10, unit: "g", carbs: 0, fat: 10, protein: 0, calories: 88 },
+      ],
+    },
+    {
+      name: "Keto Pancakes",
+      description: "Fluffy almond flour pancakes with cream cheese batter — a breakfast treat.",
+      category: "Breakfast",
+      ingredients: [
+        { foodName: "Almond Flour", portionGrams: 40, unit: "g", carbs: 4, fat: 21.6, protein: 9.6, calories: 230 },
+        { foodName: "Cream Cheese", portionGrams: 30, unit: "g", carbs: 1.2, fat: 9.9, protein: 1.8, calories: 103 },
+        { foodName: "Whole Eggs", portionGrams: 50, unit: "g", carbs: 0.3, fat: 5, protein: 6.5, calories: 78 },
+        { foodName: "Butter", portionGrams: 15, unit: "g", carbs: 0, fat: 12.2, protein: 0.1, calories: 108 },
+      ],
+    },
+    {
+      name: "Beef and Broccoli Stir-Fry",
+      description: "Tender ground beef with broccoli florets cooked in avocado oil.",
+      category: "Main Course",
+      ingredients: [
+        { foodName: "Ground Beef", portionGrams: 150, unit: "g", carbs: 0, fat: 30, protein: 39, calories: 431 },
+        { foodName: "Broccoli", portionGrams: 100, unit: "g", carbs: 4, fat: 0.4, protein: 2.6, calories: 34 },
+        { foodName: "Avocado Oil", portionGrams: 10, unit: "g", carbs: 0, fat: 10, protein: 0, calories: 88 },
+      ],
+    },
+    {
+      name: "Cheesy Zucchini Boats",
+      description: "Hollowed zucchini stuffed with seasoned ground beef and melted mozzarella.",
+      category: "Main Course",
+      ingredients: [
+        { foodName: "Zucchini", portionGrams: 200, unit: "g", carbs: 6.2, fat: 0.6, protein: 2.4, calories: 34 },
+        { foodName: "Ground Beef", portionGrams: 100, unit: "g", carbs: 0, fat: 20, protein: 26, calories: 287 },
+        { foodName: "Mozzarella", portionGrams: 40, unit: "g", carbs: 0.9, fat: 8.8, protein: 8.8, calories: 112 },
+      ],
+    },
+    {
+      name: "Keto Chicken Nuggets",
+      description: "Crispy almond flour-coated chicken breast nuggets baked until golden — a kid favorite.",
+      category: "Main Course",
+      ingredients: [
+        { foodName: "Chicken Breast", portionGrams: 150, unit: "g", carbs: 0, fat: 5.4, protein: 46.5, calories: 248 },
+        { foodName: "Almond Flour", portionGrams: 30, unit: "g", carbs: 3, fat: 16.2, protein: 7.2, calories: 173 },
+        { foodName: "Butter", portionGrams: 10, unit: "g", carbs: 0, fat: 8.1, protein: 0.1, calories: 72 },
+      ],
+    },
+    {
+      name: "Pork Belly Bites",
+      description: "Crispy roasted pork belly cubes seasoned with salt and herbs — ultra high-fat snack.",
+      category: "Snack",
+      ingredients: [
+        { foodName: "Pork Belly", portionGrams: 120, unit: "g", carbs: 0, fat: 63.6, protein: 10.8, calories: 622 },
+        { foodName: "Olive Oil", portionGrams: 5, unit: "g", carbs: 0, fat: 5, protein: 0, calories: 44 },
+      ],
+    },
+    {
+      name: "Egg Drop Soup",
+      description: "Simple and warming egg drop soup with spinach in a rich chicken broth base.",
+      category: "Soup",
+      ingredients: [
+        { foodName: "Whole Eggs", portionGrams: 100, unit: "g", carbs: 0.6, fat: 10, protein: 13, calories: 155 },
+        { foodName: "Spinach", portionGrams: 50, unit: "g", carbs: 0.7, fat: 0.2, protein: 1.5, calories: 12 },
+        { foodName: "Butter", portionGrams: 10, unit: "g", carbs: 0, fat: 8.1, protein: 0.1, calories: 72 },
+      ],
+    },
+    {
+      name: "Lamb Chops with Herb Butter",
+      description: "Grilled lamb chops served with a rich herb-infused butter topping.",
+      category: "Main Course",
+      ingredients: [
+        { foodName: "Lamb Chops", portionGrams: 180, unit: "g", carbs: 0, fat: 43.2, protein: 45, calories: 567 },
+        { foodName: "Butter", portionGrams: 20, unit: "g", carbs: 0, fat: 16.2, protein: 0.2, calories: 143 },
+        { foodName: "Asparagus", portionGrams: 80, unit: "g", carbs: 3.1, fat: 0.1, protein: 1.8, calories: 16 },
+      ],
+    },
+    {
+      name: "Tuna Salad Lettuce Wraps",
+      description: "Creamy tuna salad served in crisp lettuce cups with avocado.",
+      category: "Lunch",
+      ingredients: [
+        { foodName: "Tuna", portionGrams: 120, unit: "g", carbs: 0, fat: 6, protein: 30, calories: 158 },
+        { foodName: "Lettuce", portionGrams: 60, unit: "g", carbs: 1.4, fat: 0.2, protein: 0.7, calories: 10 },
+        { foodName: "Avocado", portionGrams: 50, unit: "g", carbs: 1, fat: 7.5, protein: 1, calories: 80 },
+        { foodName: "Olive Oil", portionGrams: 10, unit: "g", carbs: 0, fat: 10, protein: 0, calories: 88 },
+      ],
+    },
+    {
+      name: "Keto Pizza Bites",
+      description: "Mini pizza bites on an almond flour crust with mozzarella and peppers.",
+      category: "Snack",
+      ingredients: [
+        { foodName: "Almond Flour", portionGrams: 30, unit: "g", carbs: 3, fat: 16.2, protein: 7.2, calories: 173 },
+        { foodName: "Mozzarella", portionGrams: 50, unit: "g", carbs: 1.1, fat: 11, protein: 11, calories: 140 },
+        { foodName: "Bell Pepper", portionGrams: 30, unit: "g", carbs: 1.4, fat: 0.1, protein: 0.3, calories: 6 },
+      ],
+    },
+    {
+      name: "Creamy Mushroom Soup",
+      description: "Velvety mushroom soup made with heavy cream and butter — warming and keto-friendly.",
+      category: "Soup",
+      ingredients: [
+        { foodName: "Mushrooms", portionGrams: 150, unit: "g", carbs: 5, fat: 0.5, protein: 4.7, calories: 33 },
+        { foodName: "Heavy Cream", portionGrams: 60, unit: "g", carbs: 2, fat: 21, protein: 1.3, calories: 204 },
+        { foodName: "Butter", portionGrams: 15, unit: "g", carbs: 0, fat: 12.2, protein: 0.1, calories: 108 },
+      ],
+    },
+    {
+      name: "Duck with Cabbage Slaw",
+      description: "Roasted duck leg with a tangy cabbage and walnut slaw.",
+      category: "Main Course",
+      ingredients: [
+        { foodName: "Duck", portionGrams: 160, unit: "g", carbs: 0, fat: 44.8, protein: 30.4, calories: 539 },
+        { foodName: "Cabbage", portionGrams: 80, unit: "g", carbs: 4.6, fat: 0.1, protein: 1, calories: 20 },
+        { foodName: "Walnuts", portionGrams: 20, unit: "g", carbs: 1.4, fat: 13, protein: 3, calories: 131 },
+      ],
+    },
+    {
+      name: "Mackerel Patties",
+      description: "Pan-fried mackerel patties bound with egg and almond flour — omega-3 packed.",
+      category: "Main Course",
+      ingredients: [
+        { foodName: "Mackerel", portionGrams: 140, unit: "g", carbs: 0, fat: 18.2, protein: 26.6, calories: 287 },
+        { foodName: "Whole Eggs", portionGrams: 50, unit: "g", carbs: 0.3, fat: 5, protein: 6.5, calories: 78 },
+        { foodName: "Almond Flour", portionGrams: 15, unit: "g", carbs: 1.5, fat: 8.1, protein: 3.6, calories: 86 },
+        { foodName: "Coconut Oil", portionGrams: 10, unit: "g", carbs: 0, fat: 10, protein: 0, calories: 86 },
+      ],
+    },
+    {
+      name: "Ribeye Steak with Butter",
+      description: "Seared beef ribeye topped with melted herb butter — a classic high-fat keto dinner.",
+      category: "Main Course",
+      ingredients: [
+        { foodName: "Beef Ribeye", portionGrams: 200, unit: "g", carbs: 0, fat: 74, protein: 54, calories: 900 },
+        { foodName: "Butter", portionGrams: 20, unit: "g", carbs: 0, fat: 16.2, protein: 0.2, calories: 143 },
+      ],
+    },
+    {
+      name: "Shrimp Scampi",
+      description: "Garlic butter shrimp served with sauteed zucchini noodles.",
+      category: "Main Course",
+      ingredients: [
+        { foodName: "Shrimp", portionGrams: 150, unit: "g", carbs: 1.4, fat: 2.1, protein: 36, calories: 159 },
+        { foodName: "Butter", portionGrams: 20, unit: "g", carbs: 0, fat: 16.2, protein: 0.2, calories: 143 },
+        { foodName: "Zucchini", portionGrams: 100, unit: "g", carbs: 3.1, fat: 0.3, protein: 1.2, calories: 17 },
+      ],
+    },
+    {
+      name: "Keto Granola",
+      description: "Crunchy homemade granola with pecans, chia seeds, and coconut flakes.",
+      category: "Breakfast",
+      ingredients: [
+        { foodName: "Pecans", portionGrams: 30, unit: "g", carbs: 1.2, fat: 21.6, protein: 2.7, calories: 207 },
+        { foodName: "Chia Seeds", portionGrams: 15, unit: "g", carbs: 0.9, fat: 4.7, protein: 2.6, calories: 73 },
+        { foodName: "Coconut Oil", portionGrams: 10, unit: "g", carbs: 0, fat: 10, protein: 0, calories: 86 },
+        { foodName: "Coconut Meat", portionGrams: 20, unit: "g", carbs: 1.2, fat: 7, protein: 0.7, calories: 71 },
+      ],
+    },
+    {
+      name: "Cod with Lemon Butter",
+      description: "Baked cod fillets drizzled with lemon butter and served with green beans.",
+      category: "Main Course",
+      ingredients: [
+        { foodName: "Cod", portionGrams: 150, unit: "g", carbs: 0, fat: 1.1, protein: 27, calories: 123 },
+        { foodName: "Butter", portionGrams: 20, unit: "g", carbs: 0, fat: 16.2, protein: 0.2, calories: 143 },
+        { foodName: "Green Beans", portionGrams: 80, unit: "g", carbs: 5.6, fat: 0.1, protein: 1.4, calories: 25 },
+      ],
+    },
+    {
+      name: "Keto Egg Muffins",
+      description: "Baked egg muffins loaded with mushrooms, spinach, and cheddar cheese.",
+      category: "Breakfast",
+      ingredients: [
+        { foodName: "Whole Eggs", portionGrams: 120, unit: "g", carbs: 0.7, fat: 12, protein: 15.6, calories: 186 },
+        { foodName: "Mushrooms", portionGrams: 40, unit: "g", carbs: 1.3, fat: 0.1, protein: 1.2, calories: 9 },
+        { foodName: "Spinach", portionGrams: 30, unit: "g", carbs: 0.4, fat: 0.1, protein: 0.9, calories: 7 },
+        { foodName: "Cheddar Cheese", portionGrams: 25, unit: "g", carbs: 0.3, fat: 8.3, protein: 6.3, calories: 101 },
+      ],
+    },
+    {
+      name: "Turkey and Avocado Roll-Ups",
+      description: "Sliced turkey breast wrapped around avocado and cream cheese — a quick keto lunch.",
+      category: "Lunch",
+      ingredients: [
+        { foodName: "Turkey Breast", portionGrams: 100, unit: "g", carbs: 0, fat: 1, protein: 29, calories: 135 },
+        { foodName: "Avocado", portionGrams: 60, unit: "g", carbs: 1.2, fat: 9, protein: 1.2, calories: 96 },
+        { foodName: "Cream Cheese", portionGrams: 25, unit: "g", carbs: 1, fat: 8.3, protein: 1.5, calories: 86 },
+      ],
+    },
+    {
+      name: "Sardine Salad",
+      description: "Protein-packed sardines served over a bed of mixed greens with olive oil dressing.",
+      category: "Lunch",
+      ingredients: [
+        { foodName: "Sardines", portionGrams: 100, unit: "g", carbs: 0, fat: 11, protein: 25, calories: 208 },
+        { foodName: "Lettuce", portionGrams: 60, unit: "g", carbs: 1.4, fat: 0.2, protein: 0.7, calories: 10 },
+        { foodName: "Olive Oil", portionGrams: 15, unit: "g", carbs: 0, fat: 15, protein: 0, calories: 133 },
+        { foodName: "Cucumber", portionGrams: 50, unit: "g", carbs: 1.8, fat: 0.1, protein: 0.4, calories: 8 },
+      ],
+    },
+    {
+      name: "Keto Berry Smoothie",
+      description: "Thick and creamy smoothie with raspberries, heavy cream, and MCT oil.",
+      category: "Breakfast",
+      ingredients: [
+        { foodName: "Raspberries", portionGrams: 40, unit: "g", carbs: 2.2, fat: 0.3, protein: 0.5, calories: 21 },
+        { foodName: "Heavy Cream", portionGrams: 60, unit: "g", carbs: 2, fat: 21, protein: 1.3, calories: 204 },
+        { foodName: "MCT Oil", portionGrams: 10, unit: "g", carbs: 0, fat: 10, protein: 0, calories: 86 },
+      ],
+    },
+    {
+      name: "Flaxseed Keto Bread",
+      description: "Hearty low-carb bread made with flaxseed meal and eggs — perfect for toast.",
+      category: "Side",
+      ingredients: [
+        { foodName: "Flaxseed Meal", portionGrams: 60, unit: "g", carbs: 1.2, fat: 5.4, protein: 3, calories: 84 },
+        { foodName: "Whole Eggs", portionGrams: 50, unit: "g", carbs: 0.3, fat: 5, protein: 6.5, calories: 78 },
+        { foodName: "Butter", portionGrams: 15, unit: "g", carbs: 0, fat: 12.2, protein: 0.1, calories: 108 },
+      ],
+    },
+    {
+      name: "Eggplant Parmesan",
+      description: "Sliced eggplant baked with mozzarella and parmesan — a keto-friendly Italian classic.",
+      category: "Main Course",
+      ingredients: [
+        { foodName: "Eggplant", portionGrams: 150, unit: "g", carbs: 8.9, fat: 0.3, protein: 1.5, calories: 38 },
+        { foodName: "Mozzarella", portionGrams: 50, unit: "g", carbs: 1.1, fat: 11, protein: 11, calories: 140 },
+        { foodName: "Parmesan", portionGrams: 20, unit: "g", carbs: 0.6, fat: 5.8, protein: 7.6, calories: 86 },
+        { foodName: "Olive Oil", portionGrams: 10, unit: "g", carbs: 0, fat: 10, protein: 0, calories: 88 },
+      ],
+    },
+    {
+      name: "Keto Chia Pudding",
+      description: "Overnight chia seed pudding made with heavy cream and topped with blackberries.",
+      category: "Dessert",
+      ingredients: [
+        { foodName: "Chia Seeds", portionGrams: 25, unit: "g", carbs: 1.5, fat: 7.8, protein: 4.3, calories: 122 },
+        { foodName: "Heavy Cream", portionGrams: 80, unit: "g", carbs: 2.7, fat: 28, protein: 1.7, calories: 272 },
+        { foodName: "Blackberries", portionGrams: 30, unit: "g", carbs: 1.5, fat: 0.2, protein: 0.4, calories: 13 },
+      ],
+    },
+    {
+      name: "Pecan Crusted Chicken",
+      description: "Chicken breast coated in crushed pecans and baked until crispy.",
+      category: "Main Course",
+      ingredients: [
+        { foodName: "Chicken Breast", portionGrams: 150, unit: "g", carbs: 0, fat: 5.4, protein: 46.5, calories: 248 },
+        { foodName: "Pecans", portionGrams: 30, unit: "g", carbs: 1.2, fat: 21.6, protein: 2.7, calories: 207 },
+        { foodName: "Butter", portionGrams: 10, unit: "g", carbs: 0, fat: 8.1, protein: 0.1, calories: 72 },
+        { foodName: "Whole Eggs", portionGrams: 50, unit: "g", carbs: 0.3, fat: 5, protein: 6.5, calories: 78 },
+      ],
+    },
+    {
+      name: "Greek Yogurt Keto Bowl",
+      description: "Full-fat Greek yogurt topped with hemp seeds, flaxseeds, and a drizzle of MCT oil.",
+      category: "Breakfast",
+      ingredients: [
+        { foodName: "Greek Yogurt", portionGrams: 120, unit: "g", carbs: 4.9, fat: 6, protein: 10.8, calories: 116 },
+        { foodName: "Hemp Seeds", portionGrams: 15, unit: "g", carbs: 0.5, fat: 7.4, protein: 4.8, calories: 83 },
+        { foodName: "Flaxseeds", portionGrams: 10, unit: "g", carbs: 0.3, fat: 4.2, protein: 1.8, calories: 53 },
+        { foodName: "MCT Oil", portionGrams: 5, unit: "g", carbs: 0, fat: 5, protein: 0, calories: 43 },
+      ],
+    },
+  ];
+
+  for (const recipe of recipesData) {
+    const [created] = await db.insert(recipesTable).values({
+      doctorId,
+      name: recipe.name,
+      description: recipe.description,
+      category: recipe.category,
+    }).returning();
+
+    for (const ing of recipe.ingredients) {
+      await db.insert(recipeIngredientsTable).values({
+        recipeId: created.id,
+        ...ing,
+      });
+    }
+  }
+  console.log(`Recipes seeded: ${recipesData.length} total`);
+
   console.log("Seeding complete!");
 }
 
