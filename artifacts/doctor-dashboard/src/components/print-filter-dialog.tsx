@@ -9,9 +9,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Printer, Search } from "lucide-react";
+import { CalendarDateRangePicker } from "@/components/calendar-date-range-picker";
 
 export interface CheckboxOption {
   id: string;
@@ -25,7 +25,7 @@ export interface EntityOption {
   sublabel?: string;
 }
 
-export type DatePreset = "7d" | "14d" | "30d" | "all";
+export type DatePreset = "7d" | "14d" | "30d" | "all" | "custom";
 
 export interface PrintFilterResult {
   selectedIds: string[];
@@ -47,14 +47,15 @@ interface PrintFilterDialogProps {
 }
 
 const DATE_PRESETS: { value: DatePreset; label: string }[] = [
-  { value: "7d",  label: "Last 7 Days"  },
-  { value: "14d", label: "Last 14 Days" },
-  { value: "30d", label: "Last 30 Days" },
-  { value: "all", label: "All Time"     },
+  { value: "7d",     label: "Last 7 Days"  },
+  { value: "14d",    label: "Last 14 Days" },
+  { value: "30d",    label: "Last 30 Days" },
+  { value: "all",    label: "All Time"     },
+  { value: "custom", label: "Custom Range" },
 ];
 
 function presetToDateRange(preset: DatePreset): { start: string; end: string } | undefined {
-  if (preset === "all") return undefined;
+  if (preset === "all" || preset === "custom") return undefined;
   const days = preset === "7d" ? 7 : preset === "14d" ? 14 : 30;
   const end = new Date();
   const start = new Date();
@@ -80,6 +81,7 @@ export function PrintFilterDialog({
 }: PrintFilterDialogProps) {
   const [selected, setSelected] = useState<Set<string>>(() => getDefaultSelected(options));
   const [datePreset, setDatePreset] = useState<DatePreset>("all");
+  const [customDateRange, setCustomDateRange] = useState<{ start: string; end: string } | undefined>(undefined);
   const [selectedEntities, setSelectedEntities] = useState<Set<string>>(
     () => new Set((entities ?? []).map((e) => e.id))
   );
@@ -89,6 +91,7 @@ export function PrintFilterDialog({
     if (open) {
       setSelected(getDefaultSelected(options));
       setDatePreset("all");
+      setCustomDateRange(undefined);
       setSelectedEntities(new Set((entities ?? []).map((e) => e.id)));
       setEntitySearch("");
     }
@@ -157,9 +160,9 @@ export function PrintFilterDialog({
       selectedIds: sectionIds,
       selectedEntityIds: Array.from(selectedEntities),
       datePreset,
-      dateRange: presetToDateRange(datePreset),
+      dateRange: datePreset === "custom" ? customDateRange : presetToDateRange(datePreset),
     }),
-    [selectedEntities, datePreset]
+    [selectedEntities, datePreset, customDateRange]
   );
 
   function handlePrintSection(id: string) {
@@ -207,13 +210,19 @@ export function PrintFilterDialog({
                   </button>
                 ))}
               </div>
-              {datePreset !== "all" && (
+              {datePreset !== "all" && datePreset !== "custom" && (
                 <p className="text-xs text-slate-400">
                   {(() => {
                     const r = presetToDateRange(datePreset);
                     return r ? `${r.start} → ${r.end}` : "";
                   })()}
                 </p>
+              )}
+              {datePreset === "custom" && (
+                <CalendarDateRangePicker
+                  value={customDateRange}
+                  onChange={setCustomDateRange}
+                />
               )}
             </div>
           )}
