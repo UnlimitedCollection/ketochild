@@ -606,17 +606,41 @@ export default function RecipesPage() {
   const [search, setSearch] = useState("");
   const { printRef, handlePrint, isPrinting, onDataReady, printError, cancelPrint } = usePrint("Recipe Library Report", true);
   const [printFilterOpen, setPrintFilterOpen] = useState(false);
-  const [selectedPrintRecipeIds, setSelectedPrintRecipeIds] = useState<number[]>([]);
+  const [selectedPrintRecipeIds, setSelectedPrintRecipeIds] = useState<number[] | null>(null);
+  const [printSelectedSections, setPrintSelectedSections] = useState<Set<string>>(new Set(["recipe-list", "summary"]));
+  const [printDateRange, setPrintDateRange] = useState<{ start: string; end: string } | undefined>(undefined);
 
-  const printOptions = useMemo(
-    () => (recipes ?? []).map((r) => ({ id: String(r.id), label: r.name, defaultChecked: true })),
+  const RECIPES_PRINT_SECTIONS = useMemo(() => [
+    { id: "summary",     label: "Library Summary",    defaultChecked: true },
+    { id: "recipe-list", label: "Recipe Details",      defaultChecked: true },
+  ], []);
+
+  const recipeEntities = useMemo(
+    () => (recipes ?? []).map((r) => ({ id: String(r.id), label: r.name, sublabel: `${(r as RecipeDetail).ingredients?.length ?? 0} ingredients` })),
     [recipes]
   );
 
   const handlePrintFilterConfirm = useCallback((result: PrintFilterResult) => {
-    setSelectedPrintRecipeIds(result.selectedIds.map(Number));
+    setPrintSelectedSections(new Set(result.selectedIds));
+    setSelectedPrintRecipeIds(result.selectedEntityIds.map(Number));
+    setPrintDateRange(result.dateRange);
     handlePrint();
   }, [handlePrint]);
+
+  const printedRecipes = useMemo(() => {
+    if (!recipes) return [];
+    let result = selectedPrintRecipeIds === null ? recipes : recipes.filter(r => selectedPrintRecipeIds.includes(r.id));
+    if (printDateRange) {
+      result = result.filter(r => {
+        const date = (r as RecipeDetail).createdAt?.slice(0, 10);
+        if (!date) return true;
+        if (printDateRange.start && date < printDateRange.start) return false;
+        if (printDateRange.end && date > printDateRange.end) return false;
+        return true;
+      });
+    }
+    return result;
+  }, [recipes, selectedPrintRecipeIds, printDateRange]);
 
   const { data: editRecipe } = useGetRecipe(editId ?? 0, {
     query: { enabled: editId !== null },
@@ -692,9 +716,12 @@ export default function RecipesPage() {
       <PrintFilterDialog
         open={printFilterOpen}
         onOpenChange={setPrintFilterOpen}
-        title="Print Recipes"
-        description="Select which recipes to include in the report."
-        options={printOptions}
+        title="Print Recipe Library"
+        description="Choose which sections and recipes to include in the report."
+        options={RECIPES_PRINT_SECTIONS}
+        showDateRange
+        entities={recipeEntities}
+        entityLabel="Recipes to Include"
         onConfirm={handlePrintFilterConfirm}
       />
 
@@ -865,10 +892,36 @@ export default function RecipesPage() {
       )}
 
       {isPrinting && (
-        <div className="hidden print-section">
-          <hr className="border-slate-300 my-6" />
-          <h2 className="text-lg font-bold text-slate-800 mb-4">Recipe Report</h2>
-          <RecipePrintReport onReady={onDataReady} filterIds={selectedPrintRecipeIds} />
+        <div className="hidden print-section space-y-4">
+          {printSelectedSections.has("summary") && (
+            <div>
+              <h2 className="text-base font-bold text-slate-800 mb-2">Recipe Library — Summary</h2>
+              <table className="w-full text-xs border-collapse max-w-xs">
+                <tbody>
+                  <tr className="border-b border-slate-100">
+                    <td className="py-1 px-2 font-semibold text-slate-600">Total Recipes</td>
+                    <td className="py-1 px-2 text-slate-800">{printedRecipes.length}</td>
+                  </tr>
+                  <tr className="border-b border-slate-100">
+                    <td className="py-1 px-2 font-semibold text-slate-600">Avg Ingredients</td>
+                    <td className="py-1 px-2 text-slate-800">
+                      {printedRecipes.length
+                        ? Math.round(printedRecipes.reduce((s, r) => s + ((r as RecipeDetail).ingredients?.length ?? 0), 0) / printedRecipes.length)
+                        : "—"}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div className={printSelectedSections.has("recipe-list") ? undefined : "hidden"}>
+            {printSelectedSections.has("recipe-list") && (
+              <h2 className="text-base font-bold text-slate-800 mb-2">
+                Recipe Details ({printedRecipes.length})
+              </h2>
+            )}
+            <RecipePrintReport onReady={onDataReady} filterIds={printedRecipes.map(r => r.id)} />
+          </div>
         </div>
       )}
 

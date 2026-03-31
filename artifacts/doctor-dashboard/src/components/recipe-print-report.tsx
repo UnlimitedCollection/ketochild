@@ -12,9 +12,9 @@ interface Props {
 export function RecipePrintReport({ onReady, filterIds }: Props) {
   const { data: allRecipes, isLoading: listLoading, isError: listError } = useListRecipes();
 
-  const recipes = filterIds && filterIds.length > 0
-    ? (allRecipes ?? []).filter((r) => filterIds.includes(r.id))
-    : allRecipes;
+  const recipes = filterIds === undefined
+    ? allRecipes
+    : (allRecipes ?? []).filter((r) => filterIds.includes(r.id));
   const ids = recipes?.map((r) => r.id) ?? [];
 
   const detailQueries = useQueries({

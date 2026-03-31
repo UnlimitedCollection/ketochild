@@ -1,8 +1,9 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { usePrint } from "@/hooks/usePrint";
 import { usePagination } from "@/hooks/usePagination";
 import { PrintLayout } from "@/components/print-layout";
 import { PrintButton } from "@/components/print-button";
+import { PrintFilterDialog, type PrintFilterResult } from "@/components/print-filter-dialog";
 import { useUpload } from "@workspace/object-storage-web";
 import { useGetFoods, useCreateFood, useUpdateFood, useDeleteFood } from "@workspace/api-client-react";
 import type { CreateFoodRequest, UpdateFoodRequest } from "@workspace/api-client-react";
@@ -263,9 +264,44 @@ export default function FoodsPage() {
   const isMutating = createFood.isPending || updateFood.isPending || isUploading;
   const canWrite = useCanWrite();
   const { printRef, handlePrint } = usePrint("Food Library Report");
+  const [printFilterOpen, setPrintFilterOpen] = useState(false);
+  const [printSelectedCategories, setPrintSelectedCategories] = useState<Set<string>>(new Set(CATEGORIES));
+  const [printSelectedSections, setPrintSelectedSections] = useState<Set<string>>(new Set(["food-list", "stats"]));
+
+  const FOODS_PRINT_SECTIONS = useMemo(() => [
+    { id: "stats",     label: "Summary Statistics", defaultChecked: true },
+    { id: "food-list", label: "Food List Table",    defaultChecked: true },
+  ], []);
+
+  const categoryEntities = useMemo(
+    () => CATEGORIES.map((cat) => ({ id: cat, label: cat })),
+    []
+  );
+
+  const handlePrintFilterConfirm = useCallback((result: PrintFilterResult) => {
+    setPrintSelectedSections(new Set(result.selectedIds));
+    setPrintSelectedCategories(new Set(result.selectedEntityIds));
+    handlePrint();
+  }, [handlePrint]);
+
+  const printFoods = useMemo(() => {
+    if (!foods) return [];
+    return foods.filter(f => printSelectedCategories.has(f.category));
+  }, [foods, printSelectedCategories]);
 
   return (
     <PrintLayout innerRef={printRef} className="space-y-6 p-6">
+      <PrintFilterDialog
+        open={printFilterOpen}
+        onOpenChange={setPrintFilterOpen}
+        title="Print Food Library"
+        description="Choose which sections and categories to include."
+        options={FOODS_PRINT_SECTIONS}
+        entities={categoryEntities}
+        entityLabel="Food Categories"
+        onConfirm={handlePrintFilterConfirm}
+      />
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Food Library</h1>
@@ -274,7 +310,7 @@ export default function FoodsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <PrintButton onPrint={handlePrint} />
+          <PrintButton onPrint={() => setPrintFilterOpen(true)} />
           {canWrite && (
             <Button onClick={openAdd} className="no-print gap-2">
               <Plus className="h-4 w-4" />
@@ -498,38 +534,63 @@ export default function FoodsPage() {
         </CardContent>
       </Card>
 
-      {/* Print-only: all foods regardless of filters */}
-      {foods && foods.length > 0 && (
-        <div className="hidden print-section">
-          <h2 className="text-lg font-bold text-slate-800 mb-3">Food Library — All Foods ({foods.length})</h2>
-          <table className="w-full text-xs border-collapse">
-            <thead>
-              <tr className="bg-slate-100">
-                <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Name</th>
-                <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Category</th>
-                <th className="text-right py-1.5 px-2 font-semibold text-slate-600">Cal</th>
-                <th className="text-right py-1.5 px-2 font-semibold text-slate-600">Carbs (g)</th>
-                <th className="text-right py-1.5 px-2 font-semibold text-slate-600">Fat (g)</th>
-                <th className="text-right py-1.5 px-2 font-semibold text-slate-600">Protein (g)</th>
-                <th className="text-center py-1.5 px-2 font-semibold text-slate-600">Active</th>
-              </tr>
-            </thead>
-            <tbody>
-              {foods.map((food) => (
-                <tr key={food.id} className={`border-b border-slate-100 ${food.isActive === false ? "opacity-60" : ""}`}>
-                  <td className="py-1.5 px-2 text-slate-800 font-medium">{food.name}</td>
-                  <td className="py-1.5 px-2 text-slate-600">{food.category ?? "—"}</td>
-                  <td className="py-1.5 px-2 text-right text-slate-600">{food.calories != null ? Math.round(food.calories) : "—"}</td>
-                  <td className="py-1.5 px-2 text-right text-slate-600">{food.carbs != null ? food.carbs.toFixed(1) : "—"}</td>
-                  <td className="py-1.5 px-2 text-right text-slate-600">{food.fat != null ? food.fat.toFixed(1) : "—"}</td>
-                  <td className="py-1.5 px-2 text-right text-slate-600">{food.protein != null ? food.protein.toFixed(1) : "—"}</td>
-                  <td className="py-1.5 px-2 text-center text-slate-600">{food.isActive === false ? "No" : "Yes"}</td>
+      {/* Print-only: filtered foods based on dialog selection */}
+      <div className="hidden print-section space-y-4">
+        {printSelectedSections.has("stats") && foods && (
+          <div>
+            <h2 className="text-base font-bold text-slate-800 mb-2">Food Library — Summary</h2>
+            <table className="w-full text-xs border-collapse max-w-xs">
+              <tbody>
+                <tr className="border-b border-slate-100">
+                  <td className="py-1 px-2 font-semibold text-slate-600">Total Foods</td>
+                  <td className="py-1 px-2 text-slate-800">{printFoods.length}</td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+                <tr className="border-b border-slate-100">
+                  <td className="py-1 px-2 font-semibold text-slate-600">Active</td>
+                  <td className="py-1 px-2 text-slate-800">{printFoods.filter(f => f.isActive !== false).length}</td>
+                </tr>
+                <tr className="border-b border-slate-100">
+                  <td className="py-1 px-2 font-semibold text-slate-600">Categories</td>
+                  <td className="py-1 px-2 text-slate-800">{[...printSelectedCategories].join(", ")}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+        {printSelectedSections.has("food-list") && printFoods.length > 0 && (
+          <div>
+            <h2 className="text-base font-bold text-slate-800 mb-2">
+              Food List ({printFoods.length} items — {[...printSelectedCategories].join(", ")})
+            </h2>
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-100">
+                  <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Name</th>
+                  <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Category</th>
+                  <th className="text-right py-1.5 px-2 font-semibold text-slate-600">Cal</th>
+                  <th className="text-right py-1.5 px-2 font-semibold text-slate-600">Carbs (g)</th>
+                  <th className="text-right py-1.5 px-2 font-semibold text-slate-600">Fat (g)</th>
+                  <th className="text-right py-1.5 px-2 font-semibold text-slate-600">Protein (g)</th>
+                  <th className="text-center py-1.5 px-2 font-semibold text-slate-600">Active</th>
+                </tr>
+              </thead>
+              <tbody>
+                {printFoods.map((food) => (
+                  <tr key={food.id} className={`border-b border-slate-100 ${food.isActive === false ? "opacity-60" : ""}`}>
+                    <td className="py-1.5 px-2 text-slate-800 font-medium">{food.name}</td>
+                    <td className="py-1.5 px-2 text-slate-600">{food.category ?? "—"}</td>
+                    <td className="py-1.5 px-2 text-right text-slate-600">{food.calories != null ? Math.round(food.calories) : "—"}</td>
+                    <td className="py-1.5 px-2 text-right text-slate-600">{food.carbs != null ? food.carbs.toFixed(1) : "—"}</td>
+                    <td className="py-1.5 px-2 text-right text-slate-600">{food.fat != null ? food.fat.toFixed(1) : "—"}</td>
+                    <td className="py-1.5 px-2 text-right text-slate-600">{food.protein != null ? food.protein.toFixed(1) : "—"}</td>
+                    <td className="py-1.5 px-2 text-center text-slate-600">{food.isActive === false ? "No" : "Yes"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* Add / Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

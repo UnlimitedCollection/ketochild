@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { usePrint } from "@/hooks/usePrint";
 import { usePagination } from "@/hooks/usePagination";
 import { PrintLayout } from "@/components/print-layout";
+import { PrintFilterDialog, type PrintFilterResult } from "@/components/print-filter-dialog";
 import { Link, useSearch, useLocation } from "wouter";
 import { useGetKids, useGetKid, useGetKidKetoneReadings, useDeleteKid, type GetKidsParams } from "@workspace/api-client-react";
 import { Search, Filter, Loader2, User, Eye, Flame, Clock, Trash2, Pencil, Scale, FlaskConical, TrendingUp, TrendingDown, Activity, Calendar, Utensils, ChevronLeft, ChevronRight } from "lucide-react";
@@ -355,12 +356,23 @@ function KidViewDialog({ kidId, open, onOpenChange }: { kidId: number | null; op
   );
 }
 
+const KIDS_LIST_PRINT_SECTIONS = [
+  { id: "patient-info",   label: "Patient Info & Contact",  defaultChecked: true },
+  { id: "weight-records", label: "Weight Records",           defaultChecked: true },
+  { id: "meal-logs",      label: "Meal Logs",                defaultChecked: true },
+  { id: "notes",          label: "Notes & Activity",         defaultChecked: true },
+];
+
 export default function KidsListPage() {
   const searchQuery = useSearch();
   const [, navigate] = useLocation();
   const urlParams = new URLSearchParams(searchQuery);
   const initialSearch = urlParams.get("search") ?? "";
   const { printRef, handlePrint } = usePrint("Patient Directory Report");
+  const [printFilterOpen, setPrintFilterOpen] = useState(false);
+  const [printSelectedSections, setPrintSelectedSections] = useState<Set<string>>(new Set(KIDS_LIST_PRINT_SECTIONS.map(s => s.id)));
+  const [printSelectedKidIds, setPrintSelectedKidIds] = useState<Set<string> | null>(null);
+  const [printDateRange, setPrintDateRange] = useState<{ start: string; end: string } | undefined>();
 
   const [searchTerm, setSearchTerm] = useState(initialSearch);
   const debouncedSearch = useDebounce(searchTerm, 300);
@@ -430,8 +442,51 @@ export default function KidsListPage() {
     }
   });
 
+  const allKids = useGetKids({}, { query: { queryKey: ["/api/kids", "all-for-print"] } });
+  const kidEntities = useMemo(
+    () => (allKids.data ?? []).map((k) => ({ id: String(k.id), label: k.name, sublabel: `Phase ${k.phase ?? "?"}` })),
+    [allKids.data]
+  );
+
+  const handlePrintFilterConfirm = useCallback((result: PrintFilterResult) => {
+    setPrintSelectedSections(new Set(result.selectedIds));
+    setPrintSelectedKidIds(new Set(result.selectedEntityIds));
+    setPrintDateRange(result.dateRange);
+    handlePrint();
+  }, [handlePrint]);
+
+  const printedKids = useMemo(() => {
+    const all = allKids.data ?? [];
+    if (printSelectedKidIds === null) return all;
+    return all.filter(k => printSelectedKidIds.has(String(k.id)));
+  }, [allKids.data, printSelectedKidIds]);
+
+  const printedKidsWeightFiltered = useMemo(() => {
+    if (!printDateRange) return printedKids;
+    return printedKids.filter(k => {
+      if (!k.lastWeightDate) return true;
+      const date = k.lastWeightDate.slice(0, 10);
+      if (printDateRange.start && date < printDateRange.start) return false;
+      if (printDateRange.end && date > printDateRange.end) return false;
+      return true;
+    });
+  }, [printedKids, printDateRange]);
+
   return (
     <PrintLayout innerRef={printRef} className="space-y-6">
+      {/* Print Filter Dialog */}
+      <PrintFilterDialog
+        open={printFilterOpen}
+        onOpenChange={setPrintFilterOpen}
+        title="Print Patient Directory"
+        description="Choose which sections and patients to include."
+        options={KIDS_LIST_PRINT_SECTIONS}
+        entities={kidEntities}
+        entityLabel="Patients to Include"
+        showDateRange
+        onConfirm={handlePrintFilterConfirm}
+      />
+
       {/* Delete Confirmation */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
@@ -471,7 +526,7 @@ export default function KidsListPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <PrintButton onPrint={handlePrint} />
+          <PrintButton onPrint={() => setPrintFilterOpen(true)} />
           {canWrite && (
             <Button asChild className="no-print rounded-xl shadow-sm">
               <Link href="/kids/new">+ New Patient</Link>
@@ -700,36 +755,126 @@ export default function KidsListPage() {
         )}
       </Card>
 
-      {kids && kids.length > 0 && (
-        <div className="hidden print-section">
-          <table className="w-full text-xs border-collapse">
-            <thead>
-              <tr className="bg-slate-100">
-                <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Patient</th>
-                <th className="text-left py-1.5 px-2 font-semibold text-slate-600">ID / Code</th>
-                <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Phase</th>
-                <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Parent</th>
-                <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Meal %</th>
-                <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Keto</th>
-                <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Risk</th>
-              </tr>
-            </thead>
-            <tbody>
-              {kids.map((kid) => (
-                <tr key={kid.id} className="border-b border-slate-100">
-                  <td className="py-1.5 px-2 text-slate-800 font-medium">
-                    {kid.name} <span className="text-slate-400">({kid.ageMonths}m, {kid.gender === 'male' ? 'M' : 'F'})</span>
-                  </td>
-                  <td className="py-1.5 px-2 text-slate-600 font-mono">{kid.kidCode}</td>
-                  <td className="py-1.5 px-2 text-slate-600">Phase {kid.phase}</td>
-                  <td className="py-1.5 px-2 text-slate-600">{kid.parentName}</td>
-                  <td className="py-1.5 px-2 text-slate-600">{Math.round(kid.mealCompletionRate * 100)}%</td>
-                  <td className="py-1.5 px-2 text-slate-600">{kid.inKetoStatus ? "Yes" : "No"}</td>
-                  <td className="py-1.5 px-2 text-slate-600">{kid.isHighRisk ? "High Risk" : "Stable"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {printedKids.length > 0 && (
+        <div className="hidden print-section space-y-4">
+          {printDateRange && (
+            <p className="text-xs text-slate-400">
+              Date range: {printDateRange.start} — {printDateRange.end}
+            </p>
+          )}
+          {printSelectedSections.has("patient-info") && (
+            <>
+              <h2 className="text-base font-bold text-slate-800">Patient Info & Contact ({printedKids.length})</h2>
+              <table className="w-full text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-100">
+                    <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Patient</th>
+                    <th className="text-left py-1.5 px-2 font-semibold text-slate-600">ID / Code</th>
+                    <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Phase</th>
+                    <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Parent</th>
+                    <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Contact</th>
+                    <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Risk</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {printedKids.map((kid) => (
+                    <tr key={kid.id} className="border-b border-slate-100">
+                      <td className="py-1.5 px-2 text-slate-800 font-medium">
+                        {kid.name} <span className="text-slate-400">({kid.ageMonths}m, {kid.gender === 'male' ? 'M' : 'F'})</span>
+                      </td>
+                      <td className="py-1.5 px-2 text-slate-600 font-mono">{kid.kidCode}</td>
+                      <td className="py-1.5 px-2 text-slate-600">Phase {kid.phase}</td>
+                      <td className="py-1.5 px-2 text-slate-600">{kid.parentName}</td>
+                      <td className="py-1.5 px-2 text-slate-600">{kid.parentContact}</td>
+                      <td className="py-1.5 px-2 text-slate-600">{kid.isHighRisk ? "High Risk" : "Stable"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
+          {printSelectedSections.has("weight-records") && (
+            <>
+              <h2 className="text-base font-bold text-slate-800 mt-4">
+                Weight Records{printDateRange ? ` (last weight ${printDateRange.start} — ${printDateRange.end})` : ""}
+                {" "}({printedKidsWeightFiltered.length})
+              </h2>
+              <table className="w-full text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-100">
+                    <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Patient</th>
+                    <th className="text-right py-1.5 px-2 font-semibold text-slate-600">Current Weight (kg)</th>
+                    <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Last Weighed</th>
+                    <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Keto Status</th>
+                    <th className="text-right py-1.5 px-2 font-semibold text-slate-600">Meal Completion</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {printedKidsWeightFiltered.map((kid) => (
+                    <tr key={kid.id} className="border-b border-slate-100">
+                      <td className="py-1.5 px-2 text-slate-800 font-medium">{kid.name}</td>
+                      <td className="py-1.5 px-2 text-right text-slate-600">{kid.currentWeight ?? "—"}</td>
+                      <td className="py-1.5 px-2 text-slate-600">{kid.lastWeightDate ?? "—"}</td>
+                      <td className="py-1.5 px-2 text-slate-600">{kid.inKetoStatus ? "In Keto" : "Not in Keto"}</td>
+                      <td className="py-1.5 px-2 text-right text-slate-600">{Math.round(kid.mealCompletionRate * 100)}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
+          {printSelectedSections.has("meal-logs") && printedKids.length > 0 && (
+            <>
+              <h2 className="text-base font-bold text-slate-800 mt-4">Meal Completion Summary</h2>
+              <table className="w-full text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-100">
+                    <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Patient</th>
+                    <th className="text-right py-1.5 px-2 font-semibold text-slate-600">Overall Completion</th>
+                    <th className="text-right py-1.5 px-2 font-semibold text-slate-600">Last 24h</th>
+                    <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Keto Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {printedKids.map((kid) => (
+                    <tr key={kid.id} className="border-b border-slate-100">
+                      <td className="py-1.5 px-2 text-slate-800 font-medium">{kid.name}</td>
+                      <td className="py-1.5 px-2 text-right text-slate-600">{Math.round(kid.mealCompletionRate * 100)}%</td>
+                      <td className="py-1.5 px-2 text-right text-slate-600">{Math.round((kid.last24hCompletionRate ?? 0) * 100)}%</td>
+                      <td className="py-1.5 px-2 text-slate-600">{kid.inKetoStatus ? "In Keto" : "Not in Keto"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
+          {printSelectedSections.has("notes") && printedKids.length > 0 && (
+            <>
+              <h2 className="text-base font-bold text-slate-800 mt-4">Patients Overview</h2>
+              <table className="w-full text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-100">
+                    <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Patient</th>
+                    <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Phase</th>
+                    <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Risk Status</th>
+                    <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Last Weight</th>
+                    <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Weight (kg)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {printedKids.map((kid) => (
+                    <tr key={kid.id} className="border-b border-slate-100">
+                      <td className="py-1.5 px-2 text-slate-800 font-medium">{kid.name}</td>
+                      <td className="py-1.5 px-2 text-slate-600">Phase {kid.phase ?? "—"}</td>
+                      <td className="py-1.5 px-2 text-slate-600">{kid.isHighRisk ? "High Risk" : "Stable"}</td>
+                      <td className="py-1.5 px-2 text-slate-600">{kid.lastWeightDate ?? "—"}</td>
+                      <td className="py-1.5 px-2 text-slate-600">{kid.currentWeight ?? "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
         </div>
       )}
     </PrintLayout>

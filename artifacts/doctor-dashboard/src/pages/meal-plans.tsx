@@ -186,15 +186,38 @@ export default function MealPlansPage() {
   const canWrite = useCanWrite();
   const { printRef, handlePrint, isPrinting, onDataReady, printError, cancelPrint } = usePrint("Meal Plans Report", true);
   const [printFilterOpen, setPrintFilterOpen] = useState(false);
-  const [selectedPrintPlanIds, setSelectedPrintPlanIds] = useState<number[]>([]);
+  const [selectedPrintPlanIds, setSelectedPrintPlanIds] = useState<number[] | null>(null);
+  const [printSelectedSections, setPrintSelectedSections] = useState<Set<string>>(new Set(["summary", "plan-list"]));
+  const [printDateRange, setPrintDateRange] = useState<{ start: string; end: string } | undefined>(undefined);
 
-  const printOptions = useMemo(
-    () => (plans ?? []).map((p) => ({ id: String(p.id), label: p.name, defaultChecked: true })),
+  const MEAL_PLANS_PRINT_SECTIONS = useMemo(() => [
+    { id: "summary",   label: "Library Summary", defaultChecked: true },
+    { id: "plan-list", label: "Plan Details",     defaultChecked: true },
+  ], []);
+
+  const planEntities = useMemo(
+    () => (plans ?? []).map((p) => ({ id: String(p.id), label: p.name })),
     [plans]
   );
 
+  const printedPlans = useMemo(() => {
+    let result = !selectedPrintPlanIds ? plans ?? [] : (plans ?? []).filter(p => selectedPrintPlanIds.includes(p.id));
+    if (printDateRange) {
+      result = result.filter(p => {
+        const date = p.createdAt?.slice(0, 10);
+        if (!date) return true;
+        if (printDateRange.start && date < printDateRange.start) return false;
+        if (printDateRange.end && date > printDateRange.end) return false;
+        return true;
+      });
+    }
+    return result;
+  }, [plans, selectedPrintPlanIds, printDateRange]);
+
   const handlePrintFilterConfirm = useCallback((result: PrintFilterResult) => {
-    setSelectedPrintPlanIds(result.selectedIds.map(Number));
+    setPrintSelectedSections(new Set(result.selectedIds));
+    setSelectedPrintPlanIds(result.selectedEntityIds.map(Number));
+    setPrintDateRange(result.dateRange);
     handlePrint();
   }, [handlePrint]);
 
@@ -251,8 +274,11 @@ export default function MealPlansPage() {
         open={printFilterOpen}
         onOpenChange={setPrintFilterOpen}
         title="Print Meal Plans"
-        description="Select which meal plans to include in the report."
-        options={printOptions}
+        description="Choose which sections and plans to include in the report."
+        options={MEAL_PLANS_PRINT_SECTIONS}
+        showDateRange
+        entities={planEntities}
+        entityLabel="Plans to Include"
         onConfirm={handlePrintFilterConfirm}
       />
 
@@ -596,10 +622,28 @@ export default function MealPlansPage() {
       </AlertDialog>
 
       {isPrinting && (
-        <div className="hidden print-section">
-          <hr className="border-slate-300 my-6" />
-          <h2 className="text-lg font-bold text-slate-800 mb-4">Meal Plans Report</h2>
-          <MealPlanPrintReport onReady={onDataReady} filterIds={selectedPrintPlanIds} />
+        <div className="hidden print-section space-y-4">
+          {printSelectedSections.has("summary") && (
+            <div>
+              <h2 className="text-base font-bold text-slate-800 mb-2">Meal Plan Library — Summary</h2>
+              <table className="w-full text-xs border-collapse max-w-xs">
+                <tbody>
+                  <tr className="border-b border-slate-100">
+                    <td className="py-1 px-2 font-semibold text-slate-600">Total Plans</td>
+                    <td className="py-1 px-2 text-slate-800">{printedPlans.length}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div className={printSelectedSections.has("plan-list") ? undefined : "hidden"}>
+            {printSelectedSections.has("plan-list") && (
+              <h2 className="text-base font-bold text-slate-800 mb-2">
+                Plan Details ({printedPlans.length})
+              </h2>
+            )}
+            <MealPlanPrintReport onReady={onDataReady} filterIds={printedPlans.map(p => p.id)} />
+          </div>
         </div>
       )}
     </PrintLayout>

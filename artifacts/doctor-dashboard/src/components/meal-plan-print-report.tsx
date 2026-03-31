@@ -12,9 +12,9 @@ interface Props {
 export function MealPlanPrintReport({ onReady, filterIds }: Props) {
   const { data: allPlans, isLoading: listLoading, isError: listError } = useGetLibraryMealPlans();
 
-  const plans = filterIds && filterIds.length > 0
-    ? (allPlans ?? []).filter((p) => filterIds.includes(p.id))
-    : allPlans;
+  const plans = filterIds === undefined
+    ? allPlans
+    : (allPlans ?? []).filter((p) => filterIds.includes(p.id));
   const ids = plans?.map((p) => p.id) ?? [];
 
   const detailQueries = useQueries({
