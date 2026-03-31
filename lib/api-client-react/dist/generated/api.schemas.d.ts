@@ -256,17 +256,11 @@ export interface VisibilityRequest {
     showAllRecipes: boolean;
     applyToAll?: boolean;
 }
-export type MealLogMealType = (typeof MealLogMealType)[keyof typeof MealLogMealType];
-export declare const MealLogMealType: {
-    readonly breakfast: "breakfast";
-    readonly lunch: "lunch";
-    readonly dinner: "dinner";
-};
 export interface MealLog {
     id: number;
     kidId: number;
     date: string;
-    mealType: MealLogMealType;
+    mealType: string;
     isCompleted: boolean;
     calories?: number;
     carbs?: number;
@@ -318,15 +312,9 @@ export interface UploadUrlResponse {
     uploadURL: string;
     objectPath: string;
 }
-export type AddMealLogRequestMealType = (typeof AddMealLogRequestMealType)[keyof typeof AddMealLogRequestMealType];
-export declare const AddMealLogRequestMealType: {
-    readonly breakfast: "breakfast";
-    readonly lunch: "lunch";
-    readonly dinner: "dinner";
-};
 export interface AddMealLogRequest {
     date: string;
-    mealType: AddMealLogRequestMealType;
+    mealType: string;
     isCompleted?: boolean;
     calories?: number;
     carbs?: number;
@@ -334,17 +322,11 @@ export interface AddMealLogRequest {
     protein?: number;
     notes?: string;
 }
-export type MealEntryMealType = (typeof MealEntryMealType)[keyof typeof MealEntryMealType];
-export declare const MealEntryMealType: {
-    readonly breakfast: "breakfast";
-    readonly lunch: "lunch";
-    readonly dinner: "dinner";
-};
 export interface MealEntry {
     id: number;
     kidId: number;
     date: string;
-    mealType: MealEntryMealType;
+    mealType: string;
     foodName: string;
     quantity: number;
     unit: string;
@@ -353,11 +335,12 @@ export interface MealEntry {
     fat?: number;
     protein?: number;
 }
+export type MealLogDetailMeals = {
+    [key: string]: MealEntry[];
+};
 export interface MealLogDetail {
     date: string;
-    breakfast: MealEntry[];
-    lunch: MealEntry[];
-    dinner: MealEntry[];
+    meals: MealLogDetailMeals;
 }
 export type KetoneReadingReadingType = (typeof KetoneReadingReadingType)[keyof typeof KetoneReadingReadingType];
 export declare const KetoneReadingReadingType: {
@@ -448,20 +431,13 @@ export interface LibraryMealPlan {
     doctorId?: number;
     name: string;
     description?: string;
-    targetPhase?: number;
     createdAt?: string;
     updatedAt?: string;
 }
-export type LibraryMealPlanItemMealType = (typeof LibraryMealPlanItemMealType)[keyof typeof LibraryMealPlanItemMealType];
-export declare const LibraryMealPlanItemMealType: {
-    readonly breakfast: "breakfast";
-    readonly lunch: "lunch";
-    readonly dinner: "dinner";
-};
 export interface LibraryMealPlanItem {
     id: number;
     planId: number;
-    mealType: LibraryMealPlanItemMealType;
+    mealType: string;
     foodName: string;
     portionGrams: number;
     unit: string;
@@ -476,7 +452,6 @@ export interface LibraryMealPlanDetail {
     doctorId?: number;
     name: string;
     description?: string;
-    targetPhase?: number;
     createdAt?: string;
     updatedAt?: string;
     items: LibraryMealPlanItem[];
@@ -484,21 +459,13 @@ export interface LibraryMealPlanDetail {
 export interface CreateLibraryMealPlanRequest {
     name: string;
     description?: string;
-    targetPhase?: number;
 }
 export interface UpdateLibraryMealPlanRequest {
     name?: string;
     description?: string;
-    targetPhase?: number;
 }
-export type AddLibraryMealPlanItemRequestMealType = (typeof AddLibraryMealPlanItemRequestMealType)[keyof typeof AddLibraryMealPlanItemRequestMealType];
-export declare const AddLibraryMealPlanItemRequestMealType: {
-    readonly breakfast: "breakfast";
-    readonly lunch: "lunch";
-    readonly dinner: "dinner";
-};
 export interface AddLibraryMealPlanItemRequest {
-    mealType: AddLibraryMealPlanItemRequestMealType;
+    mealType: string;
     foodName: string;
     portionGrams: number;
     unit?: string;
@@ -511,16 +478,10 @@ export interface AddLibraryMealPlanItemRequest {
 export interface AssignMealPlanRequest {
     planId: number | null;
 }
-export type MealPlanItemMealType = (typeof MealPlanItemMealType)[keyof typeof MealPlanItemMealType];
-export declare const MealPlanItemMealType: {
-    readonly breakfast: "breakfast";
-    readonly lunch: "lunch";
-    readonly dinner: "dinner";
-};
 export interface MealPlanItem {
     id: number;
     planId: number;
-    mealType: MealPlanItemMealType;
+    mealType: string;
     foodId: number;
     foodName: string;
     portionGrams: number;
@@ -559,14 +520,8 @@ export interface UpdateMealPlanRequest {
     description?: string;
     isActive?: boolean;
 }
-export type AddMealPlanItemRequestMealType = (typeof AddMealPlanItemRequestMealType)[keyof typeof AddMealPlanItemRequestMealType];
-export declare const AddMealPlanItemRequestMealType: {
-    readonly breakfast: "breakfast";
-    readonly lunch: "lunch";
-    readonly dinner: "dinner";
-};
 export interface AddMealPlanItemRequest {
-    mealType: AddMealPlanItemRequestMealType;
+    mealType: string;
     foodId: number;
     foodName: string;
     portionGrams: number;
@@ -634,6 +589,7 @@ export interface RecipeDetail {
     name: string;
     description?: string;
     category: string;
+    imageUrl?: string;
     createdAt: string;
     updatedAt: string;
     ingredients: RecipeIngredient[];
@@ -646,12 +602,14 @@ export interface CreateRecipeRequest {
     name: string;
     description?: string;
     category?: string;
+    imageUrl?: string;
     ingredients?: RecipeIngredientRequest[];
 }
 export interface UpdateRecipeRequest {
     name?: string;
     description?: string;
     category?: string;
+    imageUrl?: string;
     ingredients?: RecipeIngredientRequest[];
 }
 export type UserResponseRole = (typeof UserResponseRole)[keyof typeof UserResponseRole];
@@ -714,22 +672,44 @@ export interface UpdateUserRequest {
     mobile?: string;
     role?: UpdateUserRequestRole;
 }
+export interface MealTypeRecipeRef {
+    id: number;
+    name: string;
+}
+export interface MealTypeItem {
+    id: number;
+    name: string;
+    createdAt: string;
+    recipes: MealTypeRecipeRef[];
+}
+export interface CreateMealTypeRequest {
+    /**
+     * @minLength 1
+     * @maxLength 100
+     */
+    name: string;
+    recipeIds?: number[];
+}
 export type GetKidsParams = {
     /**
      * Search by name, kid ID, parent name
      */
     search?: string;
     /**
-     * Filter by phase
+     * Filter by phase (supports multiple values)
      */
-    phase?: GetKidsPhase;
+    phase?: GetKidsPhaseItem[];
     /**
      * Filter high-risk children only
      */
     highRisk?: boolean;
+    /**
+     * Filter by keto status (true = in keto, false = not in keto)
+     */
+    ketoStatus?: boolean;
 };
-export type GetKidsPhase = (typeof GetKidsPhase)[keyof typeof GetKidsPhase];
-export declare const GetKidsPhase: {
+export type GetKidsPhaseItem = (typeof GetKidsPhaseItem)[keyof typeof GetKidsPhaseItem];
+export declare const GetKidsPhaseItem: {
     readonly NUMBER_1: 1;
     readonly NUMBER_2: 2;
     readonly NUMBER_3: 3;
@@ -752,4 +732,16 @@ export type GetFoodsParams = {
     search?: string;
     category?: string;
 };
+export interface MealPlanAssignmentHistory {
+    id: number;
+    kidId: number;
+    planId?: number | null;
+    planName?: string | null;
+    doctorId?: number | null;
+    doctorName: string;
+    action: string;
+    assignedAt: string;
+    durationDays: number;
+    isCurrentPeriod: boolean;
+}
 //# sourceMappingURL=api.schemas.d.ts.map

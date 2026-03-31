@@ -1,5 +1,5 @@
 import type { QueryKey, UseMutationOptions, UseMutationResult, UseQueryOptions, UseQueryResult } from "@tanstack/react-query";
-import type { AddKetoneReadingRequest, AddLibraryMealPlanItemRequest, AddMealLogRequest, AddMealPlanItemRequest, AssignMealPlanRequest, ChangeDoctorPasswordRequest, CreateFoodRequest, CreateKidRequest, CreateLibraryMealPlanRequest, CreateMealPlanRequest, CreateRecipeRequest, CreateTokenRequest, CreateUserRequest, DashboardStats, Doctor, ErrorResponse, Food, FoodApproval, FoodApprovalRequest, ForceChangePasswordRequest, GetFoodsParams, GetKidKetoneReadingsParams, GetKidMealHistoryParams, GetKidMealLogParams, GetKidMealLogsParams, GetKidsParams, HealthStatus, KetoneReading, Kid, KidProfile, LibraryMealPlan, LibraryMealPlanDetail, LibraryMealPlanItem, LoginRequest, LoginResponse, MealDay, MealLog, MealLogDetail, MealPlan, MealPlanDetail, MealPlanItem, MedicalSettings, MedicalSettingsRequest, Note, NoteRequest, ParentToken, RecentActivityItem, RecipeDetail, RecipeIngredient, RecipeIngredientRequest, SuccessResponse, UpdateDoctorProfileRequest, UpdateFoodRequest, UpdateKidRequest, UpdateLibraryMealPlanRequest, UpdateMealLogImageRequest, UpdateMealPlanRequest, UpdateRecipeRequest, UpdateUserRequest, UploadUrlRequest, UploadUrlResponse, UserResponse, VisibilityRequest, WeightRecord, WeightRecordRequest } from "./api.schemas";
+import type { AddKetoneReadingRequest, AddLibraryMealPlanItemRequest, AddMealLogRequest, AddMealPlanItemRequest, AssignMealPlanRequest, ChangeDoctorPasswordRequest, CreateFoodRequest, CreateKidRequest, CreateLibraryMealPlanRequest, CreateMealPlanRequest, CreateMealTypeRequest, CreateRecipeRequest, CreateTokenRequest, CreateUserRequest, DashboardStats, Doctor, ErrorResponse, Food, FoodApproval, FoodApprovalRequest, ForceChangePasswordRequest, GetFoodsParams, GetKidKetoneReadingsParams, GetKidMealHistoryParams, GetKidMealLogParams, GetKidMealLogsParams, GetKidsParams, HealthStatus, KetoneReading, Kid, KidProfile, LibraryMealPlan, LibraryMealPlanDetail, LibraryMealPlanItem, LoginRequest, LoginResponse, MealDay, MealLog, MealLogDetail, MealPlan, MealPlanDetail, MealPlanItem, MealTypeItem, MedicalSettings, MedicalSettingsRequest, Note, NoteRequest, ParentToken, RecentActivityItem, RecipeDetail, RecipeIngredient, RecipeIngredientRequest, SuccessResponse, UpdateDoctorProfileRequest, UpdateFoodRequest, UpdateKidRequest, UpdateLibraryMealPlanRequest, UpdateMealLogImageRequest, UpdateMealPlanRequest, UpdateRecipeRequest, UpdateUserRequest, UploadUrlRequest, UploadUrlResponse, UserResponse, VisibilityRequest, WeightRecord, WeightRecordRequest, MealPlanAssignmentHistory } from "./api.schemas";
 import { customFetch } from "../custom-fetch";
 import type { ErrorType, BodyType } from "../custom-fetch";
 type AwaitedInput<T> = PromiseLike<T> | T;
@@ -407,6 +407,36 @@ export declare function useGetWeightHistory<TData = Awaited<ReturnType<typeof ge
 }): UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
 };
+/**
+ * @summary Delete a weight record
+ */
+export declare const getDeleteWeightRecordUrl: (kidId: number, recordId: number) => string;
+export declare const deleteWeightRecord: (kidId: number, recordId: number, options?: RequestInit) => Promise<SuccessResponse>;
+export declare const getDeleteWeightRecordMutationOptions: <TError = ErrorType<unknown>, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof deleteWeightRecord>>, TError, {
+        kidId: number;
+        recordId: number;
+    }, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseMutationOptions<Awaited<ReturnType<typeof deleteWeightRecord>>, TError, {
+    kidId: number;
+    recordId: number;
+}, TContext>;
+export type DeleteWeightRecordMutationResult = NonNullable<Awaited<ReturnType<typeof deleteWeightRecord>>>;
+export type DeleteWeightRecordMutationError = ErrorType<unknown>;
+/**
+ * @summary Delete a weight record
+ */
+export declare const useDeleteWeightRecord: <TError = ErrorType<unknown>, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof deleteWeightRecord>>, TError, {
+        kidId: number;
+        recordId: number;
+    }, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseMutationResult<Awaited<ReturnType<typeof deleteWeightRecord>>, TError, {
+    kidId: number;
+    recordId: number;
+}, TContext>;
 /**
  * @summary Get kid medical settings
  */
@@ -1068,6 +1098,113 @@ export declare const useDeleteRecipeIngredient: <TError = ErrorType<ErrorRespons
 }) => UseMutationResult<Awaited<ReturnType<typeof deleteRecipeIngredient>>, TError, {
     recipeId: number;
     ingId: number;
+}, TContext>;
+/**
+ * @summary List all meal types
+ */
+export declare const getListMealTypesUrl: () => string;
+export declare const listMealTypes: (options?: RequestInit) => Promise<MealTypeItem[]>;
+export declare const getListMealTypesQueryKey: () => readonly ["/api/meal-types"];
+export declare const getListMealTypesQueryOptions: <TData = Awaited<ReturnType<typeof listMealTypes>>, TError = ErrorType<unknown>>(options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof listMealTypes>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseQueryOptions<Awaited<ReturnType<typeof listMealTypes>>, TError, TData> & {
+    queryKey: QueryKey;
+};
+export type ListMealTypesQueryResult = NonNullable<Awaited<ReturnType<typeof listMealTypes>>>;
+export type ListMealTypesQueryError = ErrorType<unknown>;
+/**
+ * @summary List all meal types
+ */
+export declare function useListMealTypes<TData = Awaited<ReturnType<typeof listMealTypes>>, TError = ErrorType<unknown>>(options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof listMealTypes>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+};
+/**
+ * @summary Create a new meal type
+ */
+export declare const getCreateMealTypeUrl: () => string;
+export declare const createMealType: (createMealTypeRequest: CreateMealTypeRequest, options?: RequestInit) => Promise<MealTypeItem>;
+export declare const getCreateMealTypeMutationOptions: <TError = ErrorType<ErrorResponse>, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof createMealType>>, TError, {
+        data: BodyType<CreateMealTypeRequest>;
+    }, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseMutationOptions<Awaited<ReturnType<typeof createMealType>>, TError, {
+    data: BodyType<CreateMealTypeRequest>;
+}, TContext>;
+export type CreateMealTypeMutationResult = NonNullable<Awaited<ReturnType<typeof createMealType>>>;
+export type CreateMealTypeMutationBody = BodyType<CreateMealTypeRequest>;
+export type CreateMealTypeMutationError = ErrorType<ErrorResponse>;
+/**
+ * @summary Create a new meal type
+ */
+export declare const useCreateMealType: <TError = ErrorType<ErrorResponse>, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof createMealType>>, TError, {
+        data: BodyType<CreateMealTypeRequest>;
+    }, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseMutationResult<Awaited<ReturnType<typeof createMealType>>, TError, {
+    data: BodyType<CreateMealTypeRequest>;
+}, TContext>;
+/**
+ * @summary Update a meal type name
+ */
+export declare const getUpdateMealTypeUrl: (id: number) => string;
+export declare const updateMealType: (id: number, createMealTypeRequest: CreateMealTypeRequest, options?: RequestInit) => Promise<MealTypeItem>;
+export declare const getUpdateMealTypeMutationOptions: <TError = ErrorType<ErrorResponse>, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof updateMealType>>, TError, {
+        id: number;
+        data: BodyType<CreateMealTypeRequest>;
+    }, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseMutationOptions<Awaited<ReturnType<typeof updateMealType>>, TError, {
+    id: number;
+    data: BodyType<CreateMealTypeRequest>;
+}, TContext>;
+export type UpdateMealTypeMutationResult = NonNullable<Awaited<ReturnType<typeof updateMealType>>>;
+export type UpdateMealTypeMutationBody = BodyType<CreateMealTypeRequest>;
+export type UpdateMealTypeMutationError = ErrorType<ErrorResponse>;
+/**
+ * @summary Update a meal type name
+ */
+export declare const useUpdateMealType: <TError = ErrorType<ErrorResponse>, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof updateMealType>>, TError, {
+        id: number;
+        data: BodyType<CreateMealTypeRequest>;
+    }, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseMutationResult<Awaited<ReturnType<typeof updateMealType>>, TError, {
+    id: number;
+    data: BodyType<CreateMealTypeRequest>;
+}, TContext>;
+/**
+ * @summary Delete a meal type
+ */
+export declare const getDeleteMealTypeUrl: (id: number) => string;
+export declare const deleteMealType: (id: number, options?: RequestInit) => Promise<SuccessResponse>;
+export declare const getDeleteMealTypeMutationOptions: <TError = ErrorType<ErrorResponse>, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof deleteMealType>>, TError, {
+        id: number;
+    }, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseMutationOptions<Awaited<ReturnType<typeof deleteMealType>>, TError, {
+    id: number;
+}, TContext>;
+export type DeleteMealTypeMutationResult = NonNullable<Awaited<ReturnType<typeof deleteMealType>>>;
+export type DeleteMealTypeMutationError = ErrorType<ErrorResponse>;
+/**
+ * @summary Delete a meal type
+ */
+export declare const useDeleteMealType: <TError = ErrorType<ErrorResponse>, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof deleteMealType>>, TError, {
+        id: number;
+    }, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseMutationResult<Awaited<ReturnType<typeof deleteMealType>>, TError, {
+    id: number;
 }, TContext>;
 /**
  * @summary List all users (admin only)
@@ -1919,5 +2056,28 @@ export declare const useDeleteFood: <TError = ErrorType<unknown>, TContext = unk
 }) => UseMutationResult<Awaited<ReturnType<typeof deleteFood>>, TError, {
     foodId: number;
 }, TContext>;
+/**
+ * @summary Get meal plan assignment history for a kid
+ */
+export declare const getGetKidMealPlanHistoryUrl: (kidId: number) => string;
+export declare const getKidMealPlanHistory: (kidId: number, options?: RequestInit) => Promise<MealPlanAssignmentHistory[]>;
+export declare const getGetKidMealPlanHistoryQueryKey: (kidId: number) => readonly [`/api/kids/${number}/meal-plan-history`];
+export declare const getGetKidMealPlanHistoryQueryOptions: <TData = Awaited<ReturnType<typeof getKidMealPlanHistory>>, TError = ErrorType<unknown>>(kidId: number, options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getKidMealPlanHistory>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseQueryOptions<Awaited<ReturnType<typeof getKidMealPlanHistory>>, TError, TData> & {
+    queryKey: QueryKey;
+};
+export type GetKidMealPlanHistoryQueryResult = NonNullable<Awaited<ReturnType<typeof getKidMealPlanHistory>>>;
+export type GetKidMealPlanHistoryQueryError = ErrorType<unknown>;
+/**
+ * @summary Get meal plan assignment history for a kid
+ */
+export declare function useGetKidMealPlanHistory<TData = Awaited<ReturnType<typeof getKidMealPlanHistory>>, TError = ErrorType<unknown>>(kidId: number, options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getKidMealPlanHistory>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+};
 export {};
 //# sourceMappingURL=api.d.ts.map

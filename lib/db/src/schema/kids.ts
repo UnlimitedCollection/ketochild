@@ -170,6 +170,18 @@ export const kidFoodApprovalsTable = pgTable("kid_food_approvals", {
   check("kid_food_approvals_status_chk", sql`${table.status} IN ('approved', 'avoid')`),
 ]);
 
+export const mealPlanAssignmentHistoryTable = pgTable("meal_plan_assignment_history", {
+  id: serial("id").primaryKey(),
+  kidId: integer("kid_id").notNull().references(() => kidsTable.id, { onDelete: "cascade" }),
+  planId: integer("plan_id"),
+  planName: varchar("plan_name", { length: 200 }),
+  doctorId: integer("doctor_id").references(() => doctorsTable.id),
+  doctorName: varchar("doctor_name", { length: 200 }).notNull(),
+  action: varchar("action", { length: 20 }).notNull(),
+  assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertKidSchema = createInsertSchema(kidsTable).omit({ id: true, createdAt: true });
 export type InsertKid = z.infer<typeof insertKidSchema>;
 export type Kid = typeof kidsTable.$inferSelect;

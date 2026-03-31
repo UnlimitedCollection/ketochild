@@ -863,3 +863,16 @@ export type GetFoodsParams = {
   search?: string;
   category?: string;
 };
+
+export interface MealPlanAssignmentHistory {
+  id: number;
+  kidId: number;
+  planId?: number | null;
+  planName?: string | null;
+  doctorId?: number | null;
+  doctorName: string;
+  action: string;
+  assignedAt: string;
+  durationDays: number;
+  isCurrentPeriod: boolean;
+}

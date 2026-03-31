@@ -47141,6 +47141,7 @@ __export(schema_exports, {
   mealDaysTable: () => mealDaysTable,
   mealEntriesTable: () => mealEntriesTable,
   mealLogsTable: () => mealLogsTable,
+  mealPlanAssignmentHistoryTable: () => mealPlanAssignmentHistoryTable,
   mealPlanItemsTable: () => mealPlanItemsTable,
   mealPlansTable: () => mealPlansTable,
   mealTypeRecipesTable: () => mealTypeRecipesTable,
@@ -58723,6 +58724,17 @@ var kidFoodApprovalsTable = pgTable("kid_food_approvals", {
   unique().on(table.kidId, table.foodId),
   check("kid_food_approvals_status_chk", sql`${table.status} IN ('approved', 'avoid')`)
 ]);
+var mealPlanAssignmentHistoryTable = pgTable("meal_plan_assignment_history", {
+  id: serial("id").primaryKey(),
+  kidId: integer("kid_id").notNull().references(() => kidsTable.id, { onDelete: "cascade" }),
+  planId: integer("plan_id"),
+  planName: varchar("plan_name", { length: 200 }),
+  doctorId: integer("doctor_id").references(() => doctorsTable.id),
+  doctorName: varchar("doctor_name", { length: 200 }).notNull(),
+  action: varchar("action", { length: 20 }).notNull(),
+  assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
 var insertKidSchema = createInsertSchema(kidsTable).omit({ id: true, createdAt: true });
 var insertWeightRecordSchema = createInsertSchema(weightRecordsTable).omit({ id: true, createdAt: true });
 var insertNoteSchema = createInsertSchema(notesTable).omit({ id: true, createdAt: true });
@@ -61901,6 +61913,7 @@ router5.get("/:kidId/meal-plan", async (req, res) => {
 });
 router5.put("/:kidId/meal-plan", async (req, res) => {
   const doctorId = req.session.doctorId;
+  const doctorName = req.session.doctorName ?? "Doctor";
   const isAdmin = req.session.doctorRole === "admin";
   const kidId = parseInt(req.params.kidId, 10);
   try {
@@ -61910,19 +61923,86 @@ router5.put("/:kidId/meal-plan", async (req, res) => {
       return;
     }
     const planId = parsed.data.planId;
+    let planName = null;
     if (planId !== null) {
       const planWhere = isAdmin ? eq(libraryMealPlansTable.id, planId) : and(eq(libraryMealPlansTable.id, planId), eq(libraryMealPlansTable.doctorId, doctorId));
-      const [plan] = await db.select({ id: libraryMealPlansTable.id }).from(libraryMealPlansTable).where(planWhere).limit(1);
+      const [plan] = await db.select({ id: libraryMealPlansTable.id, name: libraryMealPlansTable.name }).from(libraryMealPlansTable).where(planWhere).limit(1);
       if (!plan) {
         res.status(404).json({ error: "NOT_FOUND", message: "Library plan not found" });
         return;
       }
+      planName = plan.name;
     }
     const kidUpdateWhere = isAdmin ? eq(kidsTable.id, kidId) : and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId));
-    await db.update(kidsTable).set({ currentMealPlanId: planId }).where(kidUpdateWhere);
+    const [existingKid] = await db.select({ currentMealPlanId: kidsTable.currentMealPlanId }).from(kidsTable).where(kidUpdateWhere).limit(1);
+    if (!existingKid) {
+      res.status(404).json({ error: "NOT_FOUND", message: "Kid not found" });
+      return;
+    }
+    const previousPlanId = existingKid.currentMealPlanId ?? null;
+    if (planId === previousPlanId) {
+      res.json({ success: true });
+      return;
+    }
+    let action;
+    if (planId === null) {
+      action = "unassigned";
+    } else if (previousPlanId === null) {
+      action = "assigned";
+    } else {
+      action = "changed";
+    }
+    await db.transaction(async (tx) => {
+      await tx.update(kidsTable).set({ currentMealPlanId: planId }).where(kidUpdateWhere);
+      await tx.insert(mealPlanAssignmentHistoryTable).values({
+        kidId,
+        planId,
+        planName,
+        doctorId,
+        doctorName,
+        action
+      });
+    });
     res.json({ success: true });
   } catch (err) {
     req.log.error({ err }, "Assign meal plan error");
+    res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
+  }
+});
+router5.get("/:kidId/meal-plan-history", async (req, res) => {
+  const doctorId = req.session.doctorId;
+  const isAdmin = req.session.doctorRole === "admin";
+  const kidId = parseInt(req.params.kidId, 10);
+  try {
+    const kidWhere = isAdmin ? eq(kidsTable.id, kidId) : and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId));
+    const [kid] = await db.select({ id: kidsTable.id }).from(kidsTable).where(kidWhere).limit(1);
+    if (!kid) {
+      res.status(404).json({ error: "NOT_FOUND", message: "Kid not found" });
+      return;
+    }
+    const records = await db.select().from(mealPlanAssignmentHistoryTable).where(eq(mealPlanAssignmentHistoryTable.kidId, kidId)).orderBy(desc(mealPlanAssignmentHistoryTable.assignedAt));
+    const now = /* @__PURE__ */ new Date();
+    const result = records.map((record2, index) => {
+      const startDate = new Date(record2.assignedAt);
+      const endDate = index === 0 ? now : new Date(records[index - 1].assignedAt);
+      const durationMs = endDate.getTime() - startDate.getTime();
+      const durationDays = Math.floor(durationMs / (1e3 * 60 * 60 * 24));
+      return {
+        id: record2.id,
+        kidId: record2.kidId,
+        planId: record2.planId,
+        planName: record2.planName,
+        doctorId: record2.doctorId,
+        doctorName: record2.doctorName,
+        action: record2.action,
+        assignedAt: record2.assignedAt.toISOString(),
+        durationDays,
+        isCurrentPeriod: index === 0
+      };
+    });
+    res.json(result);
+  } catch (err) {
+    req.log.error({ err }, "Get meal plan history error");
     res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
   }
 });

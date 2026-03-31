@@ -14,6 +14,7 @@ import {
   libraryMealPlansTable,
   libraryMealPlanItemsTable,
   kidFoodApprovalsTable,
+  mealPlanAssignmentHistoryTable,
 } from "@workspace/db";
 import { eq, and, desc, asc, gte, sql, inArray } from "drizzle-orm";
 import { calcAgeMonths } from "../lib/utils";
@@ -1244,6 +1245,7 @@ router.get("/:kidId/meal-plan", async (req, res) => {
 
 router.put("/:kidId/meal-plan", async (req, res) => {
   const doctorId = req.session.doctorId!;
+  const doctorName = req.session.doctorName ?? "Doctor";
   const isAdmin = req.session.doctorRole === "admin";
   const kidId = parseInt(req.params.kidId, 10);
   try {
@@ -1254,12 +1256,13 @@ router.put("/:kidId/meal-plan", async (req, res) => {
     }
     const planId = parsed.data.planId;
 
+    let planName: string | null = null;
     if (planId !== null) {
       const planWhere = isAdmin
         ? eq(libraryMealPlansTable.id, planId)
         : and(eq(libraryMealPlansTable.id, planId), eq(libraryMealPlansTable.doctorId, doctorId));
       const [plan] = await db
-        .select({ id: libraryMealPlansTable.id })
+        .select({ id: libraryMealPlansTable.id, name: libraryMealPlansTable.name })
         .from(libraryMealPlansTable)
         .where(planWhere)
         .limit(1);
@@ -1268,19 +1271,107 @@ router.put("/:kidId/meal-plan", async (req, res) => {
         res.status(404).json({ error: "NOT_FOUND", message: "Library plan not found" });
         return;
       }
+      planName = plan.name;
     }
 
     const kidUpdateWhere = isAdmin
       ? eq(kidsTable.id, kidId)
       : and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId));
-    await db
-      .update(kidsTable)
-      .set({ currentMealPlanId: planId })
-      .where(kidUpdateWhere);
+
+    const [existingKid] = await db
+      .select({ currentMealPlanId: kidsTable.currentMealPlanId })
+      .from(kidsTable)
+      .where(kidUpdateWhere)
+      .limit(1);
+
+    if (!existingKid) {
+      res.status(404).json({ error: "NOT_FOUND", message: "Kid not found" });
+      return;
+    }
+
+    const previousPlanId = existingKid.currentMealPlanId ?? null;
+
+    if (planId === previousPlanId) {
+      res.json({ success: true });
+      return;
+    }
+
+    let action: string;
+    if (planId === null) {
+      action = "unassigned";
+    } else if (previousPlanId === null) {
+      action = "assigned";
+    } else {
+      action = "changed";
+    }
+
+    await db.transaction(async (tx) => {
+      await tx
+        .update(kidsTable)
+        .set({ currentMealPlanId: planId })
+        .where(kidUpdateWhere);
+
+      await tx.insert(mealPlanAssignmentHistoryTable).values({
+        kidId,
+        planId,
+        planName,
+        doctorId,
+        doctorName,
+        action,
+      });
+    });
 
     res.json({ success: true });
   } catch (err) {
     req.log.error({ err }, "Assign meal plan error");
+    res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
+  }
+});
+
+router.get("/:kidId/meal-plan-history", async (req, res) => {
+  const doctorId = req.session.doctorId!;
+  const isAdmin = req.session.doctorRole === "admin";
+  const kidId = parseInt(req.params.kidId, 10);
+  try {
+    const kidWhere = isAdmin
+      ? eq(kidsTable.id, kidId)
+      : and(eq(kidsTable.id, kidId), eq(kidsTable.doctorId, doctorId));
+    const [kid] = await db.select({ id: kidsTable.id }).from(kidsTable).where(kidWhere).limit(1);
+    if (!kid) {
+      res.status(404).json({ error: "NOT_FOUND", message: "Kid not found" });
+      return;
+    }
+
+    const records = await db
+      .select()
+      .from(mealPlanAssignmentHistoryTable)
+      .where(eq(mealPlanAssignmentHistoryTable.kidId, kidId))
+      .orderBy(desc(mealPlanAssignmentHistoryTable.assignedAt));
+
+    const now = new Date();
+    const result = records.map((record, index) => {
+      const startDate = new Date(record.assignedAt);
+      const endDate = index === 0 ? now : new Date(records[index - 1].assignedAt);
+      const durationMs = endDate.getTime() - startDate.getTime();
+      const durationDays = Math.floor(durationMs / (1000 * 60 * 60 * 24));
+
+      return {
+        id: record.id,
+        kidId: record.kidId,
+        planId: record.planId,
+        planName: record.planName,
+        doctorId: record.doctorId,
+        doctorName: record.doctorName,
+        action: record.action,
+        assignedAt: record.assignedAt.toISOString(),
+        durationDays,
+        isCurrentPeriod: index === 0,
+      };
+    });
+
+    res.json(result);
+  } catch (err) {
+    req.log.error({ err }, "Get meal plan history error");
     res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
   }
 });

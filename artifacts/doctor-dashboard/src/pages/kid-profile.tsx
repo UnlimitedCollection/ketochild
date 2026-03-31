@@ -4,7 +4,7 @@ import { PrintLayout } from "@/components/print-layout";
 import { PrintButton } from "@/components/print-button";
 import { PrintFilterDialog, type PrintFilterResult } from "@/components/print-filter-dialog";
 import { useParams, Link, useLocation } from "wouter";
-import { useGetKid, useAddWeightRecord, useDeleteWeightRecord, useUpdateKidMedical, useUpdateKid, useDeleteKid, useGetKidMealHistory, useGetKidKetoneReadings, useAddKetoneReading, useDeleteKetoneReading, useGetKidMealLogs, useAddMealLog, useDeleteMealLog, useGetKidMealLog, useGetKidAssignedMealPlan, useAssignKidMealPlan, useGetLibraryMealPlans, useGetFoods, useGetKidFoodApprovals, useUpsertKidFoodApproval, useUpdateMealLogImage, getGetKidAssignedMealPlanQueryKey, useListMealTypes, type LibraryMealPlanDetail, type LibraryMealPlanItem, type FoodApproval, type MedicalSettingsRequest, type UpdateKidRequest } from "@workspace/api-client-react";
+import { useGetKid, useAddWeightRecord, useDeleteWeightRecord, useUpdateKidMedical, useUpdateKid, useDeleteKid, useGetKidMealHistory, useGetKidKetoneReadings, useAddKetoneReading, useDeleteKetoneReading, useGetKidMealLogs, useAddMealLog, useDeleteMealLog, useGetKidMealLog, useGetKidAssignedMealPlan, useAssignKidMealPlan, useGetLibraryMealPlans, useGetFoods, useGetKidFoodApprovals, useUpsertKidFoodApproval, useUpdateMealLogImage, getGetKidAssignedMealPlanQueryKey, useListMealTypes, useGetKidMealPlanHistory, getGetKidMealPlanHistoryQueryKey, type LibraryMealPlanDetail, type LibraryMealPlanItem, type FoodApproval, type MedicalSettingsRequest, type UpdateKidRequest, type MealPlanAssignmentHistory } from "@workspace/api-client-react";
 import { useUpload } from "@workspace/object-storage-web";
 import { z } from "zod";
 import { useForm, useWatch } from "react-hook-form";
@@ -12,7 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { format, parseISO, startOfMonth, subMonths, eachDayOfInterval, endOfMonth, getDay } from "date-fns";
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
-  ResponsiveContainer, ReferenceLine, Legend
+  ResponsiveContainer, ReferenceLine, Legend, Cell
 } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -1958,6 +1958,169 @@ function getPlanStyle(name: string) {
   return KNOWN_PLAN_STYLES[name.toLowerCase()] ?? DEFAULT_PLAN_STYLE;
 }
 
+const PLAN_COLORS = [
+  "#6366f1", "#f59e0b", "#10b981", "#ef4444", "#3b82f6", "#8b5cf6", "#ec4899", "#14b8a6",
+];
+
+function MealPlanAssignmentHistorySection({ history, isLoading }: { history: MealPlanAssignmentHistory[]; isLoading: boolean }) {
+  if (isLoading) {
+    return (
+      <Card className="rounded-2xl border-slate-200 shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Assignment History</CardTitle>
+        </CardHeader>
+        <CardContent className="flex justify-center py-8">
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (history.length === 0) {
+    return (
+      <Card className="rounded-2xl border-slate-200 shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Assignment History</CardTitle>
+          <CardDescription>No meal plan assignments yet.</CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  const uniquePlanNames = Array.from(new Set(history.map((h) => h.planName ?? "Unassigned")));
+  const planColorMap: Record<string, string> = {};
+  uniquePlanNames.forEach((name, i) => {
+    planColorMap[name] = PLAN_COLORS[i % PLAN_COLORS.length];
+  });
+
+  const chronological = [...history].reverse();
+
+  const barChartData = chronological.map((h) => ({
+    date: format(parseISO(h.assignedAt), "MMM d, yy"),
+    assignedAt: h.assignedAt,
+    planName: h.planName ?? "Unassigned",
+    duration: Math.max(h.durationDays, 1),
+    color: planColorMap[h.planName ?? "Unassigned"],
+    isCurrentPeriod: h.isCurrentPeriod,
+    doctorName: h.doctorName,
+    action: h.action,
+  }));
+
+  return (
+    <Card className="rounded-2xl border-slate-200 shadow-sm">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">Assignment History</CardTitle>
+        <CardDescription>Visual timeline of meal plan assignments over time</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Timeline Bar Chart — dates on X-axis, bar height = duration */}
+        <div className="h-52">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={barChartData} margin={{ top: 4, right: 8, bottom: 32, left: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 10 }}
+                angle={-35}
+                textAnchor="end"
+                height={48}
+                interval={0}
+              />
+              <YAxis
+                tick={{ fontSize: 10 }}
+                tickFormatter={(v) => `${v}d`}
+                label={{ value: "Days active", angle: -90, position: "insideLeft", offset: 10, fontSize: 10 }}
+                width={44}
+              />
+              <Tooltip
+                content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null;
+                  const d = payload[0].payload;
+                  return (
+                    <div className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs shadow-md space-y-1">
+                      <p className="font-semibold text-slate-800">{d.planName}</p>
+                      <p className="text-slate-500">From: {format(parseISO(d.assignedAt), "MMM d, yyyy")}</p>
+                      <p className="text-slate-500">Duration: {d.isCurrentPeriod ? `${d.duration} days (ongoing)` : `${d.duration} days`}</p>
+                      <p className="text-slate-500">Action: <span className="capitalize">{d.action}</span></p>
+                      <p className="text-slate-500">By: {d.doctorName}</p>
+                    </div>
+                  );
+                }}
+              />
+              <Bar dataKey="duration" radius={[4, 4, 0, 0]}>
+                {barChartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Color Legend */}
+        <div className="flex flex-wrap gap-3">
+          {uniquePlanNames.map((name) => (
+            <div key={name} className="flex items-center gap-1.5">
+              <div className="h-3 w-3 rounded-sm shrink-0" style={{ backgroundColor: planColorMap[name] }} />
+              <span className="text-xs text-slate-600 truncate max-w-[120px]">{name}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* History Table — chronological order (oldest first) */}
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-xs">Date</TableHead>
+                <TableHead className="text-xs">Plan</TableHead>
+                <TableHead className="text-xs">Action</TableHead>
+                <TableHead className="text-xs text-right">Duration</TableHead>
+                <TableHead className="text-xs">Doctor</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {chronological.map((h) => (
+                <TableRow key={h.id}>
+                  <TableCell className="text-xs whitespace-nowrap">
+                    {format(parseISO(h.assignedAt), "MMM d, yyyy HH:mm")}
+                  </TableCell>
+                  <TableCell className="text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <div
+                        className="h-2.5 w-2.5 rounded-sm shrink-0"
+                        style={{ backgroundColor: planColorMap[h.planName ?? "Unassigned"] }}
+                      />
+                      <span className="truncate max-w-[140px]">{h.planName ?? <em className="text-slate-400">Unassigned</em>}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-xs capitalize">
+                    <Badge
+                      variant="outline"
+                      className={
+                        h.action === "assigned" ? "border-green-200 text-green-700 bg-green-50" :
+                        h.action === "unassigned" ? "border-red-200 text-red-700 bg-red-50" :
+                        "border-blue-200 text-blue-700 bg-blue-50"
+                      }
+                    >
+                      {h.action}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-xs text-right whitespace-nowrap">
+                    {h.isCurrentPeriod
+                      ? <span className="text-primary font-medium">{h.durationDays}d (current)</span>
+                      : `${h.durationDays}d`}
+                  </TableCell>
+                  <TableCell className="text-xs text-slate-500 whitespace-nowrap">{h.doctorName}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function MealPlanTab({ kidId }: { kidId: number }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -1980,6 +2143,8 @@ function MealPlanTab({ kidId }: { kidId: number }) {
   const todayStr = format(new Date(), "yyyy-MM-dd");
   const todayRecord = mealHistory?.find((d) => d.date === todayStr) ?? null;
 
+  const { data: assignmentHistory, isLoading: historyLoading } = useGetKidMealPlanHistory(kidId);
+
   function handleAssign(planIdStr: string) {
     const planId = planIdStr === "none" ? null : parseInt(planIdStr, 10);
     setPendingPlanId(planIdStr);
@@ -1988,6 +2153,7 @@ function MealPlanTab({ kidId }: { kidId: number }) {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetKidAssignedMealPlanQueryKey(kidId) });
+          queryClient.invalidateQueries({ queryKey: getGetKidMealPlanHistoryQueryKey(kidId) });
           toast({ title: planId ? "Meal plan assigned" : "Meal plan unassigned" });
         },
         onError: () => {
@@ -2217,6 +2383,9 @@ function MealPlanTab({ kidId }: { kidId: number }) {
           })}
         </>
       )}
+
+      {/* Assignment History — always visible */}
+      <MealPlanAssignmentHistorySection history={assignmentHistory ?? []} isLoading={historyLoading} />
     </div>
   );
 }
