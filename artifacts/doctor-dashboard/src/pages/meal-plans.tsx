@@ -16,8 +16,11 @@ import {
   getGetLibraryMealPlansQueryKey,
   getGetLibraryMealPlanQueryKey,
   useListMealTypes,
+  useGetFoods,
+  useListRecipes,
+  useGetRecipe,
 } from "@workspace/api-client-react";
-import type { LibraryMealPlan, LibraryMealPlanItem } from "@workspace/api-client-react";
+import type { LibraryMealPlan, LibraryMealPlanItem, Food, Recipe } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useCanWrite } from "@/hooks/useRole";
@@ -832,6 +835,8 @@ function PlanFormDialog({
 
 // ── Add Item Form ─────────────────────────────────────────────────────────────
 
+type SourceMode = "food" | "recipe" | "manual";
+
 function AddItemForm({
   label,
   onSubmit,
@@ -846,6 +851,7 @@ function AddItemForm({
   onCancel: () => void;
   isPending: boolean;
 }) {
+  const [mode, setMode] = useState<SourceMode>("food");
   const [foodName, setFoodName] = useState("");
   const [portionGrams, setPortionGrams] = useState(100);
   const [unit, setUnit] = useState("g");
@@ -854,54 +860,252 @@ function AddItemForm({
   const [fat, setFat] = useState(0);
   const [protein, setProtein] = useState(0);
 
+  const [foodSearch, setFoodSearch] = useState("");
+  const [recipeSearch, setRecipeSearch] = useState("");
+  const [selectedRecipeId, setSelectedRecipeId] = useState<number | null>(null);
+
+  function resetFields() {
+    setFoodName("");
+    setPortionGrams(100);
+    setUnit("g");
+    setCalories(0);
+    setCarbs(0);
+    setFat(0);
+    setProtein(0);
+    setFoodSearch("");
+    setRecipeSearch("");
+    setSelectedRecipeId(null);
+  }
+
+  function switchMode(newMode: SourceMode) {
+    if (newMode !== mode) {
+      resetFields();
+      setMode(newMode);
+    }
+  }
+
+  const { data: foods } = useGetFoods();
+  const { data: recipes } = useListRecipes();
+  const { data: recipeDetail } = useGetRecipe(selectedRecipeId ?? 0, {
+    query: { enabled: selectedRecipeId !== null },
+  });
+
+  const activeFoods = useMemo(() => (foods ?? []).filter((f) => f.isActive), [foods]);
+
+  const filteredFoods = useMemo(() => {
+    const q = foodSearch.toLowerCase().trim();
+    if (!q) return activeFoods.slice(0, 20);
+    return activeFoods.filter((f) => f.name.toLowerCase().includes(q)).slice(0, 20);
+  }, [activeFoods, foodSearch]);
+
+  const filteredRecipes = useMemo(() => {
+    if (!recipes) return [];
+    const q = recipeSearch.toLowerCase().trim();
+    if (!q) return recipes.slice(0, 20);
+    return recipes.filter((r) => r.name.toLowerCase().includes(q)).slice(0, 20);
+  }, [recipes, recipeSearch]);
+
+  function selectFood(food: Food) {
+    const scale = portionGrams / 100;
+    setFoodName(food.name);
+    setCalories(Math.round(food.calories * scale));
+    setCarbs(parseFloat((food.carbs * scale).toFixed(1)));
+    setFat(parseFloat((food.fat * scale).toFixed(1)));
+    setProtein(parseFloat((food.protein * scale).toFixed(1)));
+    setFoodSearch("");
+  }
+
+  function handlePortionChangeForFood(newPortion: number, food?: Food) {
+    setPortionGrams(newPortion);
+    const matched = food ?? foods?.find((f) => f.name === foodName);
+    if (matched) {
+      const scale = newPortion / 100;
+      setCalories(Math.round(matched.calories * scale));
+      setCarbs(parseFloat((matched.carbs * scale).toFixed(1)));
+      setFat(parseFloat((matched.fat * scale).toFixed(1)));
+      setProtein(parseFloat((matched.protein * scale).toFixed(1)));
+    }
+  }
+
+  useEffect(() => {
+    if (recipeDetail && selectedRecipeId !== null) {
+      setFoodName(recipeDetail.name);
+      setPortionGrams(100);
+      setUnit("serving");
+      setCalories(Math.round(recipeDetail.totalCalories));
+      setCarbs(parseFloat(recipeDetail.totalCarbs.toFixed(1)));
+      setFat(parseFloat(recipeDetail.totalFat.toFixed(1)));
+      setProtein(parseFloat(recipeDetail.totalProtein.toFixed(1)));
+    }
+  }, [recipeDetail, selectedRecipeId]);
+
+  const tabClass = (t: SourceMode) =>
+    `px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+      mode === t
+        ? "bg-primary text-white shadow-sm"
+        : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+    }`;
+
   return (
     <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
-      <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Add Food to {label}</p>
-      <div className="grid grid-cols-2 gap-2">
-        <div className="col-span-2">
-          <Label className="text-xs mb-1 block">Food name *</Label>
-          <Input
-            placeholder="e.g. Avocado"
-            value={foodName}
-            onChange={(e) => setFoodName(e.target.value)}
-            className="h-8 text-sm"
-          />
-        </div>
-        <div>
-          <Label className="text-xs mb-1 block">Portion</Label>
-          <Input
-            type="number"
-            min={1}
-            value={portionGrams}
-            onChange={(e) => setPortionGrams(Number(e.target.value))}
-            className="h-8 text-sm"
-          />
-        </div>
-        <div>
-          <Label className="text-xs mb-1 block">Unit</Label>
-          <Input
-            value={unit}
-            onChange={(e) => setUnit(e.target.value)}
-            className="h-8 text-sm"
-          />
-        </div>
-        <div>
-          <Label className="text-xs mb-1 block">Calories</Label>
-          <Input type="number" min={0} value={calories} onChange={(e) => setCalories(Number(e.target.value))} className="h-8 text-sm" />
-        </div>
-        <div>
-          <Label className="text-xs mb-1 block">Carbs (g)</Label>
-          <Input type="number" min={0} value={carbs} onChange={(e) => setCarbs(Number(e.target.value))} className="h-8 text-sm" />
-        </div>
-        <div>
-          <Label className="text-xs mb-1 block">Fat (g)</Label>
-          <Input type="number" min={0} value={fat} onChange={(e) => setFat(Number(e.target.value))} className="h-8 text-sm" />
-        </div>
-        <div>
-          <Label className="text-xs mb-1 block">Protein (g)</Label>
-          <Input type="number" min={0} value={protein} onChange={(e) => setProtein(Number(e.target.value))} className="h-8 text-sm" />
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Add to {label}</p>
+        <div className="flex gap-1 bg-slate-100 rounded-lg p-0.5">
+          <button className={tabClass("food")} onClick={() => switchMode("food")}>Food Library</button>
+          <button className={tabClass("recipe")} onClick={() => switchMode("recipe")}>Recipe</button>
+          <button className={tabClass("manual")} onClick={() => switchMode("manual")}>Manual</button>
         </div>
       </div>
+
+      {mode === "food" && (
+        <div className="space-y-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+            <Input
+              placeholder="Search foods..."
+              value={foodSearch}
+              onChange={(e) => setFoodSearch(e.target.value)}
+              className="h-8 text-sm pl-8"
+            />
+          </div>
+          <div className="max-h-36 overflow-y-auto rounded-lg border border-slate-200 bg-white divide-y divide-slate-100">
+            {filteredFoods.length === 0 ? (
+              <p className="text-xs text-slate-400 text-center py-3">No foods found</p>
+            ) : (
+              filteredFoods.map((food) => (
+                <button
+                  key={food.id}
+                  className={`w-full text-left px-3 py-2 hover:bg-blue-50 transition-colors ${
+                    foodName === food.name ? "bg-blue-50 border-l-2 border-primary" : ""
+                  }`}
+                  onClick={() => selectFood(food)}
+                >
+                  <p className="text-sm font-medium text-slate-800">{food.name}</p>
+                  <p className="text-xs text-slate-400">
+                    {food.calories} kcal/100g · C:{food.carbs}g · F:{food.fat}g · P:{food.protein}g
+                  </p>
+                </button>
+              ))
+            )}
+          </div>
+          {foodName && (
+            <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
+              <p className="text-xs font-medium text-blue-800">Selected: {foodName}</p>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <div>
+                  <Label className="text-xs mb-1 block">Portion (g)</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={portionGrams}
+                    onChange={(e) => handlePortionChangeForFood(Number(e.target.value))}
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <p className="text-xs text-slate-500 pb-2">
+                    {calories} kcal · C:{carbs}g · F:{fat}g · P:{protein}g
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {mode === "recipe" && (
+        <div className="space-y-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+            <Input
+              placeholder="Search recipes..."
+              value={recipeSearch}
+              onChange={(e) => setRecipeSearch(e.target.value)}
+              className="h-8 text-sm pl-8"
+            />
+          </div>
+          <div className="max-h-36 overflow-y-auto rounded-lg border border-slate-200 bg-white divide-y divide-slate-100">
+            {filteredRecipes.length === 0 ? (
+              <p className="text-xs text-slate-400 text-center py-3">No recipes found</p>
+            ) : (
+              filteredRecipes.map((recipe) => (
+                <button
+                  key={recipe.id}
+                  className={`w-full text-left px-3 py-2 hover:bg-green-50 transition-colors ${
+                    selectedRecipeId === recipe.id ? "bg-green-50 border-l-2 border-green-500" : ""
+                  }`}
+                  onClick={() => setSelectedRecipeId(recipe.id)}
+                >
+                  <p className="text-sm font-medium text-slate-800">{recipe.name}</p>
+                  <p className="text-xs text-slate-400">{recipe.category}</p>
+                </button>
+              ))
+            )}
+          </div>
+          {recipeDetail && selectedRecipeId !== null && (
+            <div className="bg-green-50 border border-green-100 rounded-lg px-3 py-2">
+              <p className="text-xs font-medium text-green-800">Selected: {recipeDetail.name}</p>
+              <p className="text-xs text-slate-500 mt-1">
+                {Math.round(recipeDetail.totalCalories)} kcal · C:{recipeDetail.totalCarbs.toFixed(1)}g · F:{recipeDetail.totalFat.toFixed(1)}g · P:{recipeDetail.totalProtein.toFixed(1)}g
+              </p>
+              {recipeDetail.ingredients.length > 0 && (
+                <div className="mt-1.5">
+                  <p className="text-xs text-slate-400">Ingredients: {recipeDetail.ingredients.map(i => i.foodName).join(", ")}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {mode === "manual" && (
+        <div className="grid grid-cols-2 gap-2">
+          <div className="col-span-2">
+            <Label className="text-xs mb-1 block">Food name *</Label>
+            <Input
+              placeholder="e.g. Avocado"
+              value={foodName}
+              onChange={(e) => setFoodName(e.target.value)}
+              className="h-8 text-sm"
+            />
+          </div>
+          <div>
+            <Label className="text-xs mb-1 block">Portion</Label>
+            <Input
+              type="number"
+              min={1}
+              value={portionGrams}
+              onChange={(e) => setPortionGrams(Number(e.target.value))}
+              className="h-8 text-sm"
+            />
+          </div>
+          <div>
+            <Label className="text-xs mb-1 block">Unit</Label>
+            <Input
+              value={unit}
+              onChange={(e) => setUnit(e.target.value)}
+              className="h-8 text-sm"
+            />
+          </div>
+          <div>
+            <Label className="text-xs mb-1 block">Calories</Label>
+            <Input type="number" min={0} value={calories} onChange={(e) => setCalories(Number(e.target.value))} className="h-8 text-sm" />
+          </div>
+          <div>
+            <Label className="text-xs mb-1 block">Carbs (g)</Label>
+            <Input type="number" min={0} value={carbs} onChange={(e) => setCarbs(Number(e.target.value))} className="h-8 text-sm" />
+          </div>
+          <div>
+            <Label className="text-xs mb-1 block">Fat (g)</Label>
+            <Input type="number" min={0} value={fat} onChange={(e) => setFat(Number(e.target.value))} className="h-8 text-sm" />
+          </div>
+          <div>
+            <Label className="text-xs mb-1 block">Protein (g)</Label>
+            <Input type="number" min={0} value={protein} onChange={(e) => setProtein(Number(e.target.value))} className="h-8 text-sm" />
+          </div>
+        </div>
+      )}
+
       <div className="flex gap-2">
         <Button
           size="sm"
