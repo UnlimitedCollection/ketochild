@@ -16,6 +16,7 @@ import {
   ketoneReadingsTable,
   kidFoodApprovalsTable,
   mealTypesTable,
+  mealTypeRecipesTable,
   recipesTable,
   recipeIngredientsTable,
 } from "@workspace/db";
@@ -178,20 +179,17 @@ async function seed() {
   }
 
   // ── 3b. Seed default meal types ────────────────────────────────────────────
-  const existingMealTypes = await db.select().from(mealTypesTable);
-  if (existingMealTypes.length === 0) {
-    const defaultMealTypes = ["Breakfast", "Lunch", "Dinner"];
-    for (const name of defaultMealTypes) {
-      await db.insert(mealTypesTable).values({ name }).onConflictDoNothing();
-    }
-    console.log(`Meal types seeded: ${defaultMealTypes.length}`);
-  } else {
-    console.log(`Meal types already seeded (${existingMealTypes.length} found), skipping.`);
+  const defaultMealTypes = ["Breakfast", "Morning Snack", "Lunch", "Snack", "Dinner"];
+  for (const name of defaultMealTypes) {
+    await db.insert(mealTypesTable).values({ name }).onConflictDoNothing();
   }
+  const allMealTypes = await db.select().from(mealTypesTable);
+  console.log(`Meal types seeded/verified: ${allMealTypes.length} total`);
 
   // ── 4. Seed 5 library meal plans ───────────────────────────────────────────
   const existingPlans = await db.select().from(libraryMealPlansTable).where(eq(libraryMealPlansTable.doctorId, doctorId));
-  if (existingPlans.length < 5) {
+  const existingPlanNames = new Set(existingPlans.map((p) => p.name));
+  if (existingPlanNames.size < 10) {
     const plans = [
       {
         name: "Phase 1 Starter Plan",
@@ -263,9 +261,80 @@ async function seed() {
           { mealType: "breakfast", foodName: "Hemp Seeds with Heavy Cream",     portionGrams: 45,  unit: "g", calories: 270, carbs: 1.5, fat: 24,   protein: 10 },
         ],
       },
+      {
+        name: "Vegetarian Keto Plan",
+        description: "Plant-based ketogenic meal plan with no meat. Relies on eggs, cheese, nuts, and low-carb vegetables.",
+        targetPhase: 2,
+        items: [
+          { mealType: "breakfast", foodName: "Scrambled Eggs with Cream Cheese",  portionGrams: 130, unit: "g", calories: 295, carbs: 2.1, fat: 24,   protein: 17 },
+          { mealType: "breakfast", foodName: "Avocado",                            portionGrams: 70,  unit: "g", calories: 112, carbs: 1.4, fat: 10.5, protein: 1.4 },
+          { mealType: "snack",     foodName: "Macadamia Nuts",                    portionGrams: 30,  unit: "g", calories: 215, carbs: 1.5, fat: 22.8, protein: 2.4 },
+          { mealType: "lunch",     foodName: "Eggplant with Mozzarella",          portionGrams: 200, unit: "g", calories: 250, carbs: 9,   fat: 16,   protein: 12 },
+          { mealType: "lunch",     foodName: "Olive Oil Dressed Greens",          portionGrams: 80,  unit: "g", calories: 95,  carbs: 2.4, fat: 8.5,  protein: 1.2 },
+          { mealType: "dinner",    foodName: "Cauliflower with Cheddar Sauce",    portionGrams: 220, unit: "g", calories: 310, carbs: 9,   fat: 24,   protein: 14 },
+          { mealType: "dinner",    foodName: "Parmesan Roasted Asparagus",        portionGrams: 100, unit: "g", calories: 110, carbs: 4.5, fat: 7,    protein: 7 },
+        ],
+      },
+      {
+        name: "Dairy-Free Keto Plan",
+        description: "Ketogenic meal plan free from dairy. Uses coconut and avocado-based fats for ratio compliance.",
+        targetPhase: 2,
+        items: [
+          { mealType: "breakfast", foodName: "Eggs Fried in Coconut Oil",         portionGrams: 120, unit: "g", calories: 290, carbs: 0.7, fat: 25,   protein: 15 },
+          { mealType: "breakfast", foodName: "Avocado",                            portionGrams: 80,  unit: "g", calories: 128, carbs: 1.6, fat: 12,   protein: 1.6 },
+          { mealType: "snack",     foodName: "Walnuts",                           portionGrams: 25,  unit: "g", calories: 164, carbs: 1.8, fat: 16.3, protein: 3.8 },
+          { mealType: "lunch",     foodName: "Chicken Breast with Avocado Oil",   portionGrams: 160, unit: "g", calories: 320, carbs: 0,   fat: 22,   protein: 30 },
+          { mealType: "lunch",     foodName: "Kale Salad with Avocado",           portionGrams: 100, unit: "g", calories: 140, carbs: 4.4, fat: 10,   protein: 4.3 },
+          { mealType: "dinner",    foodName: "Salmon with Avocado Oil Drizzle",   portionGrams: 160, unit: "g", calories: 390, carbs: 0,   fat: 31,   protein: 29 },
+          { mealType: "dinner",    foodName: "Steamed Broccoli",                  portionGrams: 100, unit: "g", calories: 34,  carbs: 4,   fat: 0.4,  protein: 2.6 },
+        ],
+      },
+      {
+        name: "Toddler Keto Plan (Ages 1–3)",
+        description: "Gentle ketogenic meal plan for very young children. Smaller portions, higher fat using cream and butter.",
+        targetPhase: 1,
+        items: [
+          { mealType: "breakfast", foodName: "Soft Scrambled Eggs with Butter",   portionGrams: 80,  unit: "g", calories: 185, carbs: 0.6, fat: 16,   protein: 10 },
+          { mealType: "breakfast", foodName: "Heavy Cream",                        portionGrams: 20,  unit: "g", calories: 68,  carbs: 0.7, fat: 7,    protein: 0.4 },
+          { mealType: "snack",     foodName: "Cream Cheese",                      portionGrams: 20,  unit: "g", calories: 68,  carbs: 0.8, fat: 6.6,  protein: 1.2 },
+          { mealType: "lunch",     foodName: "Pureed Cauliflower with Butter",    portionGrams: 100, unit: "g", calories: 110, carbs: 5,   fat: 8.1,  protein: 1.9 },
+          { mealType: "lunch",     foodName: "Flaked Salmon with Olive Oil",      portionGrams: 80,  unit: "g", calories: 200, carbs: 0,   fat: 15,   protein: 16 },
+          { mealType: "dinner",    foodName: "Ground Beef with Butter",           portionGrams: 80,  unit: "g", calories: 265, carbs: 0,   fat: 22,   protein: 15 },
+          { mealType: "dinner",    foodName: "Mashed Avocado",                    portionGrams: 50,  unit: "g", calories: 80,  carbs: 1,   fat: 7.5,  protein: 1 },
+        ],
+      },
+      {
+        name: "Teen Active Keto Plan",
+        description: "Higher calorie ketogenic plan for active teenagers. Supports growth while maintaining therapeutic ketosis.",
+        targetPhase: 2,
+        items: [
+          { mealType: "breakfast", foodName: "Bacon, Eggs, and Avocado",          portionGrams: 200, unit: "g", calories: 490, carbs: 2,   fat: 42,   protein: 30 },
+          { mealType: "breakfast", foodName: "Greek Yogurt with Nuts",            portionGrams: 100, unit: "g", calories: 200, carbs: 5,   fat: 14,   protein: 12 },
+          { mealType: "snack",     foodName: "Almond Butter and Celery",          portionGrams: 60,  unit: "g", calories: 200, carbs: 3.6, fat: 16,   protein: 6.5 },
+          { mealType: "lunch",     foodName: "Beef Ribeye Strips Salad",          portionGrams: 200, unit: "g", calories: 520, carbs: 4,   fat: 40,   protein: 35 },
+          { mealType: "lunch",     foodName: "Cheddar Cheese Block",              portionGrams: 40,  unit: "g", calories: 161, carbs: 0.5, fat: 13.2, protein: 10 },
+          { mealType: "dinner",    foodName: "Chicken Thigh with Cream Sauce",    portionGrams: 220, unit: "g", calories: 462, carbs: 3.3, fat: 37.4, protein: 30.8 },
+          { mealType: "dinner",    foodName: "Roasted Zucchini with Parmesan",   portionGrams: 120, unit: "g", calories: 130, carbs: 4.5, fat: 8,    protein: 6 },
+        ],
+      },
+      {
+        name: "Snack-Rich Modified Atkins",
+        description: "Modified Atkins approach with structured snacks for children who need frequent small meals throughout the day.",
+        targetPhase: null,
+        items: [
+          { mealType: "breakfast",     foodName: "Keto Egg Muffins",                 portionGrams: 120, unit: "g", calories: 280, carbs: 2,   fat: 22,   protein: 18 },
+          { mealType: "morning snack", foodName: "Macadamia Nuts",                   portionGrams: 20,  unit: "g", calories: 144, carbs: 1,   fat: 15.2, protein: 1.6 },
+          { mealType: "morning snack", foodName: "Cream Cheese",                     portionGrams: 20,  unit: "g", calories: 68,  carbs: 0.8, fat: 6.6,  protein: 1.2 },
+          { mealType: "lunch",         foodName: "Chicken Thigh with Spinach",       portionGrams: 180, unit: "g", calories: 350, carbs: 1.5, fat: 26,   protein: 27 },
+          { mealType: "snack",         foodName: "Pumpkin Seeds with Olive Oil",     portionGrams: 25,  unit: "g", calories: 145, carbs: 0.8, fat: 12.3, protein: 7.5 },
+          { mealType: "dinner",        foodName: "Salmon with Butter and Broccoli",  portionGrams: 200, unit: "g", calories: 450, carbs: 4.4, fat: 34,   protein: 30 },
+        ],
+      },
     ];
 
+    let newPlanCount = 0;
     for (const plan of plans) {
+      if (existingPlanNames.has(plan.name)) continue;
       const [created] = await db.insert(libraryMealPlansTable).values({
         doctorId,
         name: plan.name,
@@ -280,10 +349,11 @@ async function seed() {
           notes: "",
         });
       }
+      newPlanCount++;
     }
-    console.log(`Library meal plans seeded: ${plans.length}`);
+    console.log(`Library meal plans seeded: ${newPlanCount} new (${existingPlans.length + newPlanCount} total)`);
   } else {
-    console.log(`Library meal plans already seeded (${existingPlans.length} found), skipping.`);
+    console.log(`Library meal plans already seeded (${existingPlans.length} found, >= 10), skipping.`);
   }
 
   // ── 5. Deterministic 30 unique kids ───────────────────────────────────────
@@ -890,8 +960,231 @@ async function seed() {
         { foodName: "MCT Oil", portionGrams: 5, unit: "g", carbs: 0, fat: 5, protein: 0, calories: 43 },
       ],
     },
+    // ── New recipes (aiming for 50+ total) ──────────────────────────────────
+    {
+      name: "Almond Butter Fat Bombs",
+      description: "Frozen almond butter and coconut oil bites — a quick morning snack loaded with healthy fats.",
+      category: "Snack",
+      ingredients: [
+        { foodName: "Almond Butter", portionGrams: 30, unit: "g", carbs: 2.1, fat: 15, protein: 6.3, calories: 184 },
+        { foodName: "Coconut Oil", portionGrams: 15, unit: "g", carbs: 0, fat: 15, protein: 0, calories: 129 },
+        { foodName: "MCT Oil", portionGrams: 10, unit: "g", carbs: 0, fat: 10, protein: 0, calories: 86 },
+      ],
+    },
+    {
+      name: "Keto Avocado Toast",
+      description: "Creamy mashed avocado on flaxseed keto bread with a soft-boiled egg on top.",
+      category: "Breakfast",
+      ingredients: [
+        { foodName: "Avocado", portionGrams: 80, unit: "g", carbs: 1.6, fat: 12, protein: 1.6, calories: 128 },
+        { foodName: "Flaxseed Meal", portionGrams: 40, unit: "g", carbs: 0.8, fat: 3.6, protein: 2, calories: 56 },
+        { foodName: "Whole Eggs", portionGrams: 50, unit: "g", carbs: 0.3, fat: 5, protein: 6.5, calories: 78 },
+        { foodName: "Butter", portionGrams: 10, unit: "g", carbs: 0, fat: 8.1, protein: 0.1, calories: 72 },
+      ],
+    },
+    {
+      name: "Bacon and Cheddar Omelette",
+      description: "Fluffy omelette filled with crispy bacon bits and melted cheddar cheese.",
+      category: "Breakfast",
+      ingredients: [
+        { foodName: "Whole Eggs", portionGrams: 150, unit: "g", carbs: 0.9, fat: 15, protein: 19.5, calories: 233 },
+        { foodName: "Bacon", portionGrams: 40, unit: "g", carbs: 0.3, fat: 16.8, protein: 14.8, calories: 216 },
+        { foodName: "Cheddar Cheese", portionGrams: 30, unit: "g", carbs: 0.4, fat: 9.9, protein: 7.5, calories: 121 },
+        { foodName: "Butter", portionGrams: 10, unit: "g", carbs: 0, fat: 8.1, protein: 0.1, calories: 72 },
+      ],
+    },
+    {
+      name: "Spinach and Feta Scramble",
+      description: "Creamy scrambled eggs with wilted spinach and crumbled feta-style cheese.",
+      category: "Breakfast",
+      ingredients: [
+        { foodName: "Whole Eggs", portionGrams: 120, unit: "g", carbs: 0.7, fat: 12, protein: 15.6, calories: 186 },
+        { foodName: "Spinach", portionGrams: 60, unit: "g", carbs: 0.8, fat: 0.2, protein: 1.7, calories: 14 },
+        { foodName: "Cream Cheese", portionGrams: 25, unit: "g", carbs: 1, fat: 8.3, protein: 1.5, calories: 86 },
+        { foodName: "Butter", portionGrams: 10, unit: "g", carbs: 0, fat: 8.1, protein: 0.1, calories: 72 },
+      ],
+    },
+    {
+      name: "Macadamia Nut Clusters",
+      description: "Bite-sized clusters of macadamia nuts coated in coconut oil — zero prep, maximum fat.",
+      category: "Snack",
+      ingredients: [
+        { foodName: "Macadamia Nuts", portionGrams: 35, unit: "g", carbs: 1.8, fat: 26.6, protein: 2.8, calories: 251 },
+        { foodName: "Coconut Oil", portionGrams: 5, unit: "g", carbs: 0, fat: 5, protein: 0, calories: 43 },
+      ],
+    },
+    {
+      name: "Cucumber Cream Cheese Bites",
+      description: "Sliced cucumber rounds topped with herb cream cheese — a refreshing low-carb snack.",
+      category: "Snack",
+      ingredients: [
+        { foodName: "Cucumber", portionGrams: 80, unit: "g", carbs: 2.9, fat: 0.1, protein: 0.6, calories: 12 },
+        { foodName: "Cream Cheese", portionGrams: 40, unit: "g", carbs: 1.6, fat: 13.2, protein: 2.4, calories: 137 },
+      ],
+    },
+    {
+      name: "Deviled Eggs",
+      description: "Classic deviled eggs filled with yolk, mayo-style cream cheese, and a sprinkle of paprika.",
+      category: "Snack",
+      ingredients: [
+        { foodName: "Whole Eggs", portionGrams: 120, unit: "g", carbs: 0.7, fat: 12, protein: 15.6, calories: 186 },
+        { foodName: "Cream Cheese", portionGrams: 20, unit: "g", carbs: 0.8, fat: 6.6, protein: 1.2, calories: 68 },
+        { foodName: "Olive Oil", portionGrams: 5, unit: "g", carbs: 0, fat: 5, protein: 0, calories: 44 },
+      ],
+    },
+    {
+      name: "Keto Cauliflower Soup",
+      description: "Velvety blended cauliflower soup enriched with butter and cream cheese.",
+      category: "Soup",
+      ingredients: [
+        { foodName: "Cauliflower", portionGrams: 200, unit: "g", carbs: 10, fat: 0.6, protein: 3.8, calories: 50 },
+        { foodName: "Heavy Cream", portionGrams: 50, unit: "g", carbs: 1.7, fat: 17.5, protein: 1.1, calories: 170 },
+        { foodName: "Butter", portionGrams: 15, unit: "g", carbs: 0, fat: 12.2, protein: 0.1, calories: 108 },
+        { foodName: "Cream Cheese", portionGrams: 20, unit: "g", carbs: 0.8, fat: 6.6, protein: 1.2, calories: 68 },
+      ],
+    },
+    {
+      name: "Broccoli Cheddar Soup",
+      description: "Rich and comforting broccoli soup melted with cheddar and heavy cream.",
+      category: "Soup",
+      ingredients: [
+        { foodName: "Broccoli", portionGrams: 150, unit: "g", carbs: 6, fat: 0.6, protein: 3.9, calories: 51 },
+        { foodName: "Cheddar Cheese", portionGrams: 60, unit: "g", carbs: 0.8, fat: 19.8, protein: 15, calories: 242 },
+        { foodName: "Heavy Cream", portionGrams: 60, unit: "g", carbs: 2, fat: 21, protein: 1.3, calories: 204 },
+        { foodName: "Butter", portionGrams: 10, unit: "g", carbs: 0, fat: 8.1, protein: 0.1, calories: 72 },
+      ],
+    },
+    {
+      name: "Avocado Spinach Soup",
+      description: "Cold blended avocado and spinach soup with olive oil — a nutrient-dense keto lunch.",
+      category: "Soup",
+      ingredients: [
+        { foodName: "Avocado", portionGrams: 100, unit: "g", carbs: 2, fat: 15, protein: 2, calories: 160 },
+        { foodName: "Spinach", portionGrams: 80, unit: "g", carbs: 1.1, fat: 0.3, protein: 2.3, calories: 18 },
+        { foodName: "Olive Oil", portionGrams: 10, unit: "g", carbs: 0, fat: 10, protein: 0, calories: 88 },
+        { foodName: "Heavy Cream", portionGrams: 30, unit: "g", carbs: 1, fat: 10.5, protein: 0.6, calories: 102 },
+      ],
+    },
+    {
+      name: "Asparagus with Hollandaise",
+      description: "Steamed asparagus spears with a rich egg yolk and butter hollandaise sauce.",
+      category: "Side",
+      ingredients: [
+        { foodName: "Asparagus", portionGrams: 150, unit: "g", carbs: 5.9, fat: 0.2, protein: 3.3, calories: 30 },
+        { foodName: "Egg Yolks", portionGrams: 30, unit: "g", carbs: 1.1, fat: 8.1, protein: 4.8, calories: 97 },
+        { foodName: "Butter", portionGrams: 25, unit: "g", carbs: 0, fat: 20.3, protein: 0.2, calories: 179 },
+      ],
+    },
+    {
+      name: "Garlic Butter Green Beans",
+      description: "Tender green beans sautéed in garlic-infused butter and parmesan.",
+      category: "Side",
+      ingredients: [
+        { foodName: "Green Beans", portionGrams: 120, unit: "g", carbs: 8.4, fat: 0.1, protein: 2.2, calories: 37 },
+        { foodName: "Butter", portionGrams: 20, unit: "g", carbs: 0, fat: 16.2, protein: 0.2, calories: 143 },
+        { foodName: "Parmesan", portionGrams: 15, unit: "g", carbs: 0.5, fat: 4.4, protein: 5.7, calories: 65 },
+      ],
+    },
+    {
+      name: "Cauliflower Rice Pilaf",
+      description: "Grated cauliflower sautéed in butter and seasoned as a keto rice substitute.",
+      category: "Side",
+      ingredients: [
+        { foodName: "Cauliflower", portionGrams: 180, unit: "g", carbs: 9, fat: 0.5, protein: 3.4, calories: 45 },
+        { foodName: "Butter", portionGrams: 20, unit: "g", carbs: 0, fat: 16.2, protein: 0.2, calories: 143 },
+        { foodName: "Olive Oil", portionGrams: 10, unit: "g", carbs: 0, fat: 10, protein: 0, calories: 88 },
+      ],
+    },
+    {
+      name: "Keto Almond Flour Cookies",
+      description: "Soft baked almond flour cookies with macadamia nuts — a keto-friendly dessert treat.",
+      category: "Dessert",
+      ingredients: [
+        { foodName: "Almond Flour", portionGrams: 60, unit: "g", carbs: 6, fat: 32.4, protein: 14.4, calories: 346 },
+        { foodName: "Macadamia Nuts", portionGrams: 20, unit: "g", carbs: 1, fat: 15.2, protein: 1.6, calories: 144 },
+        { foodName: "Butter", portionGrams: 20, unit: "g", carbs: 0, fat: 16.2, protein: 0.2, calories: 143 },
+        { foodName: "Whole Eggs", portionGrams: 25, unit: "g", carbs: 0.2, fat: 2.5, protein: 3.3, calories: 39 },
+      ],
+    },
+    {
+      name: "Berry Cream Parfait",
+      description: "Layered whipped heavy cream with mixed berries — an elegant keto dessert.",
+      category: "Dessert",
+      ingredients: [
+        { foodName: "Heavy Cream", portionGrams: 80, unit: "g", carbs: 2.7, fat: 28, protein: 1.7, calories: 272 },
+        { foodName: "Blueberries", portionGrams: 20, unit: "g", carbs: 2.4, fat: 0.1, protein: 0.1, calories: 11 },
+        { foodName: "Raspberries", portionGrams: 20, unit: "g", carbs: 1.1, fat: 0.1, protein: 0.2, calories: 10 },
+        { foodName: "Strawberries", portionGrams: 20, unit: "g", carbs: 1.5, fat: 0.1, protein: 0.1, calories: 6 },
+      ],
+    },
+    {
+      name: "Coconut Cream Pudding",
+      description: "Thick coconut pudding made with coconut meat and heavy cream — dairy-optional keto dessert.",
+      category: "Dessert",
+      ingredients: [
+        { foodName: "Coconut Meat", portionGrams: 50, unit: "g", carbs: 3, fat: 17.5, protein: 1.7, calories: 177 },
+        { foodName: "Heavy Cream", portionGrams: 60, unit: "g", carbs: 2, fat: 21, protein: 1.3, calories: 204 },
+        { foodName: "MCT Oil", portionGrams: 10, unit: "g", carbs: 0, fat: 10, protein: 0, calories: 86 },
+      ],
+    },
+    {
+      name: "BLT Lettuce Cups",
+      description: "Bacon, sliced tomato-free BLT served in crisp romaine lettuce with cream cheese spread.",
+      category: "Lunch",
+      ingredients: [
+        { foodName: "Bacon", portionGrams: 50, unit: "g", carbs: 0.4, fat: 21, protein: 18.5, calories: 271 },
+        { foodName: "Lettuce", portionGrams: 80, unit: "g", carbs: 1.9, fat: 0.2, protein: 1, calories: 14 },
+        { foodName: "Cream Cheese", portionGrams: 25, unit: "g", carbs: 1, fat: 8.3, protein: 1.5, calories: 86 },
+        { foodName: "Avocado", portionGrams: 50, unit: "g", carbs: 1, fat: 7.5, protein: 1, calories: 80 },
+      ],
+    },
+    {
+      name: "Shrimp and Avocado Salad",
+      description: "Juicy shrimp tossed with avocado and cucumber in an olive oil dressing.",
+      category: "Lunch",
+      ingredients: [
+        { foodName: "Shrimp", portionGrams: 120, unit: "g", carbs: 1.1, fat: 1.7, protein: 28.8, calories: 127 },
+        { foodName: "Avocado", portionGrams: 80, unit: "g", carbs: 1.6, fat: 12, protein: 1.6, calories: 128 },
+        { foodName: "Cucumber", portionGrams: 60, unit: "g", carbs: 2.2, fat: 0.1, protein: 0.4, calories: 9 },
+        { foodName: "Olive Oil", portionGrams: 15, unit: "g", carbs: 0, fat: 15, protein: 0, calories: 133 },
+      ],
+    },
+    {
+      name: "Chicken Caesar Salad (Keto)",
+      description: "Grilled chicken breast over romaine lettuce with parmesan and olive oil-based Caesar dressing.",
+      category: "Lunch",
+      ingredients: [
+        { foodName: "Chicken Breast", portionGrams: 130, unit: "g", carbs: 0, fat: 4.7, protein: 40.3, calories: 215 },
+        { foodName: "Lettuce", portionGrams: 80, unit: "g", carbs: 1.9, fat: 0.2, protein: 1, calories: 14 },
+        { foodName: "Parmesan", portionGrams: 20, unit: "g", carbs: 0.6, fat: 5.8, protein: 7.6, calories: 86 },
+        { foodName: "Olive Oil", portionGrams: 15, unit: "g", carbs: 0, fat: 15, protein: 0, calories: 133 },
+      ],
+    },
+    {
+      name: "Keto Beef Tacos (Lettuce)",
+      description: "Seasoned ground beef served in crunchy lettuce shells with cheddar and avocado.",
+      category: "Dinner",
+      ingredients: [
+        { foodName: "Ground Beef", portionGrams: 150, unit: "g", carbs: 0, fat: 30, protein: 39, calories: 431 },
+        { foodName: "Lettuce", portionGrams: 60, unit: "g", carbs: 1.4, fat: 0.2, protein: 0.7, calories: 10 },
+        { foodName: "Cheddar Cheese", portionGrams: 30, unit: "g", carbs: 0.4, fat: 9.9, protein: 7.5, calories: 121 },
+        { foodName: "Avocado", portionGrams: 60, unit: "g", carbs: 1.2, fat: 9, protein: 1.2, calories: 96 },
+      ],
+    },
+    {
+      name: "Turkey Meatballs in Cream Sauce",
+      description: "Tender turkey meatballs simmered in a rich parmesan cream sauce.",
+      category: "Dinner",
+      ingredients: [
+        { foodName: "Turkey Breast", portionGrams: 150, unit: "g", carbs: 0, fat: 1.5, protein: 43.5, calories: 203 },
+        { foodName: "Heavy Cream", portionGrams: 60, unit: "g", carbs: 2, fat: 21, protein: 1.3, calories: 204 },
+        { foodName: "Parmesan", portionGrams: 20, unit: "g", carbs: 0.6, fat: 5.8, protein: 7.6, calories: 86 },
+        { foodName: "Butter", portionGrams: 10, unit: "g", carbs: 0, fat: 8.1, protein: 0.1, calories: 72 },
+      ],
+    },
   ];
 
+  const seededRecipes: { id: number; category: string }[] = [];
   for (const recipe of recipesData) {
     const [created] = await db.insert(recipesTable).values({
       doctorId,
@@ -906,8 +1199,41 @@ async function seed() {
         ...ing,
       });
     }
+    seededRecipes.push({ id: created.id, category: recipe.category });
   }
   console.log(`Recipes seeded: ${recipesData.length} total`);
+
+  // ── 7. Seed meal_type_recipes join table ──────────────────────────────────
+  // Map recipe categories to appropriate meal type names
+  const mealTypesByName = new Map(allMealTypes.map((mt) => [mt.name.toLowerCase(), mt.id]));
+
+  const categoryToMealTypes: Record<string, string[]> = {
+    "breakfast": ["Breakfast"],
+    "lunch":     ["Lunch"],
+    "dinner":    ["Dinner"],
+    "main course": ["Lunch", "Dinner"],
+    "snack":     ["Morning Snack", "Snack"],
+    "soup":      ["Lunch", "Dinner"],
+    "side":      ["Lunch", "Dinner"],
+    "dessert":   ["Snack", "Dinner"],
+  };
+
+  let mealTypeRecipeLinks = 0;
+  for (const recipe of seededRecipes) {
+    const categoryKey = recipe.category.toLowerCase();
+    const mealTypeNames = categoryToMealTypes[categoryKey] ?? ["Lunch", "Dinner"];
+    for (const typeName of mealTypeNames) {
+      const mealTypeId = mealTypesByName.get(typeName.toLowerCase());
+      if (mealTypeId) {
+        await db.insert(mealTypeRecipesTable).values({
+          mealTypeId,
+          recipeId: recipe.id,
+        }).onConflictDoNothing();
+        mealTypeRecipeLinks++;
+      }
+    }
+  }
+  console.log(`Meal type–recipe links seeded: ${mealTypeRecipeLinks} total`);
 
   console.log("Seeding complete!");
 }
