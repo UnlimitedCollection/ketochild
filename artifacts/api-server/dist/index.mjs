@@ -61407,9 +61407,13 @@ router5.post("/:kidId/weight", async (req, res) => {
   }
 });
 router5.delete("/:kidId/weight/:recordId", async (req, res) => {
+  const kidId = parseInt(req.params.kidId, 10);
+  const recordId = parseInt(req.params.recordId, 10);
+  if (isNaN(kidId) || isNaN(recordId)) {
+    res.status(400).json({ error: "BAD_REQUEST", message: "Invalid kid ID or record ID" });
+    return;
+  }
   try {
-    const kidId = parseInt(req.params.kidId, 10);
-    const recordId = parseInt(req.params.recordId, 10);
     await db.delete(weightRecordsTable).where(and(eq(weightRecordsTable.id, recordId), eq(weightRecordsTable.kidId, kidId)));
     res.json({ success: true, message: "Weight record deleted" });
   } catch (err) {
