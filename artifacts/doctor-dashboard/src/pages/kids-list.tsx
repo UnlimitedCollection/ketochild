@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
 import { usePrint } from "@/hooks/usePrint";
+import { usePagination } from "@/hooks/usePagination";
 import { PrintLayout } from "@/components/print-layout";
 import { Link, useSearch, useLocation } from "wouter";
 import { useGetKids, useGetKid, useGetKidKetoneReadings, useDeleteKid, type GetKidsParams } from "@workspace/api-client-react";
-import { Search, Filter, Loader2, User, Eye, Flame, Clock, Trash2, Pencil, Scale, FlaskConical, TrendingUp, TrendingDown, Activity, Calendar, Utensils } from "lucide-react";
+import { Search, Filter, Loader2, User, Eye, Flame, Clock, Trash2, Pencil, Scale, FlaskConical, TrendingUp, TrendingDown, Activity, Calendar, Utensils, ChevronLeft, ChevronRight } from "lucide-react";
 import { PrintButton } from "@/components/print-button";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -406,6 +407,17 @@ export default function KidsListPage() {
     { query: { queryKey: ["/api/kids", debouncedSearch, selectedPhases, selectedRisk, selectedKetoStatus] } }
   );
 
+  const pagination = usePagination({
+    totalItems: kids?.length ?? 0,
+    pageSize: 25,
+    resetDeps: [debouncedSearch, selectedPhases, selectedRisk, selectedKetoStatus],
+  });
+
+  const paginatedKids = useMemo(
+    () => (kids ?? []).slice(pagination.startIndex, pagination.endIndex),
+    [kids, pagination.startIndex, pagination.endIndex]
+  );
+
   const deleteKidMutation = useDeleteKid({
     mutation: {
       onSuccess: () => {
@@ -517,7 +529,7 @@ export default function KidsListPage() {
         </p>
       )}
 
-      <Card className="rounded-2xl shadow-sm border-slate-200 overflow-hidden bg-white">
+      <Card className="no-print rounded-2xl shadow-sm border-slate-200 overflow-hidden bg-white">
         {isLoading ? (
           <div className="h-64 flex items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -544,7 +556,7 @@ export default function KidsListPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {kids.map((kid) => (
+                {paginatedKids.map((kid) => (
                   <TableRow key={kid.id} className="hover:bg-slate-50/80 transition-colors group">
                     <TableCell>
                       <div className="font-bold text-slate-900">{kid.name}</div>
@@ -654,7 +666,72 @@ export default function KidsListPage() {
             </Table>
           </div>
         )}
+        {kids && kids.length > 0 && (
+          <div className="no-print flex items-center justify-between px-6 py-3 border-t border-slate-100">
+            <p className="text-sm text-slate-500">
+              Showing {pagination.rangeStart}–{pagination.rangeEnd} of {kids.length}
+            </p>
+            {pagination.totalPages > 1 && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!pagination.hasPrev}
+                  onClick={pagination.goPrev}
+                  className="gap-1"
+                >
+                  <ChevronLeft className="h-4 w-4" /> Previous
+                </Button>
+                <span className="text-sm text-slate-600">
+                  Page {pagination.currentPage} of {pagination.totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!pagination.hasNext}
+                  onClick={pagination.goNext}
+                  className="gap-1"
+                >
+                  Next <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </Card>
+
+      {kids && kids.length > 0 && (
+        <div className="hidden print-section">
+          <table className="w-full text-xs border-collapse">
+            <thead>
+              <tr className="bg-slate-100">
+                <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Patient</th>
+                <th className="text-left py-1.5 px-2 font-semibold text-slate-600">ID / Code</th>
+                <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Phase</th>
+                <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Parent</th>
+                <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Meal %</th>
+                <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Keto</th>
+                <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Risk</th>
+              </tr>
+            </thead>
+            <tbody>
+              {kids.map((kid) => (
+                <tr key={kid.id} className="border-b border-slate-100">
+                  <td className="py-1.5 px-2 text-slate-800 font-medium">
+                    {kid.name} <span className="text-slate-400">({kid.ageMonths}m, {kid.gender === 'male' ? 'M' : 'F'})</span>
+                  </td>
+                  <td className="py-1.5 px-2 text-slate-600 font-mono">{kid.kidCode}</td>
+                  <td className="py-1.5 px-2 text-slate-600">Phase {kid.phase}</td>
+                  <td className="py-1.5 px-2 text-slate-600">{kid.parentName}</td>
+                  <td className="py-1.5 px-2 text-slate-600">{Math.round(kid.mealCompletionRate * 100)}%</td>
+                  <td className="py-1.5 px-2 text-slate-600">{kid.inKetoStatus ? "Yes" : "No"}</td>
+                  <td className="py-1.5 px-2 text-slate-600">{kid.isHighRisk ? "High Risk" : "Stable"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </PrintLayout>
   );
 }

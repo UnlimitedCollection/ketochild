@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { PrintButton } from "@/components/print-button";
 import { RecipePrintReport } from "@/components/recipe-print-report";
 import { usePrint } from "@/hooks/usePrint";
+import { usePagination } from "@/hooks/usePagination";
 import { PrintLayout } from "@/components/print-layout";
 import {
   useListRecipes,
@@ -19,6 +20,7 @@ import {
   Plus,
   Pencil,
   Trash2,
+  ChevronLeft,
   ChevronRight,
   X,
   Flame,
@@ -657,6 +659,14 @@ export default function RecipesPage() {
     new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   );
 
+  const pagination = usePagination({
+    totalItems: sorted.length,
+    pageSize: 25,
+    resetDeps: [search, filterCat],
+  });
+
+  const paginatedRecipes = sorted.slice(pagination.startIndex, pagination.endIndex);
+
   function formatDate(iso: string) {
     return new Date(iso).toLocaleDateString(undefined, {
       year: "numeric", month: "short", day: "numeric",
@@ -756,7 +766,7 @@ export default function RecipesPage() {
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {sorted.map((r) => (
+            {paginatedRecipes.map((r) => (
               <div
                 key={r.id}
                 className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 cursor-pointer group transition-colors"
@@ -826,6 +836,34 @@ export default function RecipesPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+        {sorted.length > 0 && (
+          <div className="no-print flex items-center justify-between px-6 py-3 border-t border-slate-100">
+            <p className="text-sm text-slate-500">
+              Showing {pagination.rangeStart}–{pagination.rangeEnd} of {sorted.length}
+            </p>
+            {pagination.totalPages > 1 && (
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={!pagination.hasPrev}
+                  onClick={pagination.goPrev}
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" /> Previous
+                </button>
+                <span className="text-xs text-slate-500">
+                  Page {pagination.currentPage} of {pagination.totalPages}
+                </span>
+                <button
+                  disabled={!pagination.hasNext}
+                  onClick={pagination.goNext}
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Next <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

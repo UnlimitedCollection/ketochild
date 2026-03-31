@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef } from "react";
 import { usePrint } from "@/hooks/usePrint";
+import { usePagination } from "@/hooks/usePagination";
 import { PrintLayout } from "@/components/print-layout";
 import { PrintButton } from "@/components/print-button";
 import { useUpload } from "@workspace/object-storage-web";
@@ -42,7 +43,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2, Plus, Search, Pencil, Trash2, Flame, Apple, Eye, EyeOff, ImageUp, X } from "lucide-react";
+import { Loader2, Plus, Search, Pencil, Trash2, Flame, Apple, Eye, EyeOff, ImageUp, X, ChevronLeft, ChevronRight } from "lucide-react";
 
 type FoodFormData = {
   name: string;
@@ -122,6 +123,17 @@ export default function FoodsPage() {
       return matchesSearch && matchesCategory && matchesActive;
     });
   }, [foods, search, categoryFilter, showInactive]);
+
+  const pagination = usePagination({
+    totalItems: filteredFoods.length,
+    pageSize: 25,
+    resetDeps: [search, categoryFilter, showInactive],
+  });
+
+  const paginatedFoods = useMemo(
+    () => filteredFoods.slice(pagination.startIndex, pagination.endIndex),
+    [filteredFoods, pagination.startIndex, pagination.endIndex]
+  );
 
   const inactiveCount = useMemo(() => {
     if (!foods) return 0;
@@ -372,7 +384,7 @@ export default function FoodsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredFoods.map((food) => {
+                  {paginatedFoods.map((food) => {
                     const isInactive = food.isActive === false;
                     const categoryStyle: Record<string, string> = {
                       Carb:     "bg-green-50 text-green-700 border-green-200",
@@ -455,10 +467,33 @@ export default function FoodsPage() {
             </div>
           )}
           {filteredFoods.length > 0 && (
-            <p className="text-xs text-slate-400 mt-2">
-              Showing {filteredFoods.length} of {foods?.length ?? 0} foods
-              {!showInactive && inactiveCount > 0 && ` (${inactiveCount} inactive hidden)`}
-            </p>
+            <div className="flex items-center justify-between mt-3">
+              <p className="text-xs text-slate-400">
+                Showing {pagination.rangeStart}–{pagination.rangeEnd} of {filteredFoods.length} foods
+                {!showInactive && inactiveCount > 0 && ` (${inactiveCount} inactive hidden)`}
+              </p>
+              {pagination.totalPages > 1 && (
+                <div className="no-print flex items-center gap-2">
+                  <button
+                    disabled={!pagination.hasPrev}
+                    onClick={pagination.goPrev}
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" /> Previous
+                  </button>
+                  <span className="text-xs text-slate-500">
+                    Page {pagination.currentPage} of {pagination.totalPages}
+                  </span>
+                  <button
+                    disabled={!pagination.hasNext}
+                    onClick={pagination.goNext}
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Next <ChevronRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </CardContent>
       </Card>
