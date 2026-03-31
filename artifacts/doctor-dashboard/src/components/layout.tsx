@@ -161,7 +161,7 @@ function AppSidebar() {
           </div>
           <div className="overflow-hidden flex-1 min-w-0">
             <p className="text-sm font-bold text-slate-800 truncate">
-              {user?.name ? `Dr. ${user.name.split(" ").slice(-1)[0]}` : "Dr. Smith"}
+              {user?.name ? user.name.split(" ").slice(-1)[0] : "User"}
             </p>
             <div className="flex items-center gap-1.5 mt-0.5">
               <p className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold truncate">
@@ -352,7 +352,7 @@ function ProfileDropdown() {
             </div>
             <div className="overflow-hidden flex-1 min-w-0">
               <p className="text-sm font-bold text-slate-800 truncate">
-                {user?.name ? `Dr. ${user.name.split(" ").slice(-1)[0]}` : "Dr. Smith"}
+                {user?.name ? user.name.split(" ").slice(-1)[0] : "User"}
               </p>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <p className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold truncate">

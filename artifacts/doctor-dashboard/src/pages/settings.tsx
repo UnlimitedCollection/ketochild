@@ -159,7 +159,7 @@ export default function SettingsPage() {
           {initials}
         </div>
         <div>
-          <p className="text-lg font-bold text-slate-800">{user?.name ? `Dr. ${user.name}` : "—"}</p>
+          <p className="text-lg font-bold text-slate-800">{user?.name ?? "—"}</p>
           <p className="text-sm text-slate-500">{user?.email ?? "—"}</p>
           <p className="text-xs text-blue-600 font-semibold mt-0.5">{user?.designation ?? "No designation set"}</p>
         </div>
