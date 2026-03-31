@@ -1239,7 +1239,6 @@ export const GetLibraryMealPlansResponseItem = zod.object({
   doctorId: zod.number().optional(),
   name: zod.string(),
   description: zod.string().optional(),
-  targetPhase: zod.number().optional(),
   createdAt: zod.string().optional(),
   updatedAt: zod.string().optional(),
 });
@@ -1253,7 +1252,6 @@ export const GetLibraryMealPlansResponse = zod.array(
 export const CreateLibraryMealPlanBody = zod.object({
   name: zod.string(),
   description: zod.string().optional(),
-  targetPhase: zod.number().optional(),
 });
 
 /**
@@ -1268,7 +1266,6 @@ export const GetLibraryMealPlanResponse = zod.object({
   doctorId: zod.number().optional(),
   name: zod.string(),
   description: zod.string().optional(),
-  targetPhase: zod.number().optional(),
   createdAt: zod.string().optional(),
   updatedAt: zod.string().optional(),
   items: zod.array(
@@ -1298,7 +1295,6 @@ export const UpdateLibraryMealPlanParams = zod.object({
 export const UpdateLibraryMealPlanBody = zod.object({
   name: zod.string().optional(),
   description: zod.string().optional(),
-  targetPhase: zod.number().optional(),
 });
 
 export const UpdateLibraryMealPlanResponse = zod.object({
@@ -1306,7 +1302,6 @@ export const UpdateLibraryMealPlanResponse = zod.object({
   doctorId: zod.number().optional(),
   name: zod.string(),
   description: zod.string().optional(),
-  targetPhase: zod.number().optional(),
   createdAt: zod.string().optional(),
   updatedAt: zod.string().optional(),
 });
@@ -1369,7 +1364,6 @@ export const GetKidAssignedMealPlanResponse = zod.object({
   doctorId: zod.number().optional(),
   name: zod.string(),
   description: zod.string().optional(),
-  targetPhase: zod.number().optional(),
   createdAt: zod.string().optional(),
   updatedAt: zod.string().optional(),
   items: zod.array(

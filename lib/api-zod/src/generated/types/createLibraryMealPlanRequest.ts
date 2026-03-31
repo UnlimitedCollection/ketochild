@@ -9,5 +9,4 @@
 export interface CreateLibraryMealPlanRequest {
   name: string;
   description?: string;
-  targetPhase?: number;
 }

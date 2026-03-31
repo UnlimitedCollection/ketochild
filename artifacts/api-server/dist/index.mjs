@@ -39807,7 +39807,6 @@ var GetLibraryMealPlansResponseItem = objectType({
   doctorId: numberType().optional(),
   name: stringType(),
   description: stringType().optional(),
-  targetPhase: numberType().optional(),
   createdAt: stringType().optional(),
   updatedAt: stringType().optional()
 });
@@ -39816,8 +39815,7 @@ var GetLibraryMealPlansResponse = arrayType(
 );
 var CreateLibraryMealPlanBody = objectType({
   name: stringType(),
-  description: stringType().optional(),
-  targetPhase: numberType().optional()
+  description: stringType().optional()
 });
 var GetLibraryMealPlanParams = objectType({
   planId: coerce.number()
@@ -39827,7 +39825,6 @@ var GetLibraryMealPlanResponse = objectType({
   doctorId: numberType().optional(),
   name: stringType(),
   description: stringType().optional(),
-  targetPhase: numberType().optional(),
   createdAt: stringType().optional(),
   updatedAt: stringType().optional(),
   items: arrayType(
@@ -39851,15 +39848,13 @@ var UpdateLibraryMealPlanParams = objectType({
 });
 var UpdateLibraryMealPlanBody = objectType({
   name: stringType().optional(),
-  description: stringType().optional(),
-  targetPhase: numberType().optional()
+  description: stringType().optional()
 });
 var UpdateLibraryMealPlanResponse = objectType({
   id: numberType(),
   doctorId: numberType().optional(),
   name: stringType(),
   description: stringType().optional(),
-  targetPhase: numberType().optional(),
   createdAt: stringType().optional(),
   updatedAt: stringType().optional()
 });
@@ -39901,7 +39896,6 @@ var GetKidAssignedMealPlanResponse = objectType({
   doctorId: numberType().optional(),
   name: stringType(),
   description: stringType().optional(),
-  targetPhase: numberType().optional(),
   createdAt: stringType().optional(),
   updatedAt: stringType().optional(),
   items: arrayType(
@@ -58687,7 +58681,6 @@ var libraryMealPlansTable = pgTable("library_meal_plans", {
   doctorId: integer("doctor_id").references(() => doctorsTable.id),
   name: varchar("name", { length: 200 }).notNull(),
   description: text("description").default(""),
-  targetPhase: integer("target_phase"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
@@ -62099,9 +62092,7 @@ router7.get("/", async (req, res) => {
 router7.post("/", async (req, res) => {
   const doctorId = req.session.doctorId;
   try {
-    const body = { ...req.body };
-    if (body.targetPhase === null) delete body.targetPhase;
-    const parsed = CreateLibraryMealPlanBody.safeParse(body);
+    const parsed = CreateLibraryMealPlanBody.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: "INVALID_INPUT", message: parsed.error.message });
       return;
@@ -62109,23 +62100,11 @@ router7.post("/", async (req, res) => {
     const [plan] = await db.insert(libraryMealPlansTable).values({
       doctorId,
       name: parsed.data.name,
-      description: parsed.data.description ?? "",
-      targetPhase: parsed.data.targetPhase ?? null
+      description: parsed.data.description ?? ""
     }).returning();
     res.status(201).json(plan);
   } catch (err) {
     req.log.error({ err }, "Create library meal plan error");
-    res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
-  }
-});
-router7.get("/library", async (req, res) => {
-  const doctorId = req.session.doctorId;
-  const isPrivileged = req.session.doctorRole === "moderator" || req.session.doctorRole === "admin";
-  try {
-    const plans = isPrivileged ? await db.select().from(libraryMealPlansTable).orderBy(desc(libraryMealPlansTable.createdAt)) : await db.select().from(libraryMealPlansTable).where(eq(libraryMealPlansTable.doctorId, doctorId)).orderBy(desc(libraryMealPlansTable.createdAt));
-    res.json(plans);
-  } catch (err) {
-    req.log.error({ err }, "Get library meal plans error");
     res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
   }
 });
@@ -62156,9 +62135,7 @@ router7.put("/:planId", async (req, res) => {
       res.status(404).json({ error: "NOT_FOUND", message: "Meal plan not found" });
       return;
     }
-    const body = { ...req.body };
-    if (body.targetPhase === null) delete body.targetPhase;
-    const parsed = UpdateLibraryMealPlanBody.safeParse(body);
+    const parsed = UpdateLibraryMealPlanBody.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: "INVALID_INPUT", message: parsed.error.message });
       return;
@@ -62167,7 +62144,6 @@ router7.put("/:planId", async (req, res) => {
       ...parsed.data,
       updatedAt: /* @__PURE__ */ new Date()
     };
-    if (req.body.targetPhase === null) updateData.targetPhase = null;
     const [updated] = await db.update(libraryMealPlansTable).set(updateData).where(eq(libraryMealPlansTable.id, planId)).returning();
     res.json(updated);
   } catch (err) {

@@ -124,7 +124,6 @@ export const libraryMealPlansTable = pgTable("library_meal_plans", {
   doctorId: integer("doctor_id").references(() => doctorsTable.id),
   name: varchar("name", { length: 200 }).notNull(),
   description: text("description").default(""),
-  targetPhase: integer("target_phase"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

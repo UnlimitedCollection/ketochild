@@ -2053,7 +2053,7 @@ function MealPlanTab({ kidId }: { kidId: number }) {
                     <SelectItem value="none">No plan assigned</SelectItem>
                     {(libraryPlans ?? []).map((p) => (
                       <SelectItem key={p.id} value={String(p.id)}>
-                        {p.name}{p.targetPhase ? ` (Phase ${p.targetPhase})` : ""}
+                        {p.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -2098,9 +2098,6 @@ function MealPlanTab({ kidId }: { kidId: number }) {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base">{plan.name}</CardTitle>
-                {plan.targetPhase && (
-                  <Badge variant="outline">Phase {plan.targetPhase}</Badge>
-                )}
               </div>
               {plan.description && (
                 <CardDescription>{plan.description}</CardDescription>
@@ -2244,7 +2241,7 @@ function MealPlanPrintSection({ kidId }: { kidId: number }) {
 
   return (
     <div className="space-y-3">
-      <p className="text-sm font-semibold text-slate-700">{plan.name}{plan.targetPhase ? ` — Phase ${plan.targetPhase}` : ""}</p>
+      <p className="text-sm font-semibold text-slate-700">{plan.name}</p>
       {plan.description && <p className="text-xs text-slate-500">{plan.description}</p>}
       {mealTypeNames.map((mealTypeName) => {
         const items = getMealItems(mealTypeName);

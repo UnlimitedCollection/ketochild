@@ -196,148 +196,253 @@ async function seed() {
   const allMealTypes = await db.select().from(mealTypesTable);
   console.log(`Meal types seeded/verified: ${allMealTypes.length} total`);
 
-  // ── 4. Seed 5 library meal plans ───────────────────────────────────────────
+  // ── 4. Seed library meal plans ────────────────────────────────────────────
   const existingPlans = await db.select().from(libraryMealPlansTable).where(eq(libraryMealPlansTable.doctorId, doctorId));
   const existingPlanNames = new Set(existingPlans.map((p) => p.name));
-  if (existingPlanNames.size < 10) {
+  if (existingPlanNames.size < 20) {
+    const existingPlanIds = existingPlans.map((p) => p.id);
+    if (existingPlanIds.length > 0) {
+      await db.delete(libraryMealPlanItemsTable).where(inArray(libraryMealPlanItemsTable.planId, existingPlanIds));
+      await db.delete(libraryMealPlansTable).where(eq(libraryMealPlansTable.doctorId, doctorId));
+      existingPlanNames.clear();
+      console.log(`Removed ${existingPlanIds.length} existing library meal plans for deterministic reseed...`);
+    }
     const plans = [
       {
-        name: "Phase 1 Starter Plan",
+        name: "Gentle Starter Plan",
         description: "Gentle introduction to the ketogenic diet with 2:1 ratio. Ideal for newly diagnosed patients.",
-        targetPhase: 1,
         items: [
-          { mealType: "breakfast", foodName: "Scrambled Eggs with Butter",     portionGrams: 120, unit: "g", calories: 210, carbs: 1.2, fat: 18,   protein: 12 },
-          { mealType: "breakfast", foodName: "Heavy Cream",                     portionGrams: 30,  unit: "g", calories: 102, carbs: 1,   fat: 10.5, protein: 0.6 },
-          { mealType: "lunch",     foodName: "Chicken Breast with Avocado",     portionGrams: 150, unit: "g", calories: 290, carbs: 3,   fat: 20,   protein: 24 },
-          { mealType: "lunch",     foodName: "Broccoli with Butter",            portionGrams: 80,  unit: "g", calories: 85,  carbs: 4,   fat: 6,    protein: 2 },
-          { mealType: "dinner",    foodName: "Salmon with Cream Cheese",        portionGrams: 140, unit: "g", calories: 320, carbs: 2,   fat: 25,   protein: 22 },
-          { mealType: "dinner",    foodName: "Spinach Salad with Olive Oil",    portionGrams: 60,  unit: "g", calories: 70,  carbs: 1,   fat: 6,    protein: 1.5 },
-          { mealType: "breakfast", foodName: "Macadamia Nuts",                  portionGrams: 25,  unit: "g", calories: 180, carbs: 1.3, fat: 19,   protein: 2 },
+          { mealType: "Breakfast", foodName: "Scrambled Eggs with Butter",     portionGrams: 120, unit: "g", calories: 210, carbs: 1.2, fat: 18,   protein: 12 },
+          { mealType: "Breakfast", foodName: "Heavy Cream",                     portionGrams: 30,  unit: "g", calories: 102, carbs: 1,   fat: 10.5, protein: 0.6 },
+          { mealType: "Lunch",     foodName: "Chicken Breast with Avocado",     portionGrams: 150, unit: "g", calories: 290, carbs: 3,   fat: 20,   protein: 24 },
+          { mealType: "Lunch",     foodName: "Broccoli with Butter",            portionGrams: 80,  unit: "g", calories: 85,  carbs: 4,   fat: 6,    protein: 2 },
+          { mealType: "Dinner",    foodName: "Salmon with Cream Cheese",        portionGrams: 140, unit: "g", calories: 320, carbs: 2,   fat: 25,   protein: 22 },
+          { mealType: "Dinner",    foodName: "Spinach Salad with Olive Oil",    portionGrams: 60,  unit: "g", calories: 70,  carbs: 1,   fat: 6,    protein: 1.5 },
+          { mealType: "Breakfast", foodName: "Macadamia Nuts",                  portionGrams: 25,  unit: "g", calories: 180, carbs: 1.3, fat: 19,   protein: 2 },
         ],
       },
       {
-        name: "Phase 2 Classic Keto",
+        name: "Classic Keto 3:1",
         description: "Standard 3:1 ketogenic ratio. Balanced macros for children in stable keto therapy.",
-        targetPhase: 2,
         items: [
-          { mealType: "breakfast", foodName: "Eggs with Bacon and Butter",      portionGrams: 150, unit: "g", calories: 380, carbs: 1,   fat: 32,   protein: 22 },
-          { mealType: "breakfast", foodName: "Avocado",                         portionGrams: 60,  unit: "g", calories: 96,  carbs: 1.2, fat: 9,    protein: 1.2 },
-          { mealType: "lunch",     foodName: "Ground Beef with Cauliflower",    portionGrams: 180, unit: "g", calories: 350, carbs: 5,   fat: 28,   protein: 22 },
-          { mealType: "lunch",     foodName: "Cheddar Cheese",                  portionGrams: 30,  unit: "g", calories: 121, carbs: 0.4, fat: 10,   protein: 7.5 },
-          { mealType: "dinner",    foodName: "Chicken Thigh with Cream Sauce",  portionGrams: 200, unit: "g", calories: 420, carbs: 3,   fat: 34,   protein: 28 },
-          { mealType: "dinner",    foodName: "Zucchini with Olive Oil",         portionGrams: 100, unit: "g", calories: 50,  carbs: 3,   fat: 3.5,  protein: 1.2 },
-          { mealType: "breakfast", foodName: "Walnuts and Cream Cheese",        portionGrams: 40,  unit: "g", calories: 195, carbs: 2.8, fat: 18,   protein: 5 },
+          { mealType: "Breakfast", foodName: "Eggs with Bacon and Butter",      portionGrams: 150, unit: "g", calories: 380, carbs: 1,   fat: 32,   protein: 22 },
+          { mealType: "Breakfast", foodName: "Avocado",                         portionGrams: 60,  unit: "g", calories: 96,  carbs: 1.2, fat: 9,    protein: 1.2 },
+          { mealType: "Lunch",     foodName: "Ground Beef with Cauliflower",    portionGrams: 180, unit: "g", calories: 350, carbs: 5,   fat: 28,   protein: 22 },
+          { mealType: "Lunch",     foodName: "Cheddar Cheese",                  portionGrams: 30,  unit: "g", calories: 121, carbs: 0.4, fat: 10,   protein: 7.5 },
+          { mealType: "Dinner",    foodName: "Chicken Thigh with Cream Sauce",  portionGrams: 200, unit: "g", calories: 420, carbs: 3,   fat: 34,   protein: 28 },
+          { mealType: "Dinner",    foodName: "Zucchini with Olive Oil",         portionGrams: 100, unit: "g", calories: 50,  carbs: 3,   fat: 3.5,  protein: 1.2 },
+          { mealType: "Breakfast", foodName: "Walnuts and Cream Cheese",        portionGrams: 40,  unit: "g", calories: 195, carbs: 2.8, fat: 18,   protein: 5 },
         ],
       },
       {
-        name: "Phase 3 High Ratio",
+        name: "High Ratio 4:1",
         description: "Strict 4:1 ketogenic ratio for seizure control. Higher fat content for maximum ketosis.",
-        targetPhase: 3,
         items: [
-          { mealType: "breakfast", foodName: "Egg Yolks with MCT Oil",          portionGrams: 80,  unit: "g", calories: 310, carbs: 2.9, fat: 30,   protein: 9 },
-          { mealType: "breakfast", foodName: "Heavy Cream Smoothie",            portionGrams: 120, unit: "g", calories: 408, carbs: 4,   fat: 42,   protein: 2.5 },
-          { mealType: "lunch",     foodName: "Pork Belly with Spinach",         portionGrams: 120, unit: "g", calories: 480, carbs: 1,   fat: 45,   protein: 16 },
-          { mealType: "lunch",     foodName: "Avocado with Olive Oil",          portionGrams: 80,  unit: "g", calories: 210, carbs: 2,   fat: 20,   protein: 1.6 },
-          { mealType: "dinner",    foodName: "Salmon with Butter Sauce",        portionGrams: 150, unit: "g", calories: 420, carbs: 0.5, fat: 35,   protein: 28 },
-          { mealType: "dinner",    foodName: "Macadamia Nut Cream",             portionGrams: 50,  unit: "g", calories: 359, carbs: 2.5, fat: 38,   protein: 4 },
-          { mealType: "breakfast", foodName: "Coconut Oil Fat Bomb",            portionGrams: 30,  unit: "g", calories: 259, carbs: 0,   fat: 28,   protein: 0.5 },
+          { mealType: "Breakfast", foodName: "Egg Yolks with MCT Oil",          portionGrams: 80,  unit: "g", calories: 310, carbs: 2.9, fat: 30,   protein: 9 },
+          { mealType: "Breakfast", foodName: "Heavy Cream Smoothie",            portionGrams: 120, unit: "g", calories: 408, carbs: 4,   fat: 42,   protein: 2.5 },
+          { mealType: "Lunch",     foodName: "Pork Belly with Spinach",         portionGrams: 120, unit: "g", calories: 480, carbs: 1,   fat: 45,   protein: 16 },
+          { mealType: "Lunch",     foodName: "Avocado with Olive Oil",          portionGrams: 80,  unit: "g", calories: 210, carbs: 2,   fat: 20,   protein: 1.6 },
+          { mealType: "Dinner",    foodName: "Salmon with Butter Sauce",        portionGrams: 150, unit: "g", calories: 420, carbs: 0.5, fat: 35,   protein: 28 },
+          { mealType: "Dinner",    foodName: "Macadamia Nut Cream",             portionGrams: 50,  unit: "g", calories: 359, carbs: 2.5, fat: 38,   protein: 4 },
+          { mealType: "Breakfast", foodName: "Coconut Oil Fat Bomb",            portionGrams: 30,  unit: "g", calories: 259, carbs: 0,   fat: 28,   protein: 0.5 },
         ],
       },
       {
-        name: "Phase 4 Maintenance",
+        name: "Maintenance Plan",
         description: "Modified ketogenic diet for long-term maintenance. Allows slightly higher carbs.",
-        targetPhase: 4,
         items: [
-          { mealType: "breakfast", foodName: "Greek Yogurt with Berries",       portionGrams: 150, unit: "g", calories: 165, carbs: 12,  fat: 8,    protein: 14 },
-          { mealType: "breakfast", foodName: "Almond Butter with Eggs",         portionGrams: 100, unit: "g", calories: 280, carbs: 5,   fat: 22,   protein: 16 },
-          { mealType: "lunch",     foodName: "Tuna Salad with Avocado",         portionGrams: 200, unit: "g", calories: 340, carbs: 5,   fat: 24,   protein: 26 },
-          { mealType: "lunch",     foodName: "Mixed Greens with Olive Oil",     portionGrams: 80,  unit: "g", calories: 75,  carbs: 4,   fat: 6,    protein: 1.5 },
-          { mealType: "dinner",    foodName: "Beef Ribeye with Vegetables",     portionGrams: 180, unit: "g", calories: 520, carbs: 8,   fat: 38,   protein: 35 },
-          { mealType: "dinner",    foodName: "Broccoli with Cheddar",           portionGrams: 100, unit: "g", calories: 145, carbs: 5,   fat: 11,   protein: 7 },
-          { mealType: "breakfast", foodName: "Pecans and Raspberries",          portionGrams: 40,  unit: "g", calories: 200, carbs: 5,   fat: 18,   protein: 3 },
+          { mealType: "Breakfast", foodName: "Greek Yogurt with Berries",       portionGrams: 150, unit: "g", calories: 165, carbs: 12,  fat: 8,    protein: 14 },
+          { mealType: "Breakfast", foodName: "Almond Butter with Eggs",         portionGrams: 100, unit: "g", calories: 280, carbs: 5,   fat: 22,   protein: 16 },
+          { mealType: "Lunch",     foodName: "Tuna Salad with Avocado",         portionGrams: 200, unit: "g", calories: 340, carbs: 5,   fat: 24,   protein: 26 },
+          { mealType: "Lunch",     foodName: "Mixed Greens with Olive Oil",     portionGrams: 80,  unit: "g", calories: 75,  carbs: 4,   fat: 6,    protein: 1.5 },
+          { mealType: "Dinner",    foodName: "Beef Ribeye with Vegetables",     portionGrams: 180, unit: "g", calories: 520, carbs: 8,   fat: 38,   protein: 35 },
+          { mealType: "Dinner",    foodName: "Broccoli with Cheddar",           portionGrams: 100, unit: "g", calories: 145, carbs: 5,   fat: 11,   protein: 7 },
+          { mealType: "Breakfast", foodName: "Pecans and Raspberries",          portionGrams: 40,  unit: "g", calories: 200, carbs: 5,   fat: 18,   protein: 3 },
         ],
       },
       {
         name: "Anti-Seizure Intensive",
         description: "Modified Atkins approach with strict carb limits. Designed for drug-resistant epilepsy.",
-        targetPhase: null,
         items: [
-          { mealType: "breakfast", foodName: "Bacon and Eggs with Coconut Oil", portionGrams: 130, unit: "g", calories: 420, carbs: 0.7, fat: 38,   protein: 22 },
-          { mealType: "breakfast", foodName: "Flaxseed Keto Porridge",          portionGrams: 80,  unit: "g", calories: 200, carbs: 3,   fat: 16,   protein: 8 },
-          { mealType: "lunch",     foodName: "Duck with Cauliflower Mash",      portionGrams: 200, unit: "g", calories: 480, carbs: 6,   fat: 38,   protein: 28 },
-          { mealType: "lunch",     foodName: "Cream Cheese with Celery",        portionGrams: 80,  unit: "g", calories: 175, carbs: 2.4, fat: 16,   protein: 4 },
-          { mealType: "dinner",    foodName: "Lamb Chops with Herb Butter",     portionGrams: 180, unit: "g", calories: 530, carbs: 0,   fat: 42,   protein: 38 },
-          { mealType: "dinner",    foodName: "Asparagus with Parmesan",         portionGrams: 100, unit: "g", calories: 90,  carbs: 4,   fat: 5,    protein: 6 },
-          { mealType: "breakfast", foodName: "Hemp Seeds with Heavy Cream",     portionGrams: 45,  unit: "g", calories: 270, carbs: 1.5, fat: 24,   protein: 10 },
+          { mealType: "Breakfast", foodName: "Bacon and Eggs with Coconut Oil", portionGrams: 130, unit: "g", calories: 420, carbs: 0.7, fat: 38,   protein: 22 },
+          { mealType: "Breakfast", foodName: "Flaxseed Keto Porridge",          portionGrams: 80,  unit: "g", calories: 200, carbs: 3,   fat: 16,   protein: 8 },
+          { mealType: "Lunch",     foodName: "Duck with Cauliflower Mash",      portionGrams: 200, unit: "g", calories: 480, carbs: 6,   fat: 38,   protein: 28 },
+          { mealType: "Lunch",     foodName: "Cream Cheese with Celery",        portionGrams: 80,  unit: "g", calories: 175, carbs: 2.4, fat: 16,   protein: 4 },
+          { mealType: "Dinner",    foodName: "Lamb Chops with Herb Butter",     portionGrams: 180, unit: "g", calories: 530, carbs: 0,   fat: 42,   protein: 38 },
+          { mealType: "Dinner",    foodName: "Asparagus with Parmesan",         portionGrams: 100, unit: "g", calories: 90,  carbs: 4,   fat: 5,    protein: 6 },
+          { mealType: "Breakfast", foodName: "Hemp Seeds with Heavy Cream",     portionGrams: 45,  unit: "g", calories: 270, carbs: 1.5, fat: 24,   protein: 10 },
         ],
       },
       {
         name: "Vegetarian Keto Plan",
         description: "Plant-based ketogenic meal plan with no meat. Relies on eggs, cheese, nuts, and low-carb vegetables.",
-        targetPhase: 2,
         items: [
-          { mealType: "breakfast", foodName: "Scrambled Eggs with Cream Cheese",  portionGrams: 130, unit: "g", calories: 295, carbs: 2.1, fat: 24,   protein: 17 },
-          { mealType: "breakfast", foodName: "Avocado",                            portionGrams: 70,  unit: "g", calories: 112, carbs: 1.4, fat: 10.5, protein: 1.4 },
-          { mealType: "lunch",     foodName: "Macadamia Nuts",                    portionGrams: 30,  unit: "g", calories: 215, carbs: 1.5, fat: 22.8, protein: 2.4 },
-          { mealType: "lunch",     foodName: "Eggplant with Mozzarella",          portionGrams: 200, unit: "g", calories: 250, carbs: 9,   fat: 16,   protein: 12 },
-          { mealType: "lunch",     foodName: "Olive Oil Dressed Greens",          portionGrams: 80,  unit: "g", calories: 95,  carbs: 2.4, fat: 8.5,  protein: 1.2 },
-          { mealType: "dinner",    foodName: "Cauliflower with Cheddar Sauce",    portionGrams: 220, unit: "g", calories: 310, carbs: 9,   fat: 24,   protein: 14 },
-          { mealType: "dinner",    foodName: "Parmesan Roasted Asparagus",        portionGrams: 100, unit: "g", calories: 110, carbs: 4.5, fat: 7,    protein: 7 },
+          { mealType: "Breakfast", foodName: "Scrambled Eggs with Cream Cheese",  portionGrams: 130, unit: "g", calories: 295, carbs: 2.1, fat: 24,   protein: 17 },
+          { mealType: "Breakfast", foodName: "Avocado",                            portionGrams: 70,  unit: "g", calories: 112, carbs: 1.4, fat: 10.5, protein: 1.4 },
+          { mealType: "Lunch",     foodName: "Macadamia Nuts",                    portionGrams: 30,  unit: "g", calories: 215, carbs: 1.5, fat: 22.8, protein: 2.4 },
+          { mealType: "Lunch",     foodName: "Eggplant with Mozzarella",          portionGrams: 200, unit: "g", calories: 250, carbs: 9,   fat: 16,   protein: 12 },
+          { mealType: "Lunch",     foodName: "Olive Oil Dressed Greens",          portionGrams: 80,  unit: "g", calories: 95,  carbs: 2.4, fat: 8.5,  protein: 1.2 },
+          { mealType: "Dinner",    foodName: "Cauliflower with Cheddar Sauce",    portionGrams: 220, unit: "g", calories: 310, carbs: 9,   fat: 24,   protein: 14 },
+          { mealType: "Dinner",    foodName: "Parmesan Roasted Asparagus",        portionGrams: 100, unit: "g", calories: 110, carbs: 4.5, fat: 7,    protein: 7 },
         ],
       },
       {
         name: "Dairy-Free Keto Plan",
         description: "Ketogenic meal plan free from dairy. Uses coconut and avocado-based fats for ratio compliance.",
-        targetPhase: 2,
         items: [
-          { mealType: "breakfast", foodName: "Eggs Fried in Coconut Oil",         portionGrams: 120, unit: "g", calories: 290, carbs: 0.7, fat: 25,   protein: 15 },
-          { mealType: "breakfast", foodName: "Avocado",                            portionGrams: 80,  unit: "g", calories: 128, carbs: 1.6, fat: 12,   protein: 1.6 },
-          { mealType: "lunch",     foodName: "Walnuts",                           portionGrams: 25,  unit: "g", calories: 164, carbs: 1.8, fat: 16.3, protein: 3.8 },
-          { mealType: "lunch",     foodName: "Chicken Breast with Avocado Oil",   portionGrams: 160, unit: "g", calories: 320, carbs: 0,   fat: 22,   protein: 30 },
-          { mealType: "lunch",     foodName: "Kale Salad with Avocado",           portionGrams: 100, unit: "g", calories: 140, carbs: 4.4, fat: 10,   protein: 4.3 },
-          { mealType: "dinner",    foodName: "Salmon with Avocado Oil Drizzle",   portionGrams: 160, unit: "g", calories: 390, carbs: 0,   fat: 31,   protein: 29 },
-          { mealType: "dinner",    foodName: "Steamed Broccoli",                  portionGrams: 100, unit: "g", calories: 34,  carbs: 4,   fat: 0.4,  protein: 2.6 },
+          { mealType: "Breakfast", foodName: "Eggs Fried in Coconut Oil",         portionGrams: 120, unit: "g", calories: 290, carbs: 0.7, fat: 25,   protein: 15 },
+          { mealType: "Breakfast", foodName: "Avocado",                            portionGrams: 80,  unit: "g", calories: 128, carbs: 1.6, fat: 12,   protein: 1.6 },
+          { mealType: "Lunch",     foodName: "Walnuts",                           portionGrams: 25,  unit: "g", calories: 164, carbs: 1.8, fat: 16.3, protein: 3.8 },
+          { mealType: "Lunch",     foodName: "Chicken Breast with Avocado Oil",   portionGrams: 160, unit: "g", calories: 320, carbs: 0,   fat: 22,   protein: 30 },
+          { mealType: "Lunch",     foodName: "Kale Salad with Avocado",           portionGrams: 100, unit: "g", calories: 140, carbs: 4.4, fat: 10,   protein: 4.3 },
+          { mealType: "Dinner",    foodName: "Salmon with Avocado Oil Drizzle",   portionGrams: 160, unit: "g", calories: 390, carbs: 0,   fat: 31,   protein: 29 },
+          { mealType: "Dinner",    foodName: "Steamed Broccoli",                  portionGrams: 100, unit: "g", calories: 34,  carbs: 4,   fat: 0.4,  protein: 2.6 },
         ],
       },
       {
         name: "Toddler Keto Plan (Ages 1–3)",
         description: "Gentle ketogenic meal plan for very young children. Smaller portions, higher fat using cream and butter.",
-        targetPhase: 1,
         items: [
-          { mealType: "breakfast", foodName: "Soft Scrambled Eggs with Butter",   portionGrams: 80,  unit: "g", calories: 185, carbs: 0.6, fat: 16,   protein: 10 },
-          { mealType: "breakfast", foodName: "Heavy Cream",                        portionGrams: 20,  unit: "g", calories: 68,  carbs: 0.7, fat: 7,    protein: 0.4 },
-          { mealType: "breakfast", foodName: "Cream Cheese",                      portionGrams: 20,  unit: "g", calories: 68,  carbs: 0.8, fat: 6.6,  protein: 1.2 },
-          { mealType: "lunch",     foodName: "Pureed Cauliflower with Butter",    portionGrams: 100, unit: "g", calories: 110, carbs: 5,   fat: 8.1,  protein: 1.9 },
-          { mealType: "lunch",     foodName: "Flaked Salmon with Olive Oil",      portionGrams: 80,  unit: "g", calories: 200, carbs: 0,   fat: 15,   protein: 16 },
-          { mealType: "dinner",    foodName: "Ground Beef with Butter",           portionGrams: 80,  unit: "g", calories: 265, carbs: 0,   fat: 22,   protein: 15 },
-          { mealType: "dinner",    foodName: "Mashed Avocado",                    portionGrams: 50,  unit: "g", calories: 80,  carbs: 1,   fat: 7.5,  protein: 1 },
+          { mealType: "Breakfast", foodName: "Soft Scrambled Eggs with Butter",   portionGrams: 80,  unit: "g", calories: 185, carbs: 0.6, fat: 16,   protein: 10 },
+          { mealType: "Breakfast", foodName: "Heavy Cream",                        portionGrams: 20,  unit: "g", calories: 68,  carbs: 0.7, fat: 7,    protein: 0.4 },
+          { mealType: "Breakfast", foodName: "Cream Cheese",                      portionGrams: 20,  unit: "g", calories: 68,  carbs: 0.8, fat: 6.6,  protein: 1.2 },
+          { mealType: "Lunch",     foodName: "Pureed Cauliflower with Butter",    portionGrams: 100, unit: "g", calories: 110, carbs: 5,   fat: 8.1,  protein: 1.9 },
+          { mealType: "Lunch",     foodName: "Flaked Salmon with Olive Oil",      portionGrams: 80,  unit: "g", calories: 200, carbs: 0,   fat: 15,   protein: 16 },
+          { mealType: "Dinner",    foodName: "Ground Beef with Butter",           portionGrams: 80,  unit: "g", calories: 265, carbs: 0,   fat: 22,   protein: 15 },
+          { mealType: "Dinner",    foodName: "Mashed Avocado",                    portionGrams: 50,  unit: "g", calories: 80,  carbs: 1,   fat: 7.5,  protein: 1 },
         ],
       },
       {
         name: "Teen Active Keto Plan",
         description: "Higher calorie ketogenic plan for active teenagers. Supports growth while maintaining therapeutic ketosis.",
-        targetPhase: 2,
         items: [
-          { mealType: "breakfast", foodName: "Bacon, Eggs, and Avocado",          portionGrams: 200, unit: "g", calories: 490, carbs: 2,   fat: 42,   protein: 30 },
-          { mealType: "breakfast", foodName: "Greek Yogurt with Nuts",            portionGrams: 100, unit: "g", calories: 200, carbs: 5,   fat: 14,   protein: 12 },
-          { mealType: "lunch",     foodName: "Almond Butter and Celery",          portionGrams: 60,  unit: "g", calories: 200, carbs: 3.6, fat: 16,   protein: 6.5 },
-          { mealType: "lunch",     foodName: "Beef Ribeye Strips Salad",          portionGrams: 200, unit: "g", calories: 520, carbs: 4,   fat: 40,   protein: 35 },
-          { mealType: "lunch",     foodName: "Cheddar Cheese Block",              portionGrams: 40,  unit: "g", calories: 161, carbs: 0.5, fat: 13.2, protein: 10 },
-          { mealType: "dinner",    foodName: "Chicken Thigh with Cream Sauce",    portionGrams: 220, unit: "g", calories: 462, carbs: 3.3, fat: 37.4, protein: 30.8 },
-          { mealType: "dinner",    foodName: "Roasted Zucchini with Parmesan",   portionGrams: 120, unit: "g", calories: 130, carbs: 4.5, fat: 8,    protein: 6 },
+          { mealType: "Breakfast", foodName: "Bacon, Eggs, and Avocado",          portionGrams: 200, unit: "g", calories: 490, carbs: 2,   fat: 42,   protein: 30 },
+          { mealType: "Breakfast", foodName: "Greek Yogurt with Nuts",            portionGrams: 100, unit: "g", calories: 200, carbs: 5,   fat: 14,   protein: 12 },
+          { mealType: "Lunch",     foodName: "Almond Butter and Celery",          portionGrams: 60,  unit: "g", calories: 200, carbs: 3.6, fat: 16,   protein: 6.5 },
+          { mealType: "Lunch",     foodName: "Beef Ribeye Strips Salad",          portionGrams: 200, unit: "g", calories: 520, carbs: 4,   fat: 40,   protein: 35 },
+          { mealType: "Lunch",     foodName: "Cheddar Cheese Block",              portionGrams: 40,  unit: "g", calories: 161, carbs: 0.5, fat: 13.2, protein: 10 },
+          { mealType: "Dinner",    foodName: "Chicken Thigh with Cream Sauce",    portionGrams: 220, unit: "g", calories: 462, carbs: 3.3, fat: 37.4, protein: 30.8 },
+          { mealType: "Dinner",    foodName: "Roasted Zucchini with Parmesan",   portionGrams: 120, unit: "g", calories: 130, carbs: 4.5, fat: 8,    protein: 6 },
         ],
       },
       {
         name: "Snack-Rich Modified Atkins",
         description: "Modified Atkins approach with structured snacks for children who need frequent small meals throughout the day.",
-        targetPhase: null,
         items: [
-          { mealType: "breakfast", foodName: "Keto Egg Muffins",                 portionGrams: 120, unit: "g", calories: 280, carbs: 2,   fat: 22,   protein: 18 },
-          { mealType: "breakfast", foodName: "Macadamia Nuts",                   portionGrams: 20,  unit: "g", calories: 144, carbs: 1,   fat: 15.2, protein: 1.6 },
-          { mealType: "breakfast", foodName: "Cream Cheese",                     portionGrams: 20,  unit: "g", calories: 68,  carbs: 0.8, fat: 6.6,  protein: 1.2 },
-          { mealType: "lunch",     foodName: "Chicken Thigh with Spinach",       portionGrams: 180, unit: "g", calories: 350, carbs: 1.5, fat: 26,   protein: 27 },
-          { mealType: "lunch",     foodName: "Pumpkin Seeds with Olive Oil",     portionGrams: 25,  unit: "g", calories: 145, carbs: 0.8, fat: 12.3, protein: 7.5 },
-          { mealType: "dinner",    foodName: "Salmon with Butter and Broccoli",  portionGrams: 200, unit: "g", calories: 450, carbs: 4.4, fat: 34,   protein: 30 },
+          { mealType: "Breakfast", foodName: "Keto Egg Muffins",                 portionGrams: 120, unit: "g", calories: 280, carbs: 2,   fat: 22,   protein: 18 },
+          { mealType: "Breakfast", foodName: "Macadamia Nuts",                   portionGrams: 20,  unit: "g", calories: 144, carbs: 1,   fat: 15.2, protein: 1.6 },
+          { mealType: "Breakfast", foodName: "Cream Cheese",                     portionGrams: 20,  unit: "g", calories: 68,  carbs: 0.8, fat: 6.6,  protein: 1.2 },
+          { mealType: "Lunch",     foodName: "Chicken Thigh with Spinach",       portionGrams: 180, unit: "g", calories: 350, carbs: 1.5, fat: 26,   protein: 27 },
+          { mealType: "Lunch",     foodName: "Pumpkin Seeds with Olive Oil",     portionGrams: 25,  unit: "g", calories: 145, carbs: 0.8, fat: 12.3, protein: 7.5 },
+          { mealType: "Dinner",    foodName: "Salmon with Butter and Broccoli",  portionGrams: 200, unit: "g", calories: 450, carbs: 4.4, fat: 34,   protein: 30 },
+        ],
+      },
+      {
+        name: "Egg-Free Keto Plan",
+        description: "Designed for children with egg allergies. Relies on meats, fish, nuts, and healthy fats.",
+        items: [
+          { mealType: "Breakfast", foodName: "Bacon with Avocado",               portionGrams: 120, unit: "g", calories: 340, carbs: 1.5, fat: 30,   protein: 16 },
+          { mealType: "Breakfast", foodName: "Coconut Cream Smoothie",           portionGrams: 150, unit: "g", calories: 280, carbs: 3,   fat: 28,   protein: 2.5 },
+          { mealType: "Lunch",     foodName: "Turkey Meatballs with Butter",     portionGrams: 160, unit: "g", calories: 380, carbs: 2,   fat: 28,   protein: 30 },
+          { mealType: "Lunch",     foodName: "Cucumber with Cream Cheese",       portionGrams: 80,  unit: "g", calories: 95,  carbs: 2.5, fat: 8,    protein: 2 },
+          { mealType: "Dinner",    foodName: "Grilled Salmon with Herb Butter",  portionGrams: 150, unit: "g", calories: 380, carbs: 0,   fat: 28,   protein: 32 },
+          { mealType: "Dinner",    foodName: "Steamed Green Beans with Olive Oil", portionGrams: 100, unit: "g", calories: 65,  carbs: 4,  fat: 4,    protein: 2 },
+        ],
+      },
+      {
+        name: "Nut-Free Keto Plan",
+        description: "Safe for children with tree nut and peanut allergies. Uses seeds, dairy, and animal fats.",
+        items: [
+          { mealType: "Breakfast", foodName: "Scrambled Eggs with Cheese",       portionGrams: 130, unit: "g", calories: 310, carbs: 1.5, fat: 24,   protein: 22 },
+          { mealType: "Breakfast", foodName: "Butter and Heavy Cream",           portionGrams: 40,  unit: "g", calories: 180, carbs: 0.5, fat: 20,   protein: 0.5 },
+          { mealType: "Lunch",     foodName: "Chicken Drumstick with Butter",    portionGrams: 150, unit: "g", calories: 310, carbs: 0,   fat: 22,   protein: 28 },
+          { mealType: "Lunch",     foodName: "Avocado and Sunflower Seeds",      portionGrams: 90,  unit: "g", calories: 200, carbs: 3,   fat: 18,   protein: 4 },
+          { mealType: "Dinner",    foodName: "Beef Patty with Cheddar",          portionGrams: 180, unit: "g", calories: 440, carbs: 1,   fat: 34,   protein: 32 },
+          { mealType: "Dinner",    foodName: "Buttered Broccoli",                portionGrams: 100, unit: "g", calories: 85,  carbs: 4,   fat: 6,    protein: 2.5 },
+        ],
+      },
+      {
+        name: "MCT Oil Focus Plan",
+        description: "Emphasizes MCT oil supplementation for faster ketone production with lower overall fat requirement.",
+        items: [
+          { mealType: "Breakfast", foodName: "Eggs with MCT Oil",                portionGrams: 100, unit: "g", calories: 270, carbs: 1,   fat: 22,   protein: 13 },
+          { mealType: "Breakfast", foodName: "Cream Cheese on Cucumber",         portionGrams: 80,  unit: "g", calories: 120, carbs: 2,   fat: 10,   protein: 3 },
+          { mealType: "Lunch",     foodName: "Tuna with MCT Oil Dressing",       portionGrams: 150, unit: "g", calories: 300, carbs: 1,   fat: 22,   protein: 26 },
+          { mealType: "Lunch",     foodName: "Spinach with Olive Oil",           portionGrams: 80,  unit: "g", calories: 65,  carbs: 1.5, fat: 5.5,  protein: 2 },
+          { mealType: "Dinner",    foodName: "Chicken with MCT Cream Sauce",     portionGrams: 180, unit: "g", calories: 390, carbs: 2,   fat: 30,   protein: 28 },
+          { mealType: "Dinner",    foodName: "Cauliflower Mash with Butter",     portionGrams: 120, unit: "g", calories: 110, carbs: 5,   fat: 8,    protein: 2 },
+        ],
+      },
+      {
+        name: "Low Calorie Keto Plan",
+        description: "Calorie-restricted ketogenic plan for overweight children. Maintains ketosis with controlled portions.",
+        items: [
+          { mealType: "Breakfast", foodName: "Boiled Egg with Avocado",          portionGrams: 100, unit: "g", calories: 180, carbs: 1.5, fat: 14,   protein: 10 },
+          { mealType: "Breakfast", foodName: "Cucumber Slices",                  portionGrams: 50,  unit: "g", calories: 8,   carbs: 1.8, fat: 0.1,  protein: 0.3 },
+          { mealType: "Lunch",     foodName: "Grilled Chicken Breast",           portionGrams: 120, unit: "g", calories: 190, carbs: 0,   fat: 8,    protein: 28 },
+          { mealType: "Lunch",     foodName: "Mixed Salad with Olive Oil",       portionGrams: 100, unit: "g", calories: 80,  carbs: 3,   fat: 6,    protein: 1.5 },
+          { mealType: "Dinner",    foodName: "White Fish with Lemon Butter",     portionGrams: 140, unit: "g", calories: 200, carbs: 0.5, fat: 12,   protein: 24 },
+          { mealType: "Dinner",    foodName: "Steamed Asparagus",                portionGrams: 80,  unit: "g", calories: 20,  carbs: 2,   fat: 0.2,  protein: 2.2 },
+        ],
+      },
+      {
+        name: "High Protein Keto Plan",
+        description: "Higher protein ketogenic plan for children needing muscle support. Protein slightly elevated while maintaining ketosis.",
+        items: [
+          { mealType: "Breakfast", foodName: "Egg White Omelet with Cheese",     portionGrams: 150, unit: "g", calories: 240, carbs: 1.5, fat: 16,   protein: 24 },
+          { mealType: "Breakfast", foodName: "Turkey Sausage",                   portionGrams: 60,  unit: "g", calories: 120, carbs: 0.5, fat: 8,    protein: 12 },
+          { mealType: "Lunch",     foodName: "Grilled Chicken with Avocado",     portionGrams: 200, unit: "g", calories: 380, carbs: 3,   fat: 24,   protein: 38 },
+          { mealType: "Lunch",     foodName: "Cottage Cheese",                   portionGrams: 80,  unit: "g", calories: 80,  carbs: 3,   fat: 4,    protein: 10 },
+          { mealType: "Dinner",    foodName: "Beef Steak with Butter",           portionGrams: 180, unit: "g", calories: 460, carbs: 0,   fat: 32,   protein: 42 },
+          { mealType: "Dinner",    foodName: "Steamed Broccoli",                 portionGrams: 100, unit: "g", calories: 34,  carbs: 4,   fat: 0.4,  protein: 2.6 },
+        ],
+      },
+      {
+        name: "Mediterranean Keto Plan",
+        description: "Mediterranean-inspired ketogenic diet rich in olive oil, fish, and fresh vegetables.",
+        items: [
+          { mealType: "Breakfast", foodName: "Feta Cheese Omelet",               portionGrams: 140, unit: "g", calories: 280, carbs: 2,   fat: 22,   protein: 18 },
+          { mealType: "Breakfast", foodName: "Olives",                           portionGrams: 30,  unit: "g", calories: 35,  carbs: 1.1, fat: 3.3,  protein: 0.2 },
+          { mealType: "Lunch",     foodName: "Grilled Sardines with Olive Oil",  portionGrams: 150, unit: "g", calories: 320, carbs: 0,   fat: 22,   protein: 28 },
+          { mealType: "Lunch",     foodName: "Tomato and Cucumber Salad",        portionGrams: 100, unit: "g", calories: 45,  carbs: 5,   fat: 2,    protein: 1.5 },
+          { mealType: "Dinner",    foodName: "Lamb with Herb Olive Oil",         portionGrams: 160, unit: "g", calories: 420, carbs: 0,   fat: 32,   protein: 34 },
+          { mealType: "Dinner",    foodName: "Roasted Zucchini with Feta",       portionGrams: 120, unit: "g", calories: 95,  carbs: 4,   fat: 6.5,  protein: 4 },
+        ],
+      },
+      {
+        name: "Ketogenic Smoothie Plan",
+        description: "Smoothie-based ketogenic plan for children who have difficulty eating solid foods.",
+        items: [
+          { mealType: "Breakfast", foodName: "Avocado Cocoa Smoothie",           portionGrams: 200, unit: "g", calories: 320, carbs: 6,   fat: 28,   protein: 6 },
+          { mealType: "Breakfast", foodName: "Cream Cheese Bites",               portionGrams: 40,  unit: "g", calories: 136, carbs: 1.6, fat: 13.2, protein: 2.4 },
+          { mealType: "Lunch",     foodName: "Coconut Cream Berry Smoothie",     portionGrams: 200, unit: "g", calories: 290, carbs: 8,   fat: 26,   protein: 3 },
+          { mealType: "Lunch",     foodName: "Hard Boiled Egg",                  portionGrams: 50,  unit: "g", calories: 78,  carbs: 0.6, fat: 5.3,  protein: 6.3 },
+          { mealType: "Dinner",    foodName: "Chicken Bone Broth with Butter",   portionGrams: 250, unit: "g", calories: 180, carbs: 1,   fat: 14,   protein: 12 },
+          { mealType: "Dinner",    foodName: "MCT Oil Vanilla Shake",            portionGrams: 150, unit: "g", calories: 260, carbs: 2,   fat: 28,   protein: 1 },
+        ],
+      },
+      {
+        name: "School Day Keto Plan",
+        description: "Designed for school-aged children with easy-to-pack lunch options and quick breakfast meals.",
+        items: [
+          { mealType: "Breakfast", foodName: "Cheese Roll-Ups with Bacon",       portionGrams: 100, unit: "g", calories: 320, carbs: 1,   fat: 26,   protein: 20 },
+          { mealType: "Breakfast", foodName: "Cream Cheese",                     portionGrams: 25,  unit: "g", calories: 85,  carbs: 1,   fat: 8.3,  protein: 1.5 },
+          { mealType: "Lunch",     foodName: "Turkey and Cheese Lettuce Wraps",  portionGrams: 150, unit: "g", calories: 280, carbs: 2,   fat: 20,   protein: 24 },
+          { mealType: "Lunch",     foodName: "Celery with Almond Butter",        portionGrams: 60,  unit: "g", calories: 130, carbs: 3,   fat: 10,   protein: 4 },
+          { mealType: "Dinner",    foodName: "Baked Chicken Thigh",              portionGrams: 160, unit: "g", calories: 340, carbs: 0,   fat: 24,   protein: 30 },
+          { mealType: "Dinner",    foodName: "Cauliflower with Cheese Sauce",    portionGrams: 120, unit: "g", calories: 140, carbs: 5,   fat: 10,   protein: 6 },
+        ],
+      },
+      {
+        name: "Weekend Treat Keto Plan",
+        description: "Slightly more varied weekend plan with keto-friendly treats. Great for maintaining compliance on weekends.",
+        items: [
+          { mealType: "Breakfast", foodName: "Keto Pancakes with Butter",        portionGrams: 120, unit: "g", calories: 310, carbs: 4,   fat: 26,   protein: 16 },
+          { mealType: "Breakfast", foodName: "Sugar-Free Whipped Cream",         portionGrams: 30,  unit: "g", calories: 50,  carbs: 0.5, fat: 5,    protein: 0.3 },
+          { mealType: "Lunch",     foodName: "Cheeseburger Lettuce Wrap",        portionGrams: 200, unit: "g", calories: 450, carbs: 3,   fat: 34,   protein: 32 },
+          { mealType: "Lunch",     foodName: "Avocado Fries (baked)",            portionGrams: 80,  unit: "g", calories: 160, carbs: 3,   fat: 14,   protein: 2 },
+          { mealType: "Dinner",    foodName: "Pizza Chicken (cheese-topped)",    portionGrams: 180, unit: "g", calories: 380, carbs: 3,   fat: 24,   protein: 36 },
+          { mealType: "Dinner",    foodName: "Keto Chocolate Fat Bomb",          portionGrams: 30,  unit: "g", calories: 200, carbs: 2,   fat: 20,   protein: 2 },
         ],
       },
     ];
@@ -349,7 +454,6 @@ async function seed() {
         doctorId,
         name: plan.name,
         description: plan.description,
-        targetPhase: plan.targetPhase,
       }).returning();
 
       for (const item of plan.items) {
@@ -361,9 +465,9 @@ async function seed() {
       }
       newPlanCount++;
     }
-    console.log(`Library meal plans seeded: ${newPlanCount} new (${existingPlans.length + newPlanCount} total)`);
+    console.log(`Library meal plans seeded: ${newPlanCount} new (${newPlanCount} total)`);
   } else {
-    console.log(`Library meal plans already seeded (${existingPlans.length} found, >= 10), skipping.`);
+    console.log(`Library meal plans already seeded (${existingPlans.length} found, >= 20), skipping.`);
   }
 
   // ── 5. Deterministic 30 unique kids ───────────────────────────────────────

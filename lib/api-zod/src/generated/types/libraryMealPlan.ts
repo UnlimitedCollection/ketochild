@@ -11,7 +11,6 @@ export interface LibraryMealPlan {
   doctorId?: number;
   name: string;
   description?: string;
-  targetPhase?: number;
   createdAt?: string;
   updatedAt?: string;
 }

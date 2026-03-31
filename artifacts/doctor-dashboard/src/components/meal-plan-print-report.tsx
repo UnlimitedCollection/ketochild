@@ -71,9 +71,6 @@ export function MealPlanPrintReport({ onReady, filterIds }: Props) {
             <div className="flex items-start justify-between mb-1 border-b border-slate-200 pb-2">
               <div>
                 <h3 className="text-base font-bold text-slate-900">{plan.name}</h3>
-                {plan.targetPhase && (
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Phase {plan.targetPhase}</span>
-                )}
                 {plan.description && (
                   <p className="text-xs text-slate-500 mt-0.5">{plan.description}</p>
                 )}

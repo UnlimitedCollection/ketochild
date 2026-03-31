@@ -103,9 +103,9 @@ export default function MealPlansPage() {
 
   const paginatedPlans = filtered.slice(pagination.startIndex, pagination.endIndex);
 
-  function handleCreate(name: string, description: string, targetPhase: number | null) {
+  function handleCreate(name: string, description: string) {
     createPlan.mutate(
-      { data: { name, description, targetPhase: targetPhase ?? undefined } },
+      { data: { name, description } },
       {
         onSuccess: (plan) => {
           queryClient.invalidateQueries({ queryKey: getGetLibraryMealPlansQueryKey() });
@@ -118,9 +118,9 @@ export default function MealPlansPage() {
     );
   }
 
-  function handleUpdate(planId: number, name: string, description: string, targetPhase: number | null) {
+  function handleUpdate(planId: number, name: string, description: string) {
     updatePlan.mutate(
-      { planId, data: { name, description, targetPhase: targetPhase ?? undefined } },
+      { planId, data: { name, description } },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetLibraryMealPlansQueryKey() });
@@ -362,9 +362,6 @@ export default function MealPlansPage() {
                         {plan.description && (
                           <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{plan.description}</p>
                         )}
-                        {plan.targetPhase && (
-                          <Badge variant="outline" className="mt-1.5 text-xs">Phase {plan.targetPhase}</Badge>
-                        )}
                       </div>
                       <div className="no-print flex gap-1 shrink-0">
                         {canWrite && (
@@ -462,9 +459,6 @@ export default function MealPlansPage() {
                         <CardDescription className="mt-0.5">{planDetail.description}</CardDescription>
                       )}
                     </div>
-                    {planDetail.targetPhase && (
-                      <Badge variant="outline">Phase {planDetail.targetPhase}</Badge>
-                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0">
@@ -584,10 +578,10 @@ export default function MealPlansPage() {
         <PlanFormDialog
           open={!!editPlan}
           onClose={() => setEditPlan(null)}
-          onSubmit={(name, desc, phase) => handleUpdate(editPlan.id, name, desc, phase)}
+          onSubmit={(name, desc) => handleUpdate(editPlan.id, name, desc)}
           isPending={updatePlan.isPending}
           title="Edit Meal Plan"
-          initialValues={{ name: editPlan.name, description: editPlan.description ?? "", targetPhase: editPlan.targetPhase ?? null }}
+          initialValues={{ name: editPlan.name, description: editPlan.description ?? "" }}
         />
       )}
 
@@ -686,9 +680,6 @@ function MealPlanDetailDialog({
         <div className="flex items-start justify-between px-6 py-4 border-b border-slate-100">
           <div>
             <h2 className="text-base font-bold text-slate-900">{plan.name}</h2>
-            {plan.targetPhase && (
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Phase {plan.targetPhase}</span>
-            )}
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 mt-0.5">
             <X className="h-5 w-5" />
@@ -780,23 +771,20 @@ function PlanFormDialog({
 }: {
   open: boolean;
   onClose: () => void;
-  onSubmit: (name: string, description: string, targetPhase: number | null) => void;
+  onSubmit: (name: string, description: string) => void;
   isPending: boolean;
   title: string;
-  initialValues?: { name: string; description: string; targetPhase: number | null };
+  initialValues?: { name: string; description: string };
 }) {
   const [name, setName] = useState(initialValues?.name ?? "");
   const [description, setDescription] = useState(initialValues?.description ?? "");
-  const [phase, setPhase] = useState<string>(initialValues?.targetPhase?.toString() ?? "none");
 
-  // Reset form state when dialog opens or initialValues change (handles create vs edit transitions)
   useEffect(() => {
     if (open) {
       setName(initialValues?.name ?? "");
       setDescription(initialValues?.description ?? "");
-      setPhase(initialValues?.targetPhase?.toString() ?? "none");
     }
-  }, [open, initialValues?.name, initialValues?.description, initialValues?.targetPhase]);
+  }, [open, initialValues?.name, initialValues?.description]);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -808,7 +796,7 @@ function PlanFormDialog({
           <div className="space-y-1.5">
             <Label>Plan Name *</Label>
             <Input
-              placeholder="e.g. Phase 2 Keto Starter"
+              placeholder="e.g. Classic Keto Starter"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="rounded-xl"
@@ -826,25 +814,11 @@ function PlanFormDialog({
             />
             <p className="text-xs text-slate-400 text-right">{description.length} / 1000</p>
           </div>
-          <div className="space-y-1.5">
-            <Label>Target Phase</Label>
-            <Select value={phase} onValueChange={setPhase}>
-              <SelectTrigger className="rounded-xl">
-                <SelectValue placeholder="Any phase" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Any phase</SelectItem>
-                {[1, 2, 3, 4].map((p) => (
-                  <SelectItem key={p} value={String(p)}>Phase {p}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
         </div>
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button
-            onClick={() => onSubmit(name, description, phase === "none" ? null : parseInt(phase, 10))}
+            onClick={() => onSubmit(name, description)}
             disabled={!name.trim() || isPending}
           >
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

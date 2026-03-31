@@ -2730,8 +2730,6 @@ components:
           type: string
         description:
           type: string
-        targetPhase:
-          type: integer
         createdAt:
           type: string
         updatedAt:
@@ -2784,8 +2782,6 @@ components:
           type: string
         description:
           type: string
-        targetPhase:
-          type: integer
         createdAt:
           type: string
         updatedAt:
@@ -2806,8 +2802,6 @@ components:
           type: string
         description:
           type: string
-        targetPhase:
-          type: integer
       required:
         - name
 
@@ -2818,8 +2812,6 @@ components:
           type: string
         description:
           type: string
-        targetPhase:
-          type: integer
 
     AddLibraryMealPlanItemRequest:
       type: object

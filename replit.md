@@ -124,7 +124,7 @@ Tables:
 - `weight_records` — Weight measurements over time
 - `meal_days` — Daily meal completion records
 - `notes` — Private doctor notes per kid
-- `library_meal_plans` — Doctor-scoped reusable meal plan library (name, description, targetPhase). Intentionally named `library_*` to distinguish from legacy per-kid `meal_plans` table. Each plan belongs to one doctor (doctorId FK) and can be assigned to multiple kids.
+- `library_meal_plans` — Doctor-scoped reusable meal plan library (name, description). Intentionally named `library_*` to distinguish from legacy per-kid `meal_plans` table. Each plan belongs to one doctor (doctorId FK) and can be assigned to multiple kids.
 - `library_meal_plan_items` — Food items per library meal plan (mealType, foodName, portionGrams, macros). Companion table for `library_meal_plans`.
 
 **Table naming note**: the legacy per-kid `meal_plans` / `meal_plan_items` tables still exist for backwards compatibility with the original per-kid meal tracking. The new `library_*` tables implement the reusable doctor-level plan library feature added in Task 5.

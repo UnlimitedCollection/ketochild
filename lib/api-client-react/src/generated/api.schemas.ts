@@ -515,7 +515,6 @@ export interface LibraryMealPlan {
   doctorId?: number;
   name: string;
   description?: string;
-  targetPhase?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -539,7 +538,6 @@ export interface LibraryMealPlanDetail {
   doctorId?: number;
   name: string;
   description?: string;
-  targetPhase?: number;
   createdAt?: string;
   updatedAt?: string;
   items: LibraryMealPlanItem[];
@@ -548,13 +546,11 @@ export interface LibraryMealPlanDetail {
 export interface CreateLibraryMealPlanRequest {
   name: string;
   description?: string;
-  targetPhase?: number;
 }
 
 export interface UpdateLibraryMealPlanRequest {
   name?: string;
   description?: string;
-  targetPhase?: number;
 }
 
 export interface AddLibraryMealPlanItemRequest {

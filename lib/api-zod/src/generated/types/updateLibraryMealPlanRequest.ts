@@ -9,5 +9,4 @@
 export interface UpdateLibraryMealPlanRequest {
   name?: string;
   description?: string;
-  targetPhase?: number;
 }

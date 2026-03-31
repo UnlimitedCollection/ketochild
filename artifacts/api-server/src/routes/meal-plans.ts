@@ -39,9 +39,7 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   const doctorId = req.session.doctorId!;
   try {
-    const body = { ...req.body };
-    if (body.targetPhase === null) delete body.targetPhase;
-    const parsed = CreateLibraryMealPlanBody.safeParse(body);
+    const parsed = CreateLibraryMealPlanBody.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: "INVALID_INPUT", message: parsed.error.message });
       return;
@@ -52,7 +50,6 @@ router.post("/", async (req, res) => {
         doctorId,
         name: parsed.data.name,
         description: parsed.data.description ?? "",
-        targetPhase: parsed.data.targetPhase ?? null,
       })
       .returning();
     res.status(201).json(plan);
@@ -62,19 +59,6 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.get("/library", async (req, res) => {
-  const doctorId = req.session.doctorId!;
-  const isPrivileged = req.session.doctorRole === "moderator" || req.session.doctorRole === "admin";
-  try {
-    const plans = isPrivileged
-      ? await db.select().from(libraryMealPlansTable).orderBy(desc(libraryMealPlansTable.createdAt))
-      : await db.select().from(libraryMealPlansTable).where(eq(libraryMealPlansTable.doctorId, doctorId)).orderBy(desc(libraryMealPlansTable.createdAt));
-    res.json(plans);
-  } catch (err) {
-    req.log.error({ err }, "Get library meal plans error");
-    res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
-  }
-});
 
 router.get("/:planId", async (req, res) => {
   const doctorId = req.session.doctorId!;
@@ -108,9 +92,7 @@ router.put("/:planId", async (req, res) => {
       res.status(404).json({ error: "NOT_FOUND", message: "Meal plan not found" });
       return;
     }
-    const body = { ...req.body };
-    if (body.targetPhase === null) delete body.targetPhase;
-    const parsed = UpdateLibraryMealPlanBody.safeParse(body);
+    const parsed = UpdateLibraryMealPlanBody.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: "INVALID_INPUT", message: parsed.error.message });
       return;
@@ -119,7 +101,6 @@ router.put("/:planId", async (req, res) => {
       ...parsed.data,
       updatedAt: new Date(),
     };
-    if (req.body.targetPhase === null) updateData.targetPhase = null;
     const [updated] = await db
       .update(libraryMealPlansTable)
       .set(updateData)
