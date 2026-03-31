@@ -1,7 +1,8 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { usePrint } from "@/hooks/usePrint";
 import { PrintLayout } from "@/components/print-layout";
 import { PrintButton } from "@/components/print-button";
+import { PrintFilterDialog, type PrintFilterResult } from "@/components/print-filter-dialog";
 import { useParams, Link, useLocation } from "wouter";
 import { useGetKid, useAddWeightRecord, useUpdateKidMedical, useUpdateKid, useDeleteKid, useGetKidMealHistory, useGetKidKetoneReadings, useAddKetoneReading, useDeleteKetoneReading, useGetKidMealLogs, useAddMealLog, useDeleteMealLog, useGetKidMealLog, useGetKidAssignedMealPlan, useAssignKidMealPlan, useGetLibraryMealPlans, useGetFoods, useGetKidFoodApprovals, useUpsertKidFoodApproval, useUpdateMealLogImage, getGetKidAssignedMealPlanQueryKey, useListMealTypes, type LibraryMealPlanDetail, type LibraryMealPlanItem, type FoodApproval, type MedicalSettingsRequest, type UpdateKidRequest } from "@workspace/api-client-react";
 import { useUpload } from "@workspace/object-storage-web";
@@ -42,6 +43,25 @@ export default function KidProfilePage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { printRef, handlePrint, isPrinting, onDataReady, cancelPrint } = usePrint("Patient Report", true);
+  const [printFilterOpen, setPrintFilterOpen] = useState(false);
+  const [printSections, setPrintSections] = useState<Set<string>>(new Set());
+  const [printDateRange, setPrintDateRange] = useState<{ start: string; end: string } | undefined>();
+
+  const PROFILE_PRINT_SECTIONS = useMemo(() => [
+    { id: "weight", label: "Weight History", defaultChecked: true },
+    { id: "medical", label: "Medical Controls", defaultChecked: true },
+    { id: "meals", label: "Meal History", defaultChecked: true },
+    { id: "ketone", label: "Ketone Readings", defaultChecked: true },
+    { id: "mealplan", label: "Meal Plan", defaultChecked: true },
+    { id: "compliance", label: "Compliance Calendar", defaultChecked: true },
+    { id: "foods", label: "Approved Foods", defaultChecked: true },
+  ], []);
+
+  const handlePrintFilterConfirm = useCallback((result: PrintFilterResult) => {
+    setPrintSections(new Set(result.selectedIds));
+    setPrintDateRange(result.dateRange);
+    handlePrint();
+  }, [handlePrint]);
 
   const canWrite = useCanWrite();
 
@@ -97,6 +117,16 @@ export default function KidProfilePage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <PrintFilterDialog
+        open={printFilterOpen}
+        onOpenChange={setPrintFilterOpen}
+        title="Print Patient Report"
+        description="Choose which sections and date range to include in the printed report."
+        options={PROFILE_PRINT_SECTIONS}
+        showDateRange
+        onConfirm={handlePrintFilterConfirm}
+      />
+
       {/* Header Profile Card */}
       <div className="flex flex-col lg:flex-row gap-6">
         <Card className="flex-1 rounded-2xl border-slate-200 shadow-sm overflow-hidden bg-white">
@@ -125,7 +155,7 @@ export default function KidProfilePage() {
                       <button onClick={cancelPrint} className="text-slate-400 hover:text-slate-600 underline underline-offset-2">Cancel</button>
                     </span>
                   )}
-                  <PrintButton onPrint={handlePrint} />
+                  <PrintButton onPrint={() => setPrintFilterOpen(true)} />
                   <Button size="sm" variant="outline" className="no-print rounded-lg gap-1.5 text-primary border-primary/30 hover:bg-primary/5" onClick={() => setLocation(`/kids/${kidId}/analytics`)}>
                     <LineChartIcon className="h-3.5 w-3.5" /> Analysis
                   </Button>
@@ -304,52 +334,88 @@ export default function KidProfilePage() {
         </TabsContent>
       </Tabs>
 
-      {/* Print-only section: only mounted when printing to avoid background query overhead */}
       {isPrinting && (
         <div className="hidden print-section space-y-6">
-          {/* Overview: Weight History Table */}
-          <hr className="border-slate-300 my-4" />
-          <h2 className="text-lg font-bold text-slate-800">Weight History</h2>
-          {recentWeights.length === 0 ? (
-            <p className="text-sm text-slate-400 italic">No weight records.</p>
-          ) : (
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="bg-slate-100">
-                  <th className="text-left py-1.5 px-3 font-semibold text-slate-600">Date</th>
-                  <th className="text-right py-1.5 px-3 font-semibold text-slate-600">Weight (kg)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[...recentWeights].reverse().map((w, i) => (
-                  <tr key={i} className="border-b border-slate-100">
-                    <td className="py-1.5 px-3 text-slate-700">{w.date}</td>
-                    <td className="py-1.5 px-3 text-right text-slate-700">{w.weight}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {printDateRange && (printDateRange.start || printDateRange.end) && (
+            <p className="text-xs text-slate-500 italic">
+              Date range: {printDateRange.start || "—"} to {printDateRange.end || "—"}
+            </p>
           )}
-
-          <hr className="border-slate-300 my-4" />
-          <h2 className="text-lg font-bold text-slate-800">Medical Controls</h2>
-          <MedicalSummaryPrint data={medical} />
-          <hr className="border-slate-300 my-4" />
-          <h2 className="text-lg font-bold text-slate-800">Meal History</h2>
-          <MealHistoryTab kidId={kidId} medical={medical} />
-          <hr className="border-slate-300 my-4" />
-          <h2 className="text-lg font-bold text-slate-800">Ketone Readings</h2>
-          <KetoneTab kidId={kidId} />
-          <hr className="border-slate-300 my-4" />
-          <h2 className="text-lg font-bold text-slate-800">Assigned Meal Plan</h2>
-          <MealPlanPrintSection kidId={kidId} />
-          <hr className="border-slate-300 my-4" />
-          <h2 className="text-lg font-bold text-slate-800">Compliance Calendar</h2>
-          <ComplianceTab kidId={kidId} />
-          <hr className="border-slate-300 my-4" />
-          <h2 className="text-lg font-bold text-slate-800">Approved Foods</h2>
-          <ApprovedFoodsPrintSection kidId={kidId} />
-          {/* Signals print readiness once all print-section queries have settled */}
+          {printSections.has("weight") && (
+            <>
+              <hr className="border-slate-300 my-4" />
+              <h2 className="text-lg font-bold text-slate-800">Weight History</h2>
+              {(() => {
+                const filtered = printDateRange ? recentWeights.filter((w) => {
+                  if (printDateRange.start && w.date < printDateRange.start) return false;
+                  if (printDateRange.end && w.date > printDateRange.end) return false;
+                  return true;
+                }) : recentWeights;
+                return filtered.length === 0 ? (
+                  <p className="text-sm text-slate-400 italic">No weight records.</p>
+                ) : (
+                  <table className="w-full text-sm border-collapse">
+                    <thead>
+                      <tr className="bg-slate-100">
+                        <th className="text-left py-1.5 px-3 font-semibold text-slate-600">Date</th>
+                        <th className="text-right py-1.5 px-3 font-semibold text-slate-600">Weight (kg)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[...filtered].reverse().map((w, i) => (
+                        <tr key={i} className="border-b border-slate-100">
+                          <td className="py-1.5 px-3 text-slate-700">{w.date}</td>
+                          <td className="py-1.5 px-3 text-right text-slate-700">{w.weight}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                );
+              })()}
+            </>
+          )}
+          {printSections.has("medical") && (
+            <>
+              <hr className="border-slate-300 my-4" />
+              <h2 className="text-lg font-bold text-slate-800">Medical Controls</h2>
+              <MedicalSummaryPrint data={medical} />
+            </>
+          )}
+          {printSections.has("meals") && (
+            <>
+              <hr className="border-slate-300 my-4" />
+              <h2 className="text-lg font-bold text-slate-800">Meal History</h2>
+              <MealHistoryTab kidId={kidId} medical={medical} />
+            </>
+          )}
+          {printSections.has("ketone") && (
+            <>
+              <hr className="border-slate-300 my-4" />
+              <h2 className="text-lg font-bold text-slate-800">Ketone Readings</h2>
+              <KetoneTab kidId={kidId} />
+            </>
+          )}
+          {printSections.has("mealplan") && (
+            <>
+              <hr className="border-slate-300 my-4" />
+              <h2 className="text-lg font-bold text-slate-800">Assigned Meal Plan</h2>
+              <MealPlanPrintSection kidId={kidId} />
+            </>
+          )}
+          {printSections.has("compliance") && (
+            <>
+              <hr className="border-slate-300 my-4" />
+              <h2 className="text-lg font-bold text-slate-800">Compliance Calendar</h2>
+              <ComplianceTab kidId={kidId} />
+            </>
+          )}
+          {printSections.has("foods") && (
+            <>
+              <hr className="border-slate-300 my-4" />
+              <h2 className="text-lg font-bold text-slate-800">Approved Foods</h2>
+              <ApprovedFoodsPrintSection kidId={kidId} />
+            </>
+          )}
           <PrintReadySignal kidId={kidId} onReady={onDataReady} />
         </div>
       )}

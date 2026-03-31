@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { PrintButton } from "@/components/print-button";
 import { RecipePrintReport } from "@/components/recipe-print-report";
 import { usePrint } from "@/hooks/usePrint";
 import { usePagination } from "@/hooks/usePagination";
 import { PrintLayout } from "@/components/print-layout";
+import { PrintFilterDialog, type PrintFilterResult } from "@/components/print-filter-dialog";
 import {
   useListRecipes,
   useCreateRecipe,
@@ -604,6 +605,18 @@ export default function RecipesPage() {
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const { printRef, handlePrint, isPrinting, onDataReady, printError, cancelPrint } = usePrint("Recipe Library Report", true);
+  const [printFilterOpen, setPrintFilterOpen] = useState(false);
+  const [selectedPrintRecipeIds, setSelectedPrintRecipeIds] = useState<number[]>([]);
+
+  const printOptions = useMemo(
+    () => (recipes ?? []).map((r) => ({ id: String(r.id), label: r.name, defaultChecked: true })),
+    [recipes]
+  );
+
+  const handlePrintFilterConfirm = useCallback((result: PrintFilterResult) => {
+    setSelectedPrintRecipeIds(result.selectedIds.map(Number));
+    handlePrint();
+  }, [handlePrint]);
 
   const { data: editRecipe } = useGetRecipe(editId ?? 0, {
     query: { enabled: editId !== null },
@@ -633,7 +646,7 @@ export default function RecipesPage() {
   const pagination = usePagination({
     totalItems: sorted.length,
     pageSize: 25,
-    resetDeps: [search, filterCat],
+    resetDeps: [search],
   });
 
   const paginatedRecipes = sorted.slice(pagination.startIndex, pagination.endIndex);
@@ -663,7 +676,7 @@ export default function RecipesPage() {
               <button onClick={cancelPrint} className="text-slate-400 hover:text-slate-600 underline underline-offset-2">Cancel</button>
             </span>
           )}
-          <PrintButton onPrint={handlePrint} />
+          <PrintButton onPrint={() => setPrintFilterOpen(true)} />
           {canWrite && (
             <button
               onClick={() => { setEditId(null); setShowForm(true); }}
@@ -675,6 +688,15 @@ export default function RecipesPage() {
           )}
         </div>
       </div>
+
+      <PrintFilterDialog
+        open={printFilterOpen}
+        onOpenChange={setPrintFilterOpen}
+        title="Print Recipes"
+        description="Select which recipes to include in the report."
+        options={printOptions}
+        onConfirm={handlePrintFilterConfirm}
+      />
 
       <div className="no-print grid grid-cols-1 sm:grid-cols-2 gap-4">
         {[
@@ -842,12 +864,11 @@ export default function RecipesPage() {
         />
       )}
 
-      {/* Print-only: full recipe report with all recipes and their ingredients (only mounted when printing) */}
       {isPrinting && (
         <div className="hidden print-section">
           <hr className="border-slate-300 my-6" />
-          <h2 className="text-lg font-bold text-slate-800 mb-4">Full Recipe Details</h2>
-          <RecipePrintReport onReady={onDataReady} />
+          <h2 className="text-lg font-bold text-slate-800 mb-4">Recipe Report</h2>
+          <RecipePrintReport onReady={onDataReady} filterIds={selectedPrintRecipeIds} />
         </div>
       )}
 

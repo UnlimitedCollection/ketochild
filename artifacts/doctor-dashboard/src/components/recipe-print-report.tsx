@@ -6,11 +6,15 @@ import { useEffect } from "react";
 type ReadyStatus = "loading" | "ready" | "error";
 interface Props {
   onReady?: (status: ReadyStatus, error?: string) => void;
+  filterIds?: number[];
 }
 
-export function RecipePrintReport({ onReady }: Props) {
-  const { data: recipes, isLoading: listLoading, isError: listError } = useListRecipes();
+export function RecipePrintReport({ onReady, filterIds }: Props) {
+  const { data: allRecipes, isLoading: listLoading, isError: listError } = useListRecipes();
 
+  const recipes = filterIds && filterIds.length > 0
+    ? (allRecipes ?? []).filter((r) => filterIds.includes(r.id))
+    : allRecipes;
   const ids = recipes?.map((r) => r.id) ?? [];
 
   const detailQueries = useQueries({

@@ -1,8 +1,9 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { PrintButton } from "@/components/print-button";
 import { MealPlanPrintReport } from "@/components/meal-plan-print-report";
 import { usePrint } from "@/hooks/usePrint";
 import { PrintLayout } from "@/components/print-layout";
+import { PrintFilterDialog, type PrintFilterResult } from "@/components/print-filter-dialog";
 import {
   useGetLibraryMealPlans,
   useCreateLibraryMealPlan,
@@ -175,6 +176,18 @@ export default function MealPlansPage() {
 
   const canWrite = useCanWrite();
   const { printRef, handlePrint, isPrinting, onDataReady, printError, cancelPrint } = usePrint("Meal Plans Report", true);
+  const [printFilterOpen, setPrintFilterOpen] = useState(false);
+  const [selectedPrintPlanIds, setSelectedPrintPlanIds] = useState<number[]>([]);
+
+  const printOptions = useMemo(
+    () => (plans ?? []).map((p) => ({ id: String(p.id), label: p.name, defaultChecked: true })),
+    [plans]
+  );
+
+  const handlePrintFilterConfirm = useCallback((result: PrintFilterResult) => {
+    setSelectedPrintPlanIds(result.selectedIds.map(Number));
+    handlePrint();
+  }, [handlePrint]);
 
   const getMealItems = (mt: string): LibraryMealPlanItem[] =>
     planDetail?.items?.filter((i) => i.mealType.toLowerCase() === mt.toLowerCase()) ?? [];
@@ -215,7 +228,7 @@ export default function MealPlansPage() {
               <button onClick={cancelPrint} className="text-slate-400 hover:text-slate-600 underline underline-offset-2">Cancel</button>
             </span>
           )}
-          <PrintButton onPrint={handlePrint} />
+          <PrintButton onPrint={() => setPrintFilterOpen(true)} />
           {canWrite && (
             <Button onClick={() => setCreateOpen(true)} className="no-print gap-2 shadow-sm">
               <Plus className="h-4 w-4" />
@@ -224,6 +237,15 @@ export default function MealPlansPage() {
           )}
         </div>
       </div>
+
+      <PrintFilterDialog
+        open={printFilterOpen}
+        onOpenChange={setPrintFilterOpen}
+        title="Print Meal Plans"
+        description="Select which meal plans to include in the report."
+        options={printOptions}
+        onConfirm={handlePrintFilterConfirm}
+      />
 
       {/* Stats Row */}
       <div className="no-print grid grid-cols-2 gap-4 max-w-sm">
@@ -532,12 +554,11 @@ export default function MealPlansPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Print-only: all meal plans with their items and nutritional totals (only mounted when printing) */}
       {isPrinting && (
         <div className="hidden print-section">
           <hr className="border-slate-300 my-6" />
-          <h2 className="text-lg font-bold text-slate-800 mb-4">All Meal Plans — Full Report</h2>
-          <MealPlanPrintReport onReady={onDataReady} />
+          <h2 className="text-lg font-bold text-slate-800 mb-4">Meal Plans Report</h2>
+          <MealPlanPrintReport onReady={onDataReady} filterIds={selectedPrintPlanIds} />
         </div>
       )}
     </PrintLayout>

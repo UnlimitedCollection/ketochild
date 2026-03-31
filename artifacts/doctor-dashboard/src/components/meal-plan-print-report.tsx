@@ -6,11 +6,15 @@ import { useEffect } from "react";
 type ReadyStatus = "loading" | "ready" | "error";
 interface Props {
   onReady?: (status: ReadyStatus, error?: string) => void;
+  filterIds?: number[];
 }
 
-export function MealPlanPrintReport({ onReady }: Props) {
-  const { data: plans, isLoading: listLoading, isError: listError } = useGetLibraryMealPlans();
+export function MealPlanPrintReport({ onReady, filterIds }: Props) {
+  const { data: allPlans, isLoading: listLoading, isError: listError } = useGetLibraryMealPlans();
 
+  const plans = filterIds && filterIds.length > 0
+    ? (allPlans ?? []).filter((p) => filterIds.includes(p.id))
+    : allPlans;
   const ids = plans?.map((p) => p.id) ?? [];
 
   const detailQueries = useQueries({
