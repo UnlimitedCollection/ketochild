@@ -6,11 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface CreateMealTypeRequest {
-  /**
-   * @minLength 1
-   * @maxLength 100
-   */
+export interface MealTypeRecipeRef {
+  id: number;
   name: string;
-  recipeIds?: number[];
 }

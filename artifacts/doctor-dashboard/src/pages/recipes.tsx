@@ -40,9 +40,6 @@ const GREEN = "#0a7c42";
 const RED   = "#ae0010";
 const AMBER = "#855300";
 
-const CATEGORIES = [
-  "Breakfast", "Lunch", "Dinner", "Dessert", "Smoothie", "Sauce", "Other",
-];
 
 interface IngredientRow {
   foodName: string;
@@ -179,7 +176,6 @@ function RecipeForm({
 
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
-  const [category, setCategory] = useState(initial?.category ?? "");
   const [imageUrl, setImageUrl] = useState(initial?.imageUrl ?? "");
   const [imagePreview, setImagePreview] = useState<string | null>(
     initial?.imageUrl ? `/api/storage${initial.imageUrl}` : null
@@ -207,7 +203,6 @@ function RecipeForm({
     if (initial && !initialLoaded) {
       setName(initial.name ?? "");
       setDescription(initial.description ?? "");
-      setCategory(initial.category ?? "");
       setImageUrl(initial.imageUrl ?? "");
       setImagePreview(initial.imageUrl ? `/api/storage${initial.imageUrl}` : null);
       setIngredients(
@@ -254,7 +249,6 @@ function RecipeForm({
     const payload = {
       name: name.trim(),
       description: description.trim() || undefined,
-      category: category.trim() || undefined,
       imageUrl: imageUrl,
       ingredients: ingPayload,
     };
@@ -297,29 +291,14 @@ function RecipeForm({
 
         <div className="overflow-y-auto flex-1 px-6 py-4">
           <form id="recipe-form" onSubmit={handleSubmit} className="space-y-5">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Recipe Name*</label>
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Keto Egg Muffins"
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Category</label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white"
-                >
-                  <option value="">Select…</option>
-                  {CATEGORIES.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Recipe Name*</label>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Keto Egg Muffins"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-300"
+              />
             </div>
 
             <div>
@@ -544,9 +523,6 @@ function RecipeDetailPanel({
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <div>
             <h2 className="text-base font-bold text-slate-900">{recipe.name}</h2>
-            {recipe.category && (
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">{recipe.category}</span>
-            )}
           </div>
           <div className="flex items-center gap-2">
             {canWrite && (
@@ -627,7 +603,6 @@ export default function RecipesPage() {
   const [viewId, setViewId] = useState<number | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   const [search, setSearch] = useState("");
-  const [filterCat, setFilterCat] = useState("");
   const { printRef, handlePrint, isPrinting, onDataReady, printError, cancelPrint } = usePrint("Recipe Library Report", true);
 
   const { data: editRecipe } = useGetRecipe(editId ?? 0, {
@@ -647,12 +622,8 @@ export default function RecipesPage() {
     });
   };
 
-  const categories = Array.from(new Set((recipes ?? []).map((r) => r.category).filter(Boolean))) as string[];
-
   const filtered = (recipes ?? []).filter((r) => {
-    const matchSearch = !search || r.name.toLowerCase().includes(search.toLowerCase());
-    const matchCat = !filterCat || r.category === filterCat;
-    return matchSearch && matchCat;
+    return !search || r.name.toLowerCase().includes(search.toLowerCase());
   });
 
   const sorted = [...filtered].sort((a, b) =>
@@ -705,10 +676,9 @@ export default function RecipesPage() {
         </div>
       </div>
 
-      <div className="no-print grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="no-print grid grid-cols-1 sm:grid-cols-2 gap-4">
         {[
           { label: "Total Recipes",  value: (recipes ?? []).length,      color: BLUE  },
-          { label: "Categories",     value: categories.length,            color: GREEN },
           { label: "Avg Ingredients",
             value: (recipes ?? []).length
               ? Math.round((recipes ?? []).reduce((s, r) => s + ((r as RecipeDetail).ingredients?.length ?? 0), 0) / (recipes ?? []).length)
@@ -738,16 +708,6 @@ export default function RecipesPage() {
             placeholder="Search recipes…"
             className="flex-1 min-w-48 border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
           />
-          <select
-            value={filterCat}
-            onChange={(e) => setFilterCat(e.target.value)}
-            className="border border-slate-200 rounded-xl px-3.5 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-300 text-slate-700"
-          >
-            <option value="">All categories</option>
-            {categories.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
         </div>
 
         {isLoading ? (
@@ -758,9 +718,9 @@ export default function RecipesPage() {
           <div className="flex flex-col items-center justify-center py-16 text-slate-400 gap-3">
             <ChefHat className="h-10 w-10 opacity-30" />
             <p className="text-sm font-medium">
-              {search || filterCat ? "No recipes match your filters" : "No recipes yet"}
+              {search ? "No recipes match your search" : "No recipes yet"}
             </p>
-            {!search && !filterCat && (
+            {!search && (
               <p className="text-xs">Click "New Recipe" to create your first one</p>
             )}
           </div>
@@ -789,10 +749,6 @@ export default function RecipesPage() {
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-slate-900 truncate">{r.name}</p>
                   <div className="flex items-center gap-3 mt-0.5">
-                    {r.category && (
-                      <span className="text-xs font-medium text-slate-400">{r.category}</span>
-                    )}
-                    <span className="text-xs text-slate-300">•</span>
                     <span className="text-xs text-slate-400">
                       {(r as RecipeDetail).ingredients?.length ?? 0} ingredients
                     </span>

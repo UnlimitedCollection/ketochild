@@ -1,17 +1,60 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { mealTypesTable } from "@workspace/db";
-import { eq, asc } from "drizzle-orm";
+import { mealTypesTable, mealTypeRecipesTable, recipesTable } from "@workspace/db";
+import { eq, asc, inArray } from "drizzle-orm";
 
 const router: IRouter = Router();
 
+async function getMealTypesWithRecipes() {
+  const types = await db
+    .select()
+    .from(mealTypesTable)
+    .orderBy(asc(mealTypesTable.id));
+
+  if (types.length === 0) return [];
+
+  const links = await db
+    .select({
+      mealTypeId: mealTypeRecipesTable.mealTypeId,
+      recipeId: recipesTable.id,
+      recipeName: recipesTable.name,
+    })
+    .from(mealTypeRecipesTable)
+    .innerJoin(recipesTable, eq(mealTypeRecipesTable.recipeId, recipesTable.id));
+
+  const recipesByMealType = new Map<number, { id: number; name: string }[]>();
+  for (const link of links) {
+    const arr = recipesByMealType.get(link.mealTypeId) ?? [];
+    arr.push({ id: link.recipeId, name: link.recipeName });
+    recipesByMealType.set(link.mealTypeId, arr);
+  }
+
+  return types.map((t) => ({
+    ...t,
+    recipes: recipesByMealType.get(t.id) ?? [],
+  }));
+}
+
+async function syncRecipes(mealTypeId: number, recipeIds: number[]) {
+  await db.delete(mealTypeRecipesTable).where(eq(mealTypeRecipesTable.mealTypeId, mealTypeId));
+  if (recipeIds.length > 0) {
+    const existing = await db
+      .select({ id: recipesTable.id })
+      .from(recipesTable)
+      .where(inArray(recipesTable.id, recipeIds));
+    const validIds = existing.map((r) => r.id);
+    if (validIds.length > 0) {
+      await db.insert(mealTypeRecipesTable).values(
+        validIds.map((rid) => ({ mealTypeId, recipeId: rid }))
+      );
+    }
+  }
+}
+
 router.get("/", async (req, res) => {
   try {
-    const types = await db
-      .select()
-      .from(mealTypesTable)
-      .orderBy(asc(mealTypesTable.id));
-    res.json(types);
+    const result = await getMealTypesWithRecipes();
+    res.json(result);
   } catch (err) {
     req.log.error({ err }, "List meal types error");
     res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
@@ -20,7 +63,7 @@ router.get("/", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, recipeIds } = req.body;
     if (!name || typeof name !== "string" || !name.trim()) {
       res.status(400).json({ error: "INVALID_INPUT", message: "Name is required" });
       return;
@@ -29,7 +72,21 @@ router.post("/", async (req, res) => {
       .insert(mealTypesTable)
       .values({ name: name.trim() })
       .returning();
-    res.status(201).json(created);
+
+    if (Array.isArray(recipeIds)) {
+      await syncRecipes(created.id, recipeIds);
+    }
+
+    const links = await db
+      .select({ recipeId: recipesTable.id, recipeName: recipesTable.name })
+      .from(mealTypeRecipesTable)
+      .innerJoin(recipesTable, eq(mealTypeRecipesTable.recipeId, recipesTable.id))
+      .where(eq(mealTypeRecipesTable.mealTypeId, created.id));
+
+    res.status(201).json({
+      ...created,
+      recipes: links.map((l) => ({ id: l.recipeId, name: l.recipeName })),
+    });
   } catch (err) {
     const dbErr = err as { code?: string };
     if (dbErr?.code === "23505") {
@@ -48,7 +105,7 @@ router.put("/:id", async (req, res) => {
       res.status(400).json({ error: "INVALID_INPUT", message: "Invalid meal type ID" });
       return;
     }
-    const { name } = req.body;
+    const { name, recipeIds } = req.body;
     if (!name || typeof name !== "string" || !name.trim()) {
       res.status(400).json({ error: "INVALID_INPUT", message: "Name is required" });
       return;
@@ -62,7 +119,21 @@ router.put("/:id", async (req, res) => {
       res.status(404).json({ error: "NOT_FOUND", message: "Meal type not found" });
       return;
     }
-    res.json(updated);
+
+    if (Array.isArray(recipeIds)) {
+      await syncRecipes(id, recipeIds);
+    }
+
+    const links = await db
+      .select({ recipeId: recipesTable.id, recipeName: recipesTable.name })
+      .from(mealTypeRecipesTable)
+      .innerJoin(recipesTable, eq(mealTypeRecipesTable.recipeId, recipesTable.id))
+      .where(eq(mealTypeRecipesTable.mealTypeId, id));
+
+    res.json({
+      ...updated,
+      recipes: links.map((l) => ({ id: l.recipeId, name: l.recipeName })),
+    });
   } catch (err) {
     const dbErr = err as { code?: string };
     if (dbErr?.code === "23505") {

@@ -39614,24 +39614,38 @@ var DeleteRecipeIngredientResponse = objectType({
 var ListMealTypesResponseItem = objectType({
   id: numberType(),
   name: stringType(),
-  createdAt: dateType()
+  createdAt: dateType(),
+  recipes: arrayType(
+    objectType({
+      id: numberType(),
+      name: stringType()
+    })
+  )
 });
 var ListMealTypesResponse = arrayType(ListMealTypesResponseItem);
 var createMealTypeBodyNameMax = 100;
 var CreateMealTypeBody = objectType({
-  name: stringType().min(1).max(createMealTypeBodyNameMax)
+  name: stringType().min(1).max(createMealTypeBodyNameMax),
+  recipeIds: arrayType(numberType()).optional()
 });
 var UpdateMealTypeParams = objectType({
   id: coerce.number()
 });
 var updateMealTypeBodyNameMax = 100;
 var UpdateMealTypeBody = objectType({
-  name: stringType().min(1).max(updateMealTypeBodyNameMax)
+  name: stringType().min(1).max(updateMealTypeBodyNameMax),
+  recipeIds: arrayType(numberType()).optional()
 });
 var UpdateMealTypeResponse = objectType({
   id: numberType(),
   name: stringType(),
-  createdAt: dateType()
+  createdAt: dateType(),
+  recipes: arrayType(
+    objectType({
+      id: numberType(),
+      name: stringType()
+    })
+  )
 });
 var DeleteMealTypeParams = objectType({
   id: coerce.number()
@@ -43067,6 +43081,12 @@ function check(name, value) {
 }
 
 // ../../node_modules/.pnpm/drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/drizzle-orm/pg-core/primary-keys.js
+function primaryKey(...config2) {
+  if (config2[0].columns) {
+    return new PrimaryKeyBuilder(config2[0].columns, config2[0].name);
+  }
+  return new PrimaryKeyBuilder(config2);
+}
 var PrimaryKeyBuilder = class {
   static [entityKind] = "PgPrimaryKeyBuilder";
   /** @internal */
@@ -43425,19 +43445,19 @@ function extractTablesRelationalConfig(schema, configHelpers) {
       const relations2 = value.config(
         configHelpers(value.table)
       );
-      let primaryKey;
+      let primaryKey2;
       for (const [relationName, relation] of Object.entries(relations2)) {
         if (tableName) {
           const tableConfig = tablesConfig[tableName];
           tableConfig.relations[relationName] = relation;
-          if (primaryKey) {
-            tableConfig.primaryKey.push(...primaryKey);
+          if (primaryKey2) {
+            tableConfig.primaryKey.push(...primaryKey2);
           }
         } else {
           if (!(dbName in relationsBuffer)) {
             relationsBuffer[dbName] = {
               relations: {},
-              primaryKey
+              primaryKey: primaryKey2
             };
           }
           relationsBuffer[dbName].relations[relationName] = relation;
@@ -47121,6 +47141,7 @@ __export(schema_exports, {
   mealLogsTable: () => mealLogsTable,
   mealPlanItemsTable: () => mealPlanItemsTable,
   mealPlansTable: () => mealPlansTable,
+  mealTypeRecipesTable: () => mealTypeRecipesTable,
   mealTypesTable: () => mealTypesTable,
   medicalSettingsTable: () => medicalSettingsTable,
   notesTable: () => notesTable,
@@ -58746,6 +58767,12 @@ var mealTypesTable = pgTable("meal_types", {
   name: varchar("name", { length: 100 }).notNull().unique(),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
+var mealTypeRecipesTable = pgTable("meal_type_recipes", {
+  mealTypeId: integer("meal_type_id").notNull().references(() => mealTypesTable.id, { onDelete: "cascade" }),
+  recipeId: integer("recipe_id").notNull().references(() => recipesTable.id, { onDelete: "cascade" })
+}, (t) => [
+  primaryKey({ columns: [t.mealTypeId, t.recipeId] })
+]);
 
 // ../../lib/db/src/index.ts
 var { Pool: Pool3 } = esm_default;
@@ -62946,10 +62973,41 @@ var recipes_default = router10;
 // src/routes/meal-types.ts
 var import_express11 = __toESM(require_express2(), 1);
 var router11 = (0, import_express11.Router)();
+async function getMealTypesWithRecipes() {
+  const types3 = await db.select().from(mealTypesTable).orderBy(asc(mealTypesTable.id));
+  if (types3.length === 0) return [];
+  const links = await db.select({
+    mealTypeId: mealTypeRecipesTable.mealTypeId,
+    recipeId: recipesTable.id,
+    recipeName: recipesTable.name
+  }).from(mealTypeRecipesTable).innerJoin(recipesTable, eq(mealTypeRecipesTable.recipeId, recipesTable.id));
+  const recipesByMealType = /* @__PURE__ */ new Map();
+  for (const link of links) {
+    const arr = recipesByMealType.get(link.mealTypeId) ?? [];
+    arr.push({ id: link.recipeId, name: link.recipeName });
+    recipesByMealType.set(link.mealTypeId, arr);
+  }
+  return types3.map((t) => ({
+    ...t,
+    recipes: recipesByMealType.get(t.id) ?? []
+  }));
+}
+async function syncRecipes(mealTypeId, recipeIds) {
+  await db.delete(mealTypeRecipesTable).where(eq(mealTypeRecipesTable.mealTypeId, mealTypeId));
+  if (recipeIds.length > 0) {
+    const existing = await db.select({ id: recipesTable.id }).from(recipesTable).where(inArray(recipesTable.id, recipeIds));
+    const validIds = existing.map((r) => r.id);
+    if (validIds.length > 0) {
+      await db.insert(mealTypeRecipesTable).values(
+        validIds.map((rid) => ({ mealTypeId, recipeId: rid }))
+      );
+    }
+  }
+}
 router11.get("/", async (req, res) => {
   try {
-    const types3 = await db.select().from(mealTypesTable).orderBy(asc(mealTypesTable.id));
-    res.json(types3);
+    const result = await getMealTypesWithRecipes();
+    res.json(result);
   } catch (err) {
     req.log.error({ err }, "List meal types error");
     res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
@@ -62957,13 +63015,20 @@ router11.get("/", async (req, res) => {
 });
 router11.post("/", async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, recipeIds } = req.body;
     if (!name || typeof name !== "string" || !name.trim()) {
       res.status(400).json({ error: "INVALID_INPUT", message: "Name is required" });
       return;
     }
     const [created] = await db.insert(mealTypesTable).values({ name: name.trim() }).returning();
-    res.status(201).json(created);
+    if (Array.isArray(recipeIds)) {
+      await syncRecipes(created.id, recipeIds);
+    }
+    const links = await db.select({ recipeId: recipesTable.id, recipeName: recipesTable.name }).from(mealTypeRecipesTable).innerJoin(recipesTable, eq(mealTypeRecipesTable.recipeId, recipesTable.id)).where(eq(mealTypeRecipesTable.mealTypeId, created.id));
+    res.status(201).json({
+      ...created,
+      recipes: links.map((l) => ({ id: l.recipeId, name: l.recipeName }))
+    });
   } catch (err) {
     const dbErr = err;
     if (dbErr?.code === "23505") {
@@ -62981,7 +63046,7 @@ router11.put("/:id", async (req, res) => {
       res.status(400).json({ error: "INVALID_INPUT", message: "Invalid meal type ID" });
       return;
     }
-    const { name } = req.body;
+    const { name, recipeIds } = req.body;
     if (!name || typeof name !== "string" || !name.trim()) {
       res.status(400).json({ error: "INVALID_INPUT", message: "Name is required" });
       return;
@@ -62991,7 +63056,14 @@ router11.put("/:id", async (req, res) => {
       res.status(404).json({ error: "NOT_FOUND", message: "Meal type not found" });
       return;
     }
-    res.json(updated);
+    if (Array.isArray(recipeIds)) {
+      await syncRecipes(id, recipeIds);
+    }
+    const links = await db.select({ recipeId: recipesTable.id, recipeName: recipesTable.name }).from(mealTypeRecipesTable).innerJoin(recipesTable, eq(mealTypeRecipesTable.recipeId, recipesTable.id)).where(eq(mealTypeRecipesTable.mealTypeId, id));
+    res.json({
+      ...updated,
+      recipes: links.map((l) => ({ id: l.recipeId, name: l.recipeName }))
+    });
   } catch (err) {
     const dbErr = err;
     if (dbErr?.code === "23505") {

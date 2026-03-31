@@ -796,10 +796,16 @@ export interface UpdateUserRequest {
   role?: UpdateUserRequestRole;
 }
 
+export interface MealTypeRecipeRef {
+  id: number;
+  name: string;
+}
+
 export interface MealTypeItem {
   id: number;
   name: string;
   createdAt: string;
+  recipes: MealTypeRecipeRef[];
 }
 
 export interface CreateMealTypeRequest {
@@ -808,6 +814,7 @@ export interface CreateMealTypeRequest {
    * @maxLength 100
    */
   name: string;
+  recipeIds?: number[];
 }
 
 export type GetKidsParams = {

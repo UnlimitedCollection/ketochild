@@ -3275,6 +3275,17 @@ components:
           type: string
           enum: [admin, moderator]
 
+    MealTypeRecipeRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+        - id
+        - name
+
     MealTypeItem:
       type: object
       properties:
@@ -3285,10 +3296,15 @@ components:
         createdAt:
           type: string
           format: date-time
+        recipes:
+          type: array
+          items:
+            $ref: "#/components/schemas/MealTypeRecipeRef"
       required:
         - id
         - name
         - createdAt
+        - recipes
 
     CreateMealTypeRequest:
       type: object
@@ -3297,5 +3313,9 @@ components:
           type: string
           minLength: 1
           maxLength: 100
+        recipeIds:
+          type: array
+          items:
+            type: integer
       required:
         - name

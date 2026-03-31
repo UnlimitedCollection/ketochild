@@ -5,9 +5,11 @@
  * Keto Diet Doctor Dashboard API
  * OpenAPI spec version: 0.1.0
  */
+import type { MealTypeRecipeRef } from "./mealTypeRecipeRef";
 
 export interface MealTypeItem {
   id: number;
   name: string;
   createdAt: Date;
+  recipes: MealTypeRecipeRef[];
 }

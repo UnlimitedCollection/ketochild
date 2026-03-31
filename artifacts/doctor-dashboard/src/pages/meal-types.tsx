@@ -4,6 +4,7 @@ import {
   useCreateMealType,
   useUpdateMealType,
   useDeleteMealType,
+  useListRecipes,
   getListMealTypesQueryKey,
 } from "@workspace/api-client-react";
 import type { MealTypeItem } from "@workspace/api-client-react";
@@ -15,11 +16,79 @@ import {
   X,
   UtensilsCrossed,
   Check,
+  ChefHat,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCanWrite } from "@/hooks/useRole";
 
 const BLUE = "#004ac6";
+
+function RecipePicker({
+  selectedIds,
+  onChange,
+}: {
+  selectedIds: number[];
+  onChange: (ids: number[]) => void;
+}) {
+  const { data: recipes = [] } = useListRecipes();
+  const [search, setSearch] = useState("");
+
+  const filtered = recipes.filter(
+    (r) => !search || r.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const toggle = (id: number) => {
+    onChange(
+      selectedIds.includes(id)
+        ? selectedIds.filter((x) => x !== id)
+        : [...selectedIds, id]
+    );
+  };
+
+  return (
+    <div className="mt-3">
+      <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">
+        Assign Recipes
+      </label>
+      {recipes.length > 5 && (
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search recipes…"
+          className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs mb-2 focus:outline-none focus:ring-2 focus:ring-blue-300"
+        />
+      )}
+      <div className="max-h-40 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100">
+        {recipes.length === 0 ? (
+          <p className="text-xs text-slate-400 px-3 py-3 text-center">No recipes available</p>
+        ) : filtered.length === 0 ? (
+          <p className="text-xs text-slate-400 px-3 py-3 text-center">No matching recipes</p>
+        ) : (
+          filtered.map((r) => (
+            <label
+              key={r.id}
+              className="flex items-center gap-2.5 px-3 py-2 hover:bg-blue-50/50 cursor-pointer transition-colors"
+            >
+              <input
+                type="checkbox"
+                checked={selectedIds.includes(r.id)}
+                onChange={() => toggle(r.id)}
+                className="rounded border-slate-300 text-blue-600 focus:ring-blue-300 h-3.5 w-3.5"
+              />
+              <ChefHat className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+              <span className="text-xs text-slate-700 truncate">{r.name}</span>
+            </label>
+          ))
+        )}
+      </div>
+      {selectedIds.length > 0 && (
+        <p className="text-[10px] text-slate-400 mt-1">
+          {selectedIds.length} recipe{selectedIds.length !== 1 ? "s" : ""} selected
+        </p>
+      )}
+    </div>
+  );
+}
 
 export default function MealTypesPage() {
   const queryClient = useQueryClient();
@@ -30,8 +99,10 @@ export default function MealTypesPage() {
 
   const [addingNew, setAddingNew] = useState(false);
   const [newName, setNewName] = useState("");
+  const [newRecipeIds, setNewRecipeIds] = useState<number[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
+  const [editRecipeIds, setEditRecipeIds] = useState<number[]>([]);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [error, setError] = useState("");
 
@@ -44,10 +115,11 @@ export default function MealTypesPage() {
     if (!newName.trim()) return;
     setError("");
     createMealType.mutate(
-      { data: { name: newName.trim() } },
+      { data: { name: newName.trim(), recipeIds: newRecipeIds } },
       {
         onSuccess: () => {
           setNewName("");
+          setNewRecipeIds([]);
           setAddingNew(false);
           invalidate();
         },
@@ -65,11 +137,12 @@ export default function MealTypesPage() {
     if (!editName.trim()) return;
     setError("");
     updateMealType.mutate(
-      { id, data: { name: editName.trim() } },
+      { id, data: { name: editName.trim(), recipeIds: editRecipeIds } },
       {
         onSuccess: () => {
           setEditingId(null);
           setEditName("");
+          setEditRecipeIds([]);
           invalidate();
         },
         onError: (err: unknown) => {
@@ -97,6 +170,7 @@ export default function MealTypesPage() {
   function startEdit(mt: MealTypeItem) {
     setEditingId(mt.id);
     setEditName(mt.name);
+    setEditRecipeIds(mt.recipes.map((r) => r.id));
     setAddingNew(false);
     setError("");
   }
@@ -104,12 +178,14 @@ export default function MealTypesPage() {
   function cancelEdit() {
     setEditingId(null);
     setEditName("");
+    setEditRecipeIds([]);
     setError("");
   }
 
   function cancelAdd() {
     setAddingNew(false);
     setNewName("");
+    setNewRecipeIds([]);
     setError("");
   }
 
@@ -158,40 +234,43 @@ export default function MealTypesPage() {
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         {addingNew && canWrite && (
-          <div className="flex items-center gap-3 px-6 py-4 border-b border-slate-100 bg-blue-50/50">
-            <UtensilsCrossed
-              className="h-5 w-5 text-blue-500 shrink-0"
-            />
-            <input
-              autoFocus
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleCreate();
-                if (e.key === "Escape") cancelAdd();
-              }}
-              placeholder="Enter meal type name…"
-              className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
-            />
-            <button
-              onClick={handleCreate}
-              disabled={createMealType.isPending || !newName.trim()}
-              className="p-2 text-green-600 hover:bg-green-50 rounded-lg disabled:opacity-50"
-              title="Save"
-            >
-              {createMealType.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Check className="h-4 w-4" />
-              )}
-            </button>
-            <button
-              onClick={cancelAdd}
-              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg"
-              title="Cancel"
-            >
-              <X className="h-4 w-4" />
-            </button>
+          <div className="px-6 py-4 border-b border-slate-100 bg-blue-50/50">
+            <div className="flex items-center gap-3">
+              <UtensilsCrossed
+                className="h-5 w-5 text-blue-500 shrink-0"
+              />
+              <input
+                autoFocus
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleCreate();
+                  if (e.key === "Escape") cancelAdd();
+                }}
+                placeholder="Enter meal type name…"
+                className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+              />
+              <button
+                onClick={handleCreate}
+                disabled={createMealType.isPending || !newName.trim()}
+                className="p-2 text-green-600 hover:bg-green-50 rounded-lg disabled:opacity-50"
+                title="Save"
+              >
+                {createMealType.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+              </button>
+              <button
+                onClick={cancelAdd}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg"
+                title="Cancel"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <RecipePicker selectedIds={newRecipeIds} onChange={setNewRecipeIds} />
           </div>
         )}
 
@@ -218,77 +297,97 @@ export default function MealTypesPage() {
             {(mealTypes ?? []).map((mt) => (
               <div
                 key={mt.id}
-                className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 group transition-colors"
+                className="px-6 py-4 hover:bg-slate-50 group transition-colors"
               >
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ background: `${BLUE}14` }}
-                >
-                  <UtensilsCrossed
-                    className="h-5 w-5"
-                    style={{ color: BLUE }}
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  {editingId === mt.id ? (
-                    <div className="flex items-center gap-2">
-                      <input
-                        autoFocus
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") handleUpdate(mt.id);
-                          if (e.key === "Escape") cancelEdit();
-                        }}
-                        className="flex-1 border border-slate-200 rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
-                      />
-                      <button
-                        onClick={() => handleUpdate(mt.id)}
-                        disabled={
-                          updateMealType.isPending || !editName.trim()
-                        }
-                        className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg disabled:opacity-50"
-                        title="Save"
-                      >
-                        {updateMealType.isPending ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Check className="h-4 w-4" />
+                <div className="flex items-center gap-4">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ background: `${BLUE}14` }}
+                  >
+                    <UtensilsCrossed
+                      className="h-5 w-5"
+                      style={{ color: BLUE }}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    {editingId === mt.id ? (
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            autoFocus
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handleUpdate(mt.id);
+                              if (e.key === "Escape") cancelEdit();
+                            }}
+                            className="flex-1 border border-slate-200 rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                          />
+                          <button
+                            onClick={() => handleUpdate(mt.id)}
+                            disabled={
+                              updateMealType.isPending || !editName.trim()
+                            }
+                            className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg disabled:opacity-50"
+                            title="Save"
+                          >
+                            {updateMealType.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Check className="h-4 w-4" />
+                            )}
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg"
+                            title="Cancel"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <RecipePicker selectedIds={editRecipeIds} onChange={setEditRecipeIds} />
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="font-semibold text-slate-900 truncate">
+                          {mt.name}
+                        </p>
+                        {mt.recipes.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mt-1.5">
+                            {mt.recipes.map((r) => (
+                              <span
+                                key={r.id}
+                                className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 bg-slate-100 rounded-full px-2 py-0.5"
+                              >
+                                <ChefHat className="h-3 w-3" />
+                                {r.name}
+                              </span>
+                            ))}
+                          </div>
                         )}
+                      </div>
+                    )}
+                  </div>
+
+                  {editingId !== mt.id && canWrite && (
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => startEdit(mt)}
+                        className="p-1.5 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg opacity-0 group-hover:opacity-100 transition"
+                        title="Edit"
+                      >
+                        <Pencil className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={cancelEdit}
-                        className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg"
-                        title="Cancel"
+                        onClick={() => setConfirmDeleteId(mt.id)}
+                        className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition"
+                        title="Delete"
                       >
-                        <X className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
-                  ) : (
-                    <p className="font-semibold text-slate-900 truncate">
-                      {mt.name}
-                    </p>
                   )}
                 </div>
-
-                {editingId !== mt.id && canWrite && (
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={() => startEdit(mt)}
-                      className="p-1.5 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg opacity-0 group-hover:opacity-100 transition"
-                      title="Edit"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => setConfirmDeleteId(mt.id)}
-                      className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition"
-                      title="Delete"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                )}
               </div>
             ))}
           </div>

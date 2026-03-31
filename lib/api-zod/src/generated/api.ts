@@ -953,6 +953,12 @@ export const ListMealTypesResponseItem = zod.object({
   id: zod.number(),
   name: zod.string(),
   createdAt: zod.date(),
+  recipes: zod.array(
+    zod.object({
+      id: zod.number(),
+      name: zod.string(),
+    }),
+  ),
 });
 export const ListMealTypesResponse = zod.array(ListMealTypesResponseItem);
 
@@ -963,6 +969,7 @@ export const createMealTypeBodyNameMax = 100;
 
 export const CreateMealTypeBody = zod.object({
   name: zod.string().min(1).max(createMealTypeBodyNameMax),
+  recipeIds: zod.array(zod.number()).optional(),
 });
 
 /**
@@ -976,12 +983,19 @@ export const updateMealTypeBodyNameMax = 100;
 
 export const UpdateMealTypeBody = zod.object({
   name: zod.string().min(1).max(updateMealTypeBodyNameMax),
+  recipeIds: zod.array(zod.number()).optional(),
 });
 
 export const UpdateMealTypeResponse = zod.object({
   id: zod.number(),
   name: zod.string(),
   createdAt: zod.date(),
+  recipes: zod.array(
+    zod.object({
+      id: zod.number(),
+      name: zod.string(),
+    }),
+  ),
 });
 
 /**

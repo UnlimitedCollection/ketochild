@@ -64,6 +64,7 @@ export * from "./mealPlan";
 export * from "./mealPlanDetail";
 export * from "./mealPlanItem";
 export * from "./mealTypeItem";
+export * from "./mealTypeRecipeRef";
 export * from "./medicalSettings";
 export * from "./medicalSettingsPhase";
 export * from "./medicalSettingsRequest";
