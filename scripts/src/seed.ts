@@ -388,23 +388,51 @@ async function seed() {
 
     // Meal days — 35 days
     const rate = completionRates[i] ?? 0.7;
+    const carbMultipliers = [0.7, 0.8, 0.9, 1.0, 1.0, 1.1, 1.2, 1.4, 1.6, 1.8, 1.0, 1.3, 0.9, 1.5, 1.1];
+    const carbMultiplier = carbMultipliers[i] ?? 1.0;
+    const filledDayCount = Math.round(35 * Math.min(rate + 0.1, 1.0));
+
     for (let d = 34; d >= 0; d--) {
       const date = new Date();
       date.setDate(date.getDate() - d);
       const totalMeals = 5;
       const completedMeals = Math.max(0, Math.min(totalMeals, Math.round(totalMeals * rate + (Math.random() - 0.5))));
       const missedMeals = totalMeals - completedMeals;
+      const dayCarbs = completedMeals > 0
+        ? completedMeals * (med.dailyCarbs / totalMeals) * carbMultiplier + (Math.random() - 0.3) * 4
+        : 0;
       await db.insert(mealDaysTable).values({
         kidId: kid.id,
         date: date.toISOString().split("T")[0],
         totalMeals,
         completedMeals,
         missedMeals,
-        isFilled: d < 30,
+        isFilled: d < filledDayCount,
         totalCalories: completedMeals * (med.dailyCalories / totalMeals),
-        totalCarbs: completedMeals * (med.dailyCarbs / totalMeals),
+        totalCarbs: Math.max(0, dayCarbs),
         totalFat: completedMeals * (med.dailyFat / totalMeals),
         totalProtein: completedMeals * (med.dailyProtein / totalMeals),
+      });
+    }
+
+    // Meal logs within the last 24 hours for varied 24h completion rates
+    const last24hRates = [0.80, 0.20, 1.00, 0.60, 0.00, 0.40, 0.80, 0.60, 1.00, 0.20, 0.80, 0.40, 0.60, 0.00, 1.00];
+    const last24hRate = last24hRates[i] ?? 0.5;
+    const mealTypes = ["breakfast", "morning_snack", "lunch", "afternoon_snack", "dinner"];
+    for (let m = 0; m < mealTypes.length; m++) {
+      const hoursAgo = 2 + m * 4;
+      const logTime = new Date(Date.now() - hoursAgo * 60 * 60 * 1000);
+      const isCompleted = Math.random() < last24hRate;
+      await db.insert(mealLogsTable).values({
+        kidId: kid.id,
+        date: logTime.toISOString().split("T")[0],
+        mealType: mealTypes[m],
+        isCompleted,
+        calories: isCompleted ? med.dailyCalories / 5 : 0,
+        carbs: isCompleted ? med.dailyCarbs / 5 : 0,
+        fat: isCompleted ? med.dailyFat / 5 : 0,
+        protein: isCompleted ? med.dailyProtein / 5 : 0,
+        createdAt: logTime,
       });
     }
   }
