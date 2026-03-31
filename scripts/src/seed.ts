@@ -338,12 +338,38 @@ async function seed() {
     { name: "Caleb Walker",       dateOfBirth: "2016-08-06", gender: "male",   parentName: "Mike Walker",        parentContact: "+1-555-0128", phase: 4, baseWeight: 21.6 },
     { name: "Aria Sanchez",       dateOfBirth: "2021-01-23", gender: "female", parentName: "Carmen Sanchez",     parentContact: "+1-555-0129", phase: 1, baseWeight: 9.0 },
     { name: "Benjamin Young",     dateOfBirth: "2019-04-02", gender: "male",   parentName: "Peter Young",        parentContact: "+61-4-0000-0130", phase: 3, baseWeight: 13.2 },
+    { name: "Sofia Kowalski",     dateOfBirth: "2025-09-10", gender: "female", parentName: "Anna Kowalski",       parentContact: "+48-600-131-000", phase: 1, baseWeight: 7.2 },
+    { name: "Mateo Herrera",      dateOfBirth: "2021-07-04", gender: "male",   parentName: "Diego Herrera",       parentContact: "+52-55-1234-0132", phase: 1, baseWeight: 10.5 },
+    { name: "Isla MacPherson",    dateOfBirth: "2020-03-19", gender: "female", parentName: "Fiona MacPherson",    parentContact: "+44-7700-900133", phase: 2, baseWeight: 12.8 },
+    { name: "Elijah Okafor",      dateOfBirth: "2017-10-26", gender: "male",   parentName: "Chidi Okafor",        parentContact: "+234-803-000-0134", phase: 4, baseWeight: 20.1 },
+    { name: "Freya Larsson",      dateOfBirth: "2019-01-07", gender: "female", parentName: "Ingrid Larsson",      parentContact: "+46-70-000-0135", phase: 2, baseWeight: 13.5 },
+    { name: "Kai Tanaka",         dateOfBirth: "2018-05-30", gender: "male",   parentName: "Yuki Tanaka",         parentContact: "+81-90-0000-0136", phase: 3, baseWeight: 16.4 },
+    { name: "Nora Fitzgerald",    dateOfBirth: "2020-11-22", gender: "female", parentName: "Sinead Fitzgerald",   parentContact: "+353-85-000137", phase: 1, baseWeight: 10.9 },
+    { name: "Theo Müller",        dateOfBirth: "2016-09-14", gender: "male",   parentName: "Klaus Müller",        parentContact: "+49-170-000-0138", phase: 4, baseWeight: 22.8 },
+    { name: "Aurora Singh",       dateOfBirth: "2021-12-05", gender: "female", parentName: "Gurpreet Singh",      parentContact: "+91-98-0000-0139", phase: 1, baseWeight: 9.1 },
+    { name: "Felix Dubois",       dateOfBirth: "2018-08-11", gender: "male",   parentName: "Pierre Dubois",       parentContact: "+33-6-00-00-0140", phase: 2, baseWeight: 15.7 },
+    { name: "Penelope O'Brien",   dateOfBirth: "2019-06-27", gender: "female", parentName: "Aoife O'Brien",       parentContact: "+353-86-000141", phase: 3, baseWeight: 12.3 },
+    { name: "Ryder Johansson",    dateOfBirth: "2017-02-15", gender: "male",   parentName: "Erik Johansson",      parentContact: "+46-70-000-0142", phase: 4, baseWeight: 19.5 },
+    { name: "Imogen Papadopoulos",dateOfBirth: "2020-07-08", gender: "female", parentName: "Eleni Papadopoulos",  parentContact: "+30-697-000-0143", phase: 2, baseWeight: 11.6 },
+    { name: "Axel Petrov",        dateOfBirth: "2018-03-21", gender: "male",   parentName: "Ivan Petrov",         parentContact: "+7-900-000-0144", phase: 1, baseWeight: 14.3 },
+    { name: "Luna Moreau",        dateOfBirth: "2021-10-13", gender: "female", parentName: "Claire Moreau",       parentContact: "+33-6-00-00-0145", phase: 1, baseWeight: 8.8 },
+    { name: "Jasper de Vries",    dateOfBirth: "2016-12-02", gender: "male",   parentName: "Willem de Vries",     parentContact: "+31-6-0000-0146", phase: 3, baseWeight: 23.1 },
+    { name: "Sienna Russo",       dateOfBirth: "2019-08-18", gender: "female", parentName: "Giulia Russo",        parentContact: "+39-347-000-0147", phase: 2, baseWeight: 13.0 },
+    { name: "Declan Walsh",       dateOfBirth: "2022-02-28", gender: "male",   parentName: "Patrick Walsh",       parentContact: "+353-87-000148", phase: 1, baseWeight: 8.3 },
+    { name: "Valentina Cruz",     dateOfBirth: "2018-01-09", gender: "female", parentName: "Isabel Cruz",         parentContact: "+34-6-0000-0149", phase: 3, baseWeight: 15.1 },
+    { name: "Hamish Stewart",     dateOfBirth: "2017-05-24", gender: "male",   parentName: "Alistair Stewart",    parentContact: "+44-7700-900150", phase: 4, baseWeight: 20.8 },
+    { name: "Margot Lefebvre",    dateOfBirth: "2020-09-30", gender: "female", parentName: "Brigitte Lefebvre",   parentContact: "+32-470-00-0151", phase: 2, baseWeight: 11.9 },
+    { name: "Tobias Andersen",    dateOfBirth: "2025-06-17", gender: "male",   parentName: "Mikkel Andersen",     parentContact: "+45-22-000-152", phase: 1, baseWeight: 6.9 },
   ];
 
   const completionRates = [
     0.90, 0.42, 0.85, 0.95, 0.28, 0.70, 0.88, 0.62, 0.75, 0.45,
     0.92, 0.55, 0.82, 0.38, 0.78, 0.65, 0.91, 0.50, 0.73, 0.88,
     0.35, 0.80, 0.60, 0.77, 0.85, 0.48, 0.70, 0.93, 0.55, 0.82,
+    // new patients 31-52
+    0.30, 0.67, 0.88, 0.25, 0.72, 0.40, 0.95, 0.58, 0.33, 0.84,
+    0.45, 0.76, 0.52, 0.90, 0.38, 0.63, 0.87, 0.20, 0.70, 0.44,
+    0.91, 0.29,
   ];
 
   const phaseSettings: Record<number, { ketoRatio: number; dailyCalories: number; dailyCarbs: number; dailyFat: number; dailyProtein: number }> = {
@@ -410,9 +436,16 @@ async function seed() {
     // Meal days — 35 days
     const rate = completionRates[i] ?? 0.7;
     const carbMultipliers = [
-      0.7, 0.8, 0.9, 1.0, 1.0, 1.1, 1.2, 1.4, 1.6, 1.8,
-      1.0, 1.3, 0.9, 1.5, 1.1, 0.8, 1.0, 1.3, 0.9, 0.7,
-      1.4, 1.6, 1.1, 0.8, 1.2, 1.5, 0.9, 1.0, 1.3, 1.1,
+      // Patients 1-30: multiplier * completionRate > 1.0 means "Not in Keto"
+      // "In Keto" patients use 0.75 (safely below target)
+      // "Not in Keto" patients use 1/rate * 1.2 (reliably 20% above target)
+      0.75, 2.86, 0.75, 0.75, 4.29, 0.75, 0.75, 1.94, 0.75, 2.67,
+      0.75, 2.18, 0.75, 3.16, 0.75, 0.75, 0.75, 2.40, 0.75, 0.75,
+      3.43, 0.75, 2.00, 0.75, 0.75, 2.50, 0.75, 0.75, 2.18, 0.75,
+      // Patients 31-52
+      0.75, 1.79, 0.75, 0.75, 0.75, 3.00, 0.75, 2.07, 0.75, 0.75,
+      2.67, 0.75, 2.31, 0.75, 3.16, 0.75, 0.75, 0.75, 0.75, 0.75,
+      0.75, 0.75,
     ];
     const carbMultiplier = carbMultipliers[i] ?? 1.0;
     const filledDayCount = Math.round(35 * Math.min(rate + 0.1, 1.0));
@@ -445,6 +478,10 @@ async function seed() {
       0.80, 0.20, 1.00, 0.60, 0.00, 0.40, 0.80, 0.60, 1.00, 0.20,
       0.80, 0.40, 0.60, 0.00, 1.00, 0.60, 0.80, 0.20, 1.00, 0.40,
       0.00, 0.80, 0.60, 1.00, 0.40, 0.20, 0.80, 1.00, 0.60, 0.40,
+      // new patients 31-52
+      0.20, 0.80, 1.00, 0.00, 0.60, 0.40, 1.00, 0.60, 0.20, 0.80,
+      0.40, 1.00, 0.00, 0.80, 0.20, 0.60, 1.00, 0.00, 0.80, 0.40,
+      1.00, 0.20,
     ];
     const last24hRate = last24hRates[i] ?? 0.5;
     const mealTypes = ["breakfast", "morning_snack", "lunch", "afternoon_snack", "dinner"];
@@ -498,6 +535,29 @@ async function seed() {
     "Phase 4 maintenance — excellent long-term compliance. Annual labs within normal limits. Discuss potential weaning timeline at next visit.",
     "Youngest phase 1 patient. Very small portions. Parents extremely careful with measurements. Good ketone response at 1.3 mmol/L.",
     "Phase 3 intensification initiated. Increasing fat ratio from 3:1 to 4:1. Blood monitoring frequency increased to twice weekly.",
+    // new patients 31-52
+    "Very young patient at 6 months — diet introduced cautiously. Parents trained intensively on formula preparation. Daily monitoring in place.",
+    "Phase 1 patient, week 3. Slow start to compliance. Parents overwhelmed with meal weighing. Support group referral made.",
+    "Phase 2 patient with consistent 88% compliance. Excellent seizure control since diet initiation. Family very engaged with protocol.",
+    "Diet poorly tolerated — GI symptoms reported. Considering 2:1 ratio as starting point. Labs ordered to assess electrolytes.",
+    "Phase 2 — steady progress. Patient alert and active at school. Blood ketones 2.1 mmol/L. Continue current plan.",
+    "Compliance dipping at 40%. Family recently relocated, disrupting routine. Connecting with local dietitian for ongoing support.",
+    "Phase 3 patient achieving 95% compliance. Seizures reduced from daily to twice weekly. Excellent prognosis for continued improvement.",
+    "Mid-protocol review for phase 2 patient. Meal completion at 58%. Parents report difficulty with school lunches. Created portable meal guide.",
+    "Patient flagged High Risk — completion below 60%. Emergency review scheduled. Parents contacted via phone. Dietitian follow-up booked.",
+    "Phase 2 patient with 84% compliance. Growing steadily. Blood glucose within target. Continue 3:1 protocol.",
+    "Phase 3 — initial results encouraging. First two weeks on strict 4:1. Ketones reaching 3.0 mmol/L. Mild irritability noted, likely transitional.",
+    "Phase 1 patient, day 18. Low-carb adaptation progressing. Urinary ketones positive since day 5. Parents diligent with journaling.",
+    "Phase 4 maintenance. Patient on diet for 2.5 years. Transition plan drafted in collaboration with neurology. Gradual carb increase planned.",
+    "Compliance suddenly dropped to 38%. Parents report child refusing some keto foods. Flavour variety session held with dietitian.",
+    "Phase 2 — consistent 63% completion rate. Aiming for 75% by next review. Family attending monthly group clinic sessions.",
+    "Phase 3 with strong 87% compliance. Bloodwork excellent — no deficiencies detected. Parents highly confident with meal preparation.",
+    "High-risk alert — 20% completion. Family crisis situation identified. Social worker involved. Diet temporarily simplified to aid compliance.",
+    "Phase 2 patient performing well overall. Ketones stable. Parents keen to progress to phase 3. Discussed timeline and criteria with family.",
+    "Phase 1 patient at 44% completion. Recently diagnosed; family still in adjustment phase. Weekly check-in calls arranged with clinic nurse.",
+    "Phase 3 patient exceeding targets at 91% compliance. Seizure diary shows 75% reduction. Discussed potential weaning in 6 months.",
+    "High-risk patient. Completion at 29%. Multiple missed days identified in meal log review. Intensive support package initiated with family.",
+    "Infant patient (6 months). Diet introduced under close supervision. Formula-based ketogenic plan active. Ketones 0.8 mmol/L at day 10.",
   ];
 
   for (let i = 0; i < createdKids.length; i++) {
