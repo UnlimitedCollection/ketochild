@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Printer, Search } from "lucide-react";
+import { Calendar, Printer, Search } from "lucide-react";
 import { CalendarDateRangePicker } from "@/components/calendar-date-range-picker";
 
 export interface CheckboxOption {
@@ -205,8 +205,14 @@ export function PrintFilterDialog({
                         ? "bg-primary text-white border-primary"
                         : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                     }`}
+                    aria-label={preset.value === "custom" ? preset.label : undefined}
+                    title={preset.value === "custom" ? preset.label : undefined}
                   >
-                    {preset.label}
+                    {preset.value === "custom" ? (
+                      <Calendar className="w-3.5 h-3.5" />
+                    ) : (
+                      preset.label
+                    )}
                   </button>
                 ))}
               </div>
