@@ -1,4 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
+import { usePrint } from "@/hooks/usePrint";
+import { PrintLayout } from "@/components/print-layout";
+import { PrintButton } from "@/components/print-button";
 import { useParams, Link, useLocation } from "wouter";
 import { useGetKid, useAddWeightRecord, useUpdateKidMedical, useUpdateKid, useDeleteKid, useGetKidMealHistory, useGetKidKetoneReadings, useAddKetoneReading, useDeleteKetoneReading, useGetKidMealLogs, useAddMealLog, useDeleteMealLog, useGetKidMealLog, useGetKidAssignedMealPlan, useAssignKidMealPlan, useGetLibraryMealPlans, useGetFoods, useGetKidFoodApprovals, useUpsertKidFoodApproval, useUpdateMealLogImage, getGetKidAssignedMealPlanQueryKey, useListMealTypes, type LibraryMealPlanDetail, type LibraryMealPlanItem, type FoodApproval, type MedicalSettingsRequest, type UpdateKidRequest } from "@workspace/api-client-react";
 import { useUpload } from "@workspace/object-storage-web";
@@ -38,6 +41,7 @@ export default function KidProfilePage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { printRef, handlePrint, isPrinting, onDataReady, cancelPrint } = usePrint("Patient Report", true);
 
   const canWrite = useCanWrite();
 
@@ -67,7 +71,7 @@ export default function KidProfilePage() {
   const { kid, medical, recentWeights } = profile;
 
   return (
-    <div className="space-y-6">
+    <PrintLayout innerRef={printRef} className="space-y-6">
       {/* Edit Kid Dialog */}
       <EditKidDialog kidId={kidId} kid={kid} open={editOpen} onOpenChange={setEditOpen} />
 
@@ -115,15 +119,22 @@ export default function KidProfilePage() {
                   </div>
                 </div>
                 <div className="flex items-start gap-2">
-                  <Button size="sm" variant="outline" className="rounded-lg gap-1.5 text-primary border-primary/30 hover:bg-primary/5" onClick={() => setLocation(`/kids/${kidId}/analytics`)}>
+                  {isPrinting && (
+                    <span className="no-print flex items-center gap-1.5 text-xs text-slate-400">
+                      Preparing report…
+                      <button onClick={cancelPrint} className="text-slate-400 hover:text-slate-600 underline underline-offset-2">Cancel</button>
+                    </span>
+                  )}
+                  <PrintButton onPrint={handlePrint} />
+                  <Button size="sm" variant="outline" className="no-print rounded-lg gap-1.5 text-primary border-primary/30 hover:bg-primary/5" onClick={() => setLocation(`/kids/${kidId}/analytics`)}>
                     <LineChartIcon className="h-3.5 w-3.5" /> Analysis
                   </Button>
                   {canWrite && (
                     <>
-                      <Button size="sm" variant="outline" className="rounded-lg gap-1.5" onClick={() => setEditOpen(true)}>
+                      <Button size="sm" variant="outline" className="no-print rounded-lg gap-1.5" onClick={() => setEditOpen(true)}>
                         <Pencil className="h-3.5 w-3.5" /> Edit
                       </Button>
-                      <Button size="sm" variant="outline" className="rounded-lg gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setDeleteOpen(true)}>
+                      <Button size="sm" variant="outline" className="no-print rounded-lg gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setDeleteOpen(true)}>
                         <Trash2 className="h-3.5 w-3.5" /> Delete
                       </Button>
                     </>
@@ -158,9 +169,9 @@ export default function KidProfilePage() {
         </Card>
       </div>
 
-      {/* Tabs Section */}
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="bg-white border border-slate-200 p-1 rounded-xl h-auto mb-6 flex flex-wrap shadow-sm">
+      {/* Tabs Section — hidden in print (print-section below is shown instead) */}
+      <Tabs defaultValue="overview" className="w-full no-print">
+        <TabsList className="no-print bg-white border border-slate-200 p-1 rounded-xl h-auto mb-6 flex flex-wrap shadow-sm">
           <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white py-2.5 px-4 flex items-center gap-2 transition-all">
             <Activity className="h-4 w-4" /> Overview
           </TabsTrigger>
@@ -292,8 +303,122 @@ export default function KidProfilePage() {
           <ApprovedFoodsTab kidId={kidId} />
         </TabsContent>
       </Tabs>
-    </div>
+
+      {/* Print-only section: only mounted when printing to avoid background query overhead */}
+      {isPrinting && (
+        <div className="hidden print-section space-y-6">
+          {/* Overview: Weight History Table */}
+          <hr className="border-slate-300 my-4" />
+          <h2 className="text-lg font-bold text-slate-800">Weight History</h2>
+          {recentWeights.length === 0 ? (
+            <p className="text-sm text-slate-400 italic">No weight records.</p>
+          ) : (
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="bg-slate-100">
+                  <th className="text-left py-1.5 px-3 font-semibold text-slate-600">Date</th>
+                  <th className="text-right py-1.5 px-3 font-semibold text-slate-600">Weight (kg)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...recentWeights].reverse().map((w, i) => (
+                  <tr key={i} className="border-b border-slate-100">
+                    <td className="py-1.5 px-3 text-slate-700">{w.date}</td>
+                    <td className="py-1.5 px-3 text-right text-slate-700">{w.weight}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          <hr className="border-slate-300 my-4" />
+          <h2 className="text-lg font-bold text-slate-800">Medical Controls</h2>
+          <MedicalSummaryPrint data={medical} />
+          <hr className="border-slate-300 my-4" />
+          <h2 className="text-lg font-bold text-slate-800">Meal History</h2>
+          <MealHistoryTab kidId={kidId} medical={medical} />
+          <hr className="border-slate-300 my-4" />
+          <h2 className="text-lg font-bold text-slate-800">Ketone Readings</h2>
+          <KetoneTab kidId={kidId} />
+          <hr className="border-slate-300 my-4" />
+          <h2 className="text-lg font-bold text-slate-800">Assigned Meal Plan</h2>
+          <MealPlanPrintSection kidId={kidId} />
+          <hr className="border-slate-300 my-4" />
+          <h2 className="text-lg font-bold text-slate-800">Compliance Calendar</h2>
+          <ComplianceTab kidId={kidId} />
+          <hr className="border-slate-300 my-4" />
+          <h2 className="text-lg font-bold text-slate-800">Approved Foods</h2>
+          <ApprovedFoodsPrintSection kidId={kidId} />
+          {/* Signals print readiness once all print-section queries have settled */}
+          <PrintReadySignal kidId={kidId} onReady={onDataReady} />
+        </div>
+      )}
+    </PrintLayout>
   );
+}
+
+/**
+ * Read-only medical settings summary for print output.
+ * Replaces MedicalSettingsForm which uses hidden interactive controls.
+ */
+function MedicalSummaryPrint({ data }: { data: MedicalSettings }) {
+  const rows: { label: string; value: string }[] = [
+    { label: "Phase", value: `Phase ${data.phase}` },
+    { label: "Keto Ratio", value: `${data.ketoRatio}:1` },
+    { label: "Daily Calories", value: `${data.dailyCalories} kcal` },
+    { label: "Daily Carbs", value: `${data.dailyCarbs} g` },
+    { label: "Daily Fat", value: `${data.dailyFat} g` },
+    { label: "Daily Protein", value: `${data.dailyProtein} g` },
+    { label: "Show All Foods", value: data.showAllFoods ? "Yes" : "No" },
+    { label: "Show All Recipes", value: data.showAllRecipes ? "Yes" : "No" },
+  ];
+  return (
+    <table className="w-full text-sm border-collapse">
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.label} className="border-b border-slate-100">
+            <td className="py-1.5 px-3 font-semibold text-slate-600 w-40">{row.label}</td>
+            <td className="py-1.5 px-3 text-slate-800">{row.value}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+/**
+ * Mounts inside the print-only section. Watches global query fetch count and
+ * signals readiness once all in-flight queries have settled.
+ */
+function PrintReadySignal({ kidId, onReady }: { kidId: number; onReady: (status: "loading" | "ready" | "error", msg?: string) => void }) {
+  // Explicitly track loading AND error state of all queries used in the print section.
+  // Includes useListMealTypes because MealPlanPrintSection depends on it for meal-type labels.
+  const { isLoading: kidLoading, isError: kidError } = useGetKid(kidId);
+  const { isLoading: mealHistoryLoading, isError: mealHistoryError } = useGetKidMealHistory(kidId);
+  const { isLoading: ketoneLoading, isError: ketoneError } = useGetKidKetoneReadings(kidId);
+  const { isLoading: assignedPlanLoading, isError: assignedPlanError } = useGetKidAssignedMealPlan(kidId);
+  const { isLoading: approvalsLoading, isError: approvalsError } = useGetKidFoodApprovals(kidId);
+  const { isLoading: foodsLoading, isError: foodsError } = useGetFoods({});
+  const { isLoading: mealTypesLoading, isError: mealTypesError } = useListMealTypes();
+
+  const isLoading = kidLoading || mealHistoryLoading || ketoneLoading || assignedPlanLoading || approvalsLoading || foodsLoading || mealTypesLoading;
+  const hasError = kidError || mealHistoryError || ketoneError || assignedPlanError || approvalsError || foodsError || mealTypesError;
+
+  const signaled = useRef(false);
+
+  useEffect(() => {
+    if (signaled.current) return;
+    if (!isLoading) {
+      signaled.current = true;
+      if (hasError) {
+        onReady("error", "Some report sections could not be loaded. The report may be incomplete.");
+      } else {
+        onReady("ready");
+      }
+    }
+  }, [isLoading, hasError, onReady]);
+
+  return null;
 }
 
 // Sub-components
@@ -1963,6 +2088,124 @@ function MealPlanTab({ kidId }: { kidId: number }) {
         </>
       )}
     </div>
+  );
+}
+
+/**
+ * Read-only print version of the assigned meal plan.
+ * Shows all meal type sections expanded with all items — no interactive buttons.
+ */
+function MealPlanPrintSection({ kidId }: { kidId: number }) {
+  const { data: rawAssigned, isLoading: assignedLoading } = useGetKidAssignedMealPlan(kidId);
+  const { data: mealTypesData } = useListMealTypes();
+  const mealTypeNames = useMemo(() => (mealTypesData ?? []).map((mt: { name: string }) => mt.name), [mealTypesData]);
+
+  const plan: LibraryMealPlanDetail | undefined =
+    rawAssigned && typeof rawAssigned === "object" ? rawAssigned : undefined;
+
+  const getMealItems = (mealType: string): LibraryMealPlanItem[] =>
+    plan?.items?.filter((i: LibraryMealPlanItem) => i.mealType.toLowerCase() === mealType.toLowerCase()) ?? [];
+
+  if (assignedLoading) return <p className="text-xs text-slate-400 italic">Loading meal plan…</p>;
+  if (!plan) return <p className="text-xs text-slate-400 italic">No meal plan assigned.</p>;
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm font-semibold text-slate-700">{plan.name}{plan.targetPhase ? ` — Phase ${plan.targetPhase}` : ""}</p>
+      {plan.description && <p className="text-xs text-slate-500">{plan.description}</p>}
+      {mealTypeNames.map((mealTypeName) => {
+        const items = getMealItems(mealTypeName);
+        const mealCals = items.reduce((a: number, i: LibraryMealPlanItem) => a + (i.calories ?? 0), 0);
+        return (
+          <div key={mealTypeName}>
+            <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
+              {mealTypeName} — {Math.round(mealCals)} kcal
+            </p>
+            {items.length === 0 ? (
+              <p className="text-xs text-slate-400 italic pl-2">No items</p>
+            ) : (
+              <table className="w-full text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-50">
+                    <th className="text-left py-1 px-2 font-medium text-slate-500">Food</th>
+                    <th className="text-right py-1 px-2 font-medium text-slate-500">Portion</th>
+                    <th className="text-right py-1 px-2 font-medium text-slate-500">Cal</th>
+                    <th className="text-right py-1 px-2 font-medium text-slate-500">C (g)</th>
+                    <th className="text-right py-1 px-2 font-medium text-slate-500">F (g)</th>
+                    <th className="text-right py-1 px-2 font-medium text-slate-500">P (g)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item: LibraryMealPlanItem) => (
+                    <tr key={item.id} className="border-b border-slate-100">
+                      <td className="py-1 px-2 text-slate-800 font-medium">{item.foodName}</td>
+                      <td className="py-1 px-2 text-right text-slate-600">{item.portionGrams}{item.unit}</td>
+                      <td className="py-1 px-2 text-right text-slate-600">{Math.round(item.calories ?? 0)}</td>
+                      <td className="py-1 px-2 text-right text-slate-600">{(item.carbs ?? 0).toFixed(1)}</td>
+                      <td className="py-1 px-2 text-right text-slate-600">{(item.fat ?? 0).toFixed(1)}</td>
+                      <td className="py-1 px-2 text-right text-slate-600">{(item.protein ?? 0).toFixed(1)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * Read-only print version of approved foods.
+ * Renders a static table with approval status — no clickable buttons.
+ */
+function ApprovedFoodsPrintSection({ kidId }: { kidId: number }) {
+  const { data: foods, isLoading: foodsLoading } = useGetFoods({});
+  const { data: approvals, isLoading: approvalsLoading } = useGetKidFoodApprovals(kidId);
+
+  const approvalsMap = useMemo(() => {
+    const map: Record<number, string> = {};
+    approvals?.forEach((a: FoodApproval) => { map[a.foodId] = a.status; });
+    return map;
+  }, [approvals]);
+
+  if (foodsLoading || approvalsLoading) return <p className="text-xs text-slate-400 italic">Loading foods…</p>;
+
+  const activeFoods = (foods ?? []).filter((f) => f.isActive !== false);
+  if (activeFoods.length === 0) return <p className="text-xs text-slate-400 italic">No foods available.</p>;
+
+  return (
+    <table className="w-full text-xs border-collapse">
+      <thead>
+        <tr className="bg-slate-100">
+          <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Food</th>
+          <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Category</th>
+          <th className="text-right py-1.5 px-2 font-semibold text-slate-600">Cal</th>
+          <th className="text-right py-1.5 px-2 font-semibold text-slate-600">C (g)</th>
+          <th className="text-right py-1.5 px-2 font-semibold text-slate-600">F (g)</th>
+          <th className="text-right py-1.5 px-2 font-semibold text-slate-600">P (g)</th>
+          <th className="text-center py-1.5 px-2 font-semibold text-slate-600">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {activeFoods.map((food) => {
+          const status = approvalsMap[food.id];
+          const label = status === "approved" ? "Approved" : status === "avoid" ? "Avoid" : "—";
+          return (
+            <tr key={food.id} className="border-b border-slate-100">
+              <td className="py-1.5 px-2 font-medium text-slate-800">{food.name}</td>
+              <td className="py-1.5 px-2 text-slate-600">{food.category ?? "—"}</td>
+              <td className="py-1.5 px-2 text-right text-slate-600">{Math.round(food.calories ?? 0)}</td>
+              <td className="py-1.5 px-2 text-right text-slate-600">{(food.carbs ?? 0).toFixed(1)}</td>
+              <td className="py-1.5 px-2 text-right text-slate-600">{(food.fat ?? 0).toFixed(1)}</td>
+              <td className="py-1.5 px-2 text-right text-slate-600">{(food.protein ?? 0).toFixed(1)}</td>
+              <td className="py-1.5 px-2 text-center font-semibold text-slate-700">{label}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
   );
 }
 

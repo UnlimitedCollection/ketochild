@@ -196,3 +196,68 @@
   ::-webkit-scrollbar-thumb { background: #e0e3e5; border-radius: 10px; }
   ::-webkit-scrollbar-thumb:hover { background: #c3c6d7; }
 }
+
+@media print {
+  aside,
+  .app-shell-header,
+  .no-print {
+    display: none !important;
+  }
+
+  body, html {
+    background: white !important;
+  }
+
+  .print-content {
+    margin: 0 !important;
+    padding: 16px !important;
+    max-width: 100% !important;
+  }
+
+  .print-break-before {
+    page-break-before: always;
+    break-before: page;
+  }
+
+  table {
+    page-break-inside: auto;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  /* Print section used for showing all child profile tab data */
+  .print-section {
+    display: block !important;
+  }
+
+  /* print-only: shown only in print (hidden in normal view) */
+  .print-only {
+    display: block !important;
+  }
+  span.print-only {
+    display: inline !important;
+  }
+
+  /* Within print-only sections, hide form action controls */
+  .print-section button,
+  .print-section [role="combobox"],
+  .print-section input[type="checkbox"],
+  .print-section input[type="radio"] {
+    display: none !important;
+  }
+
+  .print-section input[type="text"],
+  .print-section input[type="number"],
+  .print-section textarea,
+  .print-section select {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    height: auto !important;
+    pointer-events: none;
+  }
+}

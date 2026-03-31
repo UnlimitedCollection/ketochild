@@ -1,7 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
+import { usePrint } from "@/hooks/usePrint";
+import { PrintLayout } from "@/components/print-layout";
 import { Link, useSearch, useLocation } from "wouter";
 import { useGetKids, useGetKid, useGetKidKetoneReadings, useDeleteKid, type GetKidsParams } from "@workspace/api-client-react";
 import { Search, Filter, Loader2, User, Eye, Flame, Clock, Trash2, Pencil, Scale, FlaskConical, TrendingUp, TrendingDown, Activity, Calendar, Utensils } from "lucide-react";
+import { PrintButton } from "@/components/print-button";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -356,6 +359,7 @@ export default function KidsListPage() {
   const [, navigate] = useLocation();
   const urlParams = new URLSearchParams(searchQuery);
   const initialSearch = urlParams.get("search") ?? "";
+  const { printRef, handlePrint } = usePrint("Patient Directory Report");
 
   const [searchTerm, setSearchTerm] = useState(initialSearch);
   const debouncedSearch = useDebounce(searchTerm, 300);
@@ -415,7 +419,7 @@ export default function KidsListPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <PrintLayout innerRef={printRef} className="space-y-6">
       {/* Delete Confirmation */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
@@ -454,14 +458,17 @@ export default function KidsListPage() {
             Manage and monitor all children in the program.
           </p>
         </div>
-        {canWrite && (
-          <Button asChild className="rounded-xl shadow-sm">
-            <Link href="/kids/new">+ New Patient</Link>
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <PrintButton onPrint={handlePrint} />
+          {canWrite && (
+            <Button asChild className="no-print rounded-xl shadow-sm">
+              <Link href="/kids/new">+ New Patient</Link>
+            </Button>
+          )}
+        </div>
       </div>
 
-      <Card className="rounded-2xl p-4 shadow-sm border-slate-200 bg-white">
+      <Card className="no-print rounded-2xl p-4 shadow-sm border-slate-200 bg-white">
         <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
           <div className="relative w-full md:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -502,6 +509,14 @@ export default function KidsListPage() {
         </div>
       </Card>
 
+      {/* Print-only: summarise active filters */}
+      {kids && (
+        <p className="hidden print-only text-xs text-slate-500 mb-2">
+          Showing {kids.length} patient{kids.length !== 1 ? "s" : ""}
+          {hasActiveFilters ? " (filtered)" : " (all)"}
+        </p>
+      )}
+
       <Card className="rounded-2xl shadow-sm border-slate-200 overflow-hidden bg-white">
         {isLoading ? (
           <div className="h-64 flex items-center justify-center">
@@ -525,7 +540,7 @@ export default function KidsListPage() {
                   <TableHead className="font-semibold text-slate-600">Meal Completion</TableHead>
                   <TableHead className="font-semibold text-slate-600">Keto Status</TableHead>
                   <TableHead className="font-semibold text-slate-600">Risk</TableHead>
-                  <TableHead className="text-right font-semibold text-slate-600">Action</TableHead>
+                  <TableHead className="no-print text-right font-semibold text-slate-600">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -600,7 +615,7 @@ export default function KidsListPage() {
                         </Badge>
                       )}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="no-print text-right">
                       <div className="flex items-center justify-end gap-1">
                         {canWrite && (
                           <Button
@@ -640,6 +655,6 @@ export default function KidsListPage() {
           </div>
         )}
       </Card>
-    </div>
+    </PrintLayout>
   );
 }

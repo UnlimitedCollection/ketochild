@@ -1,4 +1,8 @@
 import { useState, useEffect, useRef } from "react";
+import { PrintButton } from "@/components/print-button";
+import { RecipePrintReport } from "@/components/recipe-print-report";
+import { usePrint } from "@/hooks/usePrint";
+import { PrintLayout } from "@/components/print-layout";
 import {
   useListRecipes,
   useCreateRecipe,
@@ -622,6 +626,7 @@ export default function RecipesPage() {
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("");
+  const { printRef, handlePrint, isPrinting, onDataReady, printError, cancelPrint } = usePrint("Recipe Library Report", true);
 
   const { data: editRecipe } = useGetRecipe(editId ?? 0, {
     query: { enabled: editId !== null },
@@ -659,7 +664,7 @@ export default function RecipesPage() {
   }
 
   return (
-    <div className="space-y-6 pb-10">
+    <PrintLayout innerRef={printRef} className="space-y-6 pb-10">
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-black text-slate-900">Recipe Library</h1>
@@ -667,18 +672,30 @@ export default function RecipesPage() {
             Build and manage your keto-friendly recipe collection — macros auto-calculated from the food database
           </p>
         </div>
-        {canWrite && (
-          <button
-            onClick={() => { setEditId(null); setShowForm(true); }}
-            className="flex items-center gap-2 bg-[#004ac6] text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-blue-700 transition-all active:scale-95"
-          >
-            <Plus className="h-4 w-4" />
-            New Recipe
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {printError && (
+            <span className="no-print text-xs text-red-500">{printError}</span>
+          )}
+          {isPrinting && !printError && (
+            <span className="no-print flex items-center gap-1.5 text-xs text-slate-400">
+              Preparing report…
+              <button onClick={cancelPrint} className="text-slate-400 hover:text-slate-600 underline underline-offset-2">Cancel</button>
+            </span>
+          )}
+          <PrintButton onPrint={handlePrint} />
+          {canWrite && (
+            <button
+              onClick={() => { setEditId(null); setShowForm(true); }}
+              className="no-print flex items-center gap-2 bg-[#004ac6] text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-blue-700 transition-all active:scale-95"
+            >
+              <Plus className="h-4 w-4" />
+              New Recipe
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="no-print grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { label: "Total Recipes",  value: (recipes ?? []).length,      color: BLUE  },
           { label: "Categories",     value: categories.length,            color: GREEN },
@@ -703,7 +720,7 @@ export default function RecipesPage() {
         ))}
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="no-print bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="flex items-center gap-3 px-6 py-4 border-b border-slate-100 flex-wrap">
           <input
             value={search}
@@ -783,7 +800,7 @@ export default function RecipesPage() {
                   {canWrite && (
                     <button
                       onClick={(e) => { e.stopPropagation(); setEditId(r.id); setShowForm(true); }}
-                      className="p-1.5 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg opacity-0 group-hover:opacity-100 transition"
+                      className="no-print p-1.5 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg opacity-0 group-hover:opacity-100 transition"
                       title="Edit"
                     >
                       <Pencil className="h-4 w-4" />
@@ -791,7 +808,7 @@ export default function RecipesPage() {
                   )}
                   <button
                     onClick={(e) => { e.stopPropagation(); setViewId(r.id); }}
-                    className="p-1.5 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg opacity-0 group-hover:opacity-100 transition"
+                    className="no-print p-1.5 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg opacity-0 group-hover:opacity-100 transition"
                     title="View details"
                   >
                     <Eye className="h-4 w-4" />
@@ -799,13 +816,13 @@ export default function RecipesPage() {
                   {canWrite && (
                     <button
                       onClick={(e) => { e.stopPropagation(); setConfirmDelete(r.id); }}
-                      className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition"
+                      className="no-print p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition"
                       title="Delete"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
                   )}
-                  <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-slate-500 transition" />
+                  <ChevronRight className="no-print h-4 w-4 text-slate-300 group-hover:text-slate-500 transition" />
                 </div>
               </div>
             ))}
@@ -829,6 +846,15 @@ export default function RecipesPage() {
           onEdit={() => { setEditId(viewId); setViewId(null); setShowForm(true); }}
           canWrite={canWrite}
         />
+      )}
+
+      {/* Print-only: full recipe report with all recipes and their ingredients (only mounted when printing) */}
+      {isPrinting && (
+        <div className="hidden print-section">
+          <hr className="border-slate-300 my-6" />
+          <h2 className="text-lg font-bold text-slate-800 mb-4">Full Recipe Details</h2>
+          <RecipePrintReport onReady={onDataReady} />
+        </div>
       )}
 
       {confirmDelete !== null && (
@@ -857,6 +883,6 @@ export default function RecipesPage() {
           </div>
         </div>
       )}
-    </div>
+    </PrintLayout>
   );
 }

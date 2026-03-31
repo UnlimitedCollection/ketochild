@@ -396,7 +396,7 @@ function ProfileDropdown() {
 
 function AppHeader() {
   return (
-    <header className="sticky top-0 w-full z-40 bg-white/90 backdrop-blur-md flex items-center gap-4 px-8 py-3 shadow-sm border-b border-slate-200">
+    <header className="app-shell-header sticky top-0 w-full z-40 bg-white/90 backdrop-blur-md flex items-center gap-4 px-8 py-3 shadow-sm border-b border-slate-200">
       <div className="flex-1" />
       <div className="flex items-center gap-1">
         <AlertsBell />

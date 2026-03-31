@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
+import { usePrint } from "@/hooks/usePrint";
+import { PrintLayout } from "@/components/print-layout";
 import { useListTokens, useCreateToken, useResetToken, useRevokeToken } from "@workspace/api-client-react";
 import { useGetKids } from "@workspace/api-client-react";
 import type { ParentToken } from "@workspace/api-client-react";
 import { Loader2, Key, RefreshCw, Trash2, Plus, Copy, CheckCheck, Eye, EyeOff } from "lucide-react";
+import { PrintButton } from "@/components/print-button";
 import { useQueryClient } from "@tanstack/react-query";
 import { getListTokensQueryKey } from "@workspace/api-client-react";
 import { useCanWrite } from "@/hooks/useRole";
@@ -72,14 +75,14 @@ function TokenCell({ token, status }: { token: string; status: string }) {
       </span>
       <button
         onClick={() => setVisible(!visible)}
-        className="text-slate-400 hover:text-slate-600 shrink-0"
+        className="no-print text-slate-400 hover:text-slate-600 shrink-0"
         title={visible ? "Hide token" : "Show token"}
       >
         {visible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
       </button>
       <button
         onClick={handleCopy}
-        className="text-slate-400 hover:text-blue-600 shrink-0"
+        className="no-print text-slate-400 hover:text-blue-600 shrink-0"
         title="Copy token"
       >
         {copied ? <CheckCheck className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
@@ -193,6 +196,7 @@ export default function TokensPage() {
   const canWrite = useCanWrite();
   const [showDialog, setShowDialog] = useState(false);
   const [confirmRevoke, setConfirmRevoke] = useState<number | null>(null);
+  const { printRef, handlePrint } = usePrint("Parent Access Tokens Report");
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: getListTokensQueryKey() });
 
@@ -220,7 +224,7 @@ export default function TokensPage() {
   );
 
   return (
-    <div className="space-y-6 pb-10">
+    <PrintLayout innerRef={printRef} className="space-y-6 pb-10">
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-black text-slate-900">Parent Access Tokens</h1>
@@ -228,15 +232,18 @@ export default function TokensPage() {
             Generate secure login tokens for parents to access their child's meal records
           </p>
         </div>
-        {canWrite && (
-          <button
-            onClick={() => setShowDialog(true)}
-            className="flex items-center gap-2 bg-[#004ac6] text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-blue-700 transition-all active:scale-95"
-          >
-            <Plus className="h-4 w-4" />
-            Generate Token
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          <PrintButton onPrint={handlePrint} />
+          {canWrite && (
+            <button
+              onClick={() => setShowDialog(true)}
+              className="no-print flex items-center gap-2 bg-[#004ac6] text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-blue-700 transition-all active:scale-95"
+            >
+              <Plus className="h-4 w-4" />
+              Generate Token
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -285,7 +292,7 @@ export default function TokensPage() {
                   <th className="px-4 py-3 text-left font-semibold">Status</th>
                   <th className="px-4 py-3 text-left font-semibold">Created</th>
                   <th className="px-4 py-3 text-left font-semibold">Expires</th>
-                  <th className="px-4 py-3 text-right font-semibold">Actions</th>
+                  <th className="no-print px-4 py-3 text-right font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -303,14 +310,17 @@ export default function TokensPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 max-w-[220px]">
-                      <TokenCell token={t.token} status={t.status} />
+                      <div className="no-print">
+                        <TokenCell token={t.token} status={t.status} />
+                      </div>
+                      <span className="hidden print-only font-mono text-xs text-slate-800 break-all">{t.token}</span>
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadge status={t.status} />
                     </td>
                     <td className="px-4 py-3 text-slate-500 text-xs">{formatDate(t.createdAt)}</td>
                     <td className="px-4 py-3 text-slate-500 text-xs">{formatDate(t.expiresAt)}</td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="no-print px-4 py-3 text-right">
                       {canWrite && (
                         <div className="flex items-center justify-end gap-2">
                           <button
@@ -377,6 +387,6 @@ export default function TokensPage() {
           </div>
         </div>
       )}
-    </div>
+    </PrintLayout>
   );
 }

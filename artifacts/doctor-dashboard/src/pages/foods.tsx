@@ -1,4 +1,7 @@
 import { useState, useMemo, useRef } from "react";
+import { usePrint } from "@/hooks/usePrint";
+import { PrintLayout } from "@/components/print-layout";
+import { PrintButton } from "@/components/print-button";
 import { useUpload } from "@workspace/object-storage-web";
 import { useGetFoods, useCreateFood, useUpdateFood, useDeleteFood } from "@workspace/api-client-react";
 import type { CreateFoodRequest, UpdateFoodRequest } from "@workspace/api-client-react";
@@ -247,9 +250,10 @@ export default function FoodsPage() {
 
   const isMutating = createFood.isPending || updateFood.isPending || isUploading;
   const canWrite = useCanWrite();
+  const { printRef, handlePrint } = usePrint("Food Library Report");
 
   return (
-    <div className="space-y-6 p-6">
+    <PrintLayout innerRef={printRef} className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Food Library</h1>
@@ -257,17 +261,20 @@ export default function FoodsPage() {
             Manage the approved food database used in keto meal planning
           </p>
         </div>
-        {canWrite && (
-          <Button onClick={openAdd} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add Food
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <PrintButton onPrint={handlePrint} />
+          {canWrite && (
+            <Button onClick={openAdd} className="no-print gap-2">
+              <Plus className="h-4 w-4" />
+              Add Food
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Stats Row */}
       {foods && (
-        <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
+        <div className="no-print grid grid-cols-2 sm:grid-cols-2 gap-4">
           <Card className="border-0 shadow-sm">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center gap-3">
@@ -297,15 +304,15 @@ export default function FoodsPage() {
         </div>
       )}
 
-      {/* Filters */}
-      <Card className="border-0 shadow-sm">
+      {/* Filters — interactive table (hidden in print, replaced by print-only table below) */}
+      <Card className="no-print border-0 shadow-sm">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">Food Library</CardTitle>
             {inactiveCount > 0 && (
               <button
                 onClick={() => setShowInactive(!showInactive)}
-                className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-colors ${showInactive ? "bg-slate-700 text-white border-slate-700" : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"}`}
+                className={`no-print flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-colors ${showInactive ? "bg-slate-700 text-white border-slate-700" : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"}`}
               >
                 <EyeOff className="h-3.5 w-3.5" />
                 {showInactive ? `Hide inactive (${inactiveCount})` : `Show ${inactiveCount} inactive`}
@@ -314,7 +321,7 @@ export default function FoodsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <div className="no-print flex flex-col sm:flex-row gap-3 mb-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input
@@ -361,7 +368,7 @@ export default function FoodsPage() {
                     <TableHead className="font-semibold text-right">Fat (g)</TableHead>
                     <TableHead className="font-semibold text-right">Protein (g)</TableHead>
                     <TableHead className="font-semibold text-center">Active</TableHead>
-                    <TableHead className="w-20"></TableHead>
+                    <TableHead className="no-print w-20"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -408,7 +415,7 @@ export default function FoodsPage() {
                             />
                           )}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="no-print">
                           <div className="flex items-center justify-end gap-1">
                             {canWrite && (
                               <Button
@@ -455,6 +462,39 @@ export default function FoodsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Print-only: all foods regardless of filters */}
+      {foods && foods.length > 0 && (
+        <div className="hidden print-section">
+          <h2 className="text-lg font-bold text-slate-800 mb-3">Food Library — All Foods ({foods.length})</h2>
+          <table className="w-full text-xs border-collapse">
+            <thead>
+              <tr className="bg-slate-100">
+                <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Name</th>
+                <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Category</th>
+                <th className="text-right py-1.5 px-2 font-semibold text-slate-600">Cal</th>
+                <th className="text-right py-1.5 px-2 font-semibold text-slate-600">Carbs (g)</th>
+                <th className="text-right py-1.5 px-2 font-semibold text-slate-600">Fat (g)</th>
+                <th className="text-right py-1.5 px-2 font-semibold text-slate-600">Protein (g)</th>
+                <th className="text-center py-1.5 px-2 font-semibold text-slate-600">Active</th>
+              </tr>
+            </thead>
+            <tbody>
+              {foods.map((food) => (
+                <tr key={food.id} className={`border-b border-slate-100 ${food.isActive === false ? "opacity-60" : ""}`}>
+                  <td className="py-1.5 px-2 text-slate-800 font-medium">{food.name}</td>
+                  <td className="py-1.5 px-2 text-slate-600">{food.category ?? "—"}</td>
+                  <td className="py-1.5 px-2 text-right text-slate-600">{food.calories != null ? Math.round(food.calories) : "—"}</td>
+                  <td className="py-1.5 px-2 text-right text-slate-600">{food.carbs != null ? food.carbs.toFixed(1) : "—"}</td>
+                  <td className="py-1.5 px-2 text-right text-slate-600">{food.fat != null ? food.fat.toFixed(1) : "—"}</td>
+                  <td className="py-1.5 px-2 text-right text-slate-600">{food.protein != null ? food.protein.toFixed(1) : "—"}</td>
+                  <td className="py-1.5 px-2 text-center text-slate-600">{food.isActive === false ? "No" : "Yes"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Add / Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -721,6 +761,6 @@ export default function FoodsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </PrintLayout>
   );
 }

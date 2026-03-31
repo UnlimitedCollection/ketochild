@@ -1,4 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
+import { PrintButton } from "@/components/print-button";
+import { MealPlanPrintReport } from "@/components/meal-plan-print-report";
+import { usePrint } from "@/hooks/usePrint";
+import { PrintLayout } from "@/components/print-layout";
 import {
   useGetLibraryMealPlans,
   useCreateLibraryMealPlan,
@@ -170,6 +174,7 @@ export default function MealPlansPage() {
   }
 
   const canWrite = useCanWrite();
+  const { printRef, handlePrint, isPrinting, onDataReady, printError, cancelPrint } = usePrint("Meal Plans Report", true);
 
   const getMealItems = (mt: string): LibraryMealPlanItem[] =>
     planDetail?.items?.filter((i) => i.mealType.toLowerCase() === mt.toLowerCase()) ?? [];
@@ -191,7 +196,7 @@ export default function MealPlansPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <PrintLayout innerRef={printRef} className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -200,16 +205,28 @@ export default function MealPlansPage() {
             Create and manage reusable meal plans — assign them to patients from their profile
           </p>
         </div>
-        {canWrite && (
-          <Button onClick={() => setCreateOpen(true)} className="gap-2 shadow-sm">
-            <Plus className="h-4 w-4" />
-            New Plan
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {printError && (
+            <span className="no-print text-xs text-red-500">{printError}</span>
+          )}
+          {isPrinting && !printError && (
+            <span className="no-print flex items-center gap-1.5 text-xs text-slate-400">
+              Preparing report…
+              <button onClick={cancelPrint} className="text-slate-400 hover:text-slate-600 underline underline-offset-2">Cancel</button>
+            </span>
+          )}
+          <PrintButton onPrint={handlePrint} />
+          {canWrite && (
+            <Button onClick={() => setCreateOpen(true)} className="no-print gap-2 shadow-sm">
+              <Plus className="h-4 w-4" />
+              New Plan
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-2 gap-4 max-w-sm">
+      <div className="no-print grid grid-cols-2 gap-4 max-w-sm">
         <Card className="rounded-2xl border-slate-200 shadow-sm">
           <CardContent className="pt-4 pb-3">
             <div className="flex items-center gap-3">
@@ -240,7 +257,7 @@ export default function MealPlansPage() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="no-print grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Plan List */}
         <div className="space-y-4">
           <div className="relative">
@@ -292,7 +309,7 @@ export default function MealPlansPage() {
                           <Badge variant="outline" className="mt-1.5 text-xs">Phase {plan.targetPhase}</Badge>
                         )}
                       </div>
-                      <div className="flex gap-1 shrink-0">
+                      <div className="no-print flex gap-1 shrink-0">
                         {canWrite && (
                           <Button
                             variant="ghost"
@@ -389,7 +406,7 @@ export default function MealPlansPage() {
                     <CardHeader className="py-3 px-4">
                       <div className="flex items-center justify-between">
                         <button
-                          className="flex items-center gap-3 flex-1 text-left"
+                          className="no-print flex items-center gap-3 flex-1 text-left"
                           onClick={() => setExpandedMeal(isExpanded ? null : mealTypeName)}
                         >
                           <div className={`flex h-8 w-8 items-center justify-center rounded-lg border ${color}`}>
@@ -409,7 +426,7 @@ export default function MealPlansPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-7 text-xs gap-1"
+                            className="no-print h-7 text-xs gap-1"
                             onClick={() => { setAddItemMeal(mealTypeName); setExpandedMeal(mealTypeName); }}
                           >
                             <Plus className="h-3 w-3" />Add Food
@@ -444,7 +461,7 @@ export default function MealPlansPage() {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-7 w-7 text-slate-400 hover:text-destructive"
+                                    className="no-print h-7 w-7 text-slate-400 hover:text-destructive"
                                     onClick={() => handleDeleteItem(item.id)}
                                   >
                                     <Trash2 className="h-3.5 w-3.5" />
@@ -514,7 +531,16 @@ export default function MealPlansPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+
+      {/* Print-only: all meal plans with their items and nutritional totals (only mounted when printing) */}
+      {isPrinting && (
+        <div className="hidden print-section">
+          <hr className="border-slate-300 my-6" />
+          <h2 className="text-lg font-bold text-slate-800 mb-4">All Meal Plans — Full Report</h2>
+          <MealPlanPrintReport onReady={onDataReady} />
+        </div>
+      )}
+    </PrintLayout>
   );
 }
 

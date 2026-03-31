@@ -7,7 +7,7 @@ export default function MealPlansRecipesPage() {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="meal-plans">
-        <TabsList className="mb-4">
+        <TabsList className="no-print mb-4">
           <TabsTrigger value="meal-plans">Meal Plans</TabsTrigger>
           <TabsTrigger value="recipes">Recipes</TabsTrigger>
           <TabsTrigger value="meal-types">Meal Types</TabsTrigger>

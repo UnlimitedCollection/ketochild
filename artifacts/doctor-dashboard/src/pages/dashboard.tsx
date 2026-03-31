@@ -2,6 +2,9 @@ import { useGetDashboardStats, useGetDashboardRecentActivity } from "@workspace/
 import { useCanWrite } from "@/hooks/useRole";
 import { Link, useLocation } from "wouter";
 import { Loader2, AlertTriangle } from "lucide-react";
+import { PrintButton } from "@/components/print-button";
+import { PrintLayout } from "@/components/print-layout";
+import { usePrint } from "@/hooks/usePrint";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip,
   LineChart, Line, XAxis, YAxis, CartesianGrid
@@ -88,6 +91,7 @@ export default function DashboardPage() {
   const canWrite = useCanWrite();
   const { data: stats, isLoading, error } = useGetDashboardStats();
   const { data: recentActivity, isLoading: activityLoading } = useGetDashboardRecentActivity();
+  const { printRef, handlePrint } = usePrint("Clinical Overview Report");
 
   const now = new Date();
   const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -117,16 +121,19 @@ export default function DashboardPage() {
   const totalPhase = phaseData.reduce((s, p) => s + p.count, 0);
 
   return (
-    <div className="space-y-8 pb-10">
+    <PrintLayout innerRef={printRef} className="space-y-8 pb-10">
 
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-black text-slate-900">Clinical Overview</h1>
           <p className="text-sm text-slate-500 mt-0.5">Daily status for Pediatric Ketogenic Therapy</p>
         </div>
-        <p className="text-xs text-slate-400 mt-1 font-medium">
-          Last Updated: Today, {timeStr}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-xs text-slate-400 mt-1 font-medium">
+            Last Updated: Today, {timeStr}
+          </p>
+          <PrintButton onPrint={handlePrint} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
@@ -270,7 +277,7 @@ export default function DashboardPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
             <h2 className="font-bold text-slate-800">High-Risk Children</h2>
-            <Link href="/high-risk" className="text-xs font-bold text-blue-600 hover:underline">
+            <Link href="/high-risk" className="no-print text-xs font-bold text-blue-600 hover:underline">
               View All →
             </Link>
           </div>
@@ -331,7 +338,7 @@ export default function DashboardPage() {
                           {isCrit ? "Critical" : "Moderate"}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="no-print px-4 py-3 text-right">
                         <Link
                           href={`/kids/${kid.id}`}
                           className="text-slate-400 hover:text-blue-600 transition-colors font-bold"
@@ -350,7 +357,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {canWrite && (
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+          <div className="no-print bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
             <h2 className="font-bold text-slate-800 mb-4">Quick Actions</h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {QUICK_ACTIONS.map((qa) => (
@@ -407,6 +414,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-    </div>
+    </PrintLayout>
   );
 }
