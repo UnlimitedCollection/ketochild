@@ -17,9 +17,12 @@ import {
   UtensilsCrossed,
   Check,
   ChefHat,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCanWrite } from "@/hooks/useRole";
+import { usePagination } from "@/hooks/usePagination";
 
 const BLUE = "#004ac6";
 
@@ -110,6 +113,14 @@ export default function MealTypesPage() {
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: getListMealTypesQueryKey() });
+
+  const mealTypesList = mealTypes ?? [];
+  const pagination = usePagination({
+    totalItems: mealTypesList.length,
+    pageSize: 25,
+    resetDeps: [mealTypesList.length],
+  });
+  const paginatedMealTypes = mealTypesList.slice(pagination.startIndex, pagination.endIndex);
 
   function handleCreate() {
     if (!newName.trim()) return;
@@ -284,7 +295,7 @@ export default function MealTypesPage() {
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
           </div>
-        ) : (mealTypes ?? []).length === 0 ? (
+        ) : mealTypesList.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-slate-400 gap-3">
             <UtensilsCrossed className="h-10 w-10 opacity-30" />
             <p className="text-sm font-medium">No meal types yet</p>
@@ -293,104 +304,134 @@ export default function MealTypesPage() {
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-100">
-            {(mealTypes ?? []).map((mt) => (
-              <div
-                key={mt.id}
-                className="px-6 py-4 hover:bg-slate-50 group transition-colors"
-              >
-                <div className="flex items-center gap-4">
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ background: `${BLUE}14` }}
-                  >
-                    <UtensilsCrossed
-                      className="h-5 w-5"
-                      style={{ color: BLUE }}
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    {editingId === mt.id ? (
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <input
-                            autoFocus
-                            value={editName}
-                            onChange={(e) => setEditName(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") handleUpdate(mt.id);
-                              if (e.key === "Escape") cancelEdit();
-                            }}
-                            className="flex-1 border border-slate-200 rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
-                          />
-                          <button
-                            onClick={() => handleUpdate(mt.id)}
-                            disabled={
-                              updateMealType.isPending || !editName.trim()
-                            }
-                            className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg disabled:opacity-50"
-                            title="Save"
-                          >
-                            {updateMealType.isPending ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Check className="h-4 w-4" />
-                            )}
-                          </button>
-                          <button
-                            onClick={cancelEdit}
-                            className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg"
-                            title="Cancel"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
-                        <RecipePicker selectedIds={editRecipeIds} onChange={setEditRecipeIds} />
-                      </div>
-                    ) : (
-                      <div>
-                        <p className="font-semibold text-slate-900 truncate">
-                          {mt.name}
-                        </p>
-                        {mt.recipes.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 mt-1.5">
-                            {mt.recipes.map((r) => (
-                              <span
-                                key={r.id}
-                                className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 bg-slate-100 rounded-full px-2 py-0.5"
-                              >
-                                <ChefHat className="h-3 w-3" />
-                                {r.name}
-                              </span>
-                            ))}
+          <>
+            <div className="divide-y divide-slate-100">
+              {paginatedMealTypes.map((mt) => (
+                <div
+                  key={mt.id}
+                  className="px-6 py-4 hover:bg-slate-50 group transition-colors"
+                >
+                  <div className="flex items-center gap-4">
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ background: `${BLUE}14` }}
+                    >
+                      <UtensilsCrossed
+                        className="h-5 w-5"
+                        style={{ color: BLUE }}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      {editingId === mt.id ? (
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <input
+                              autoFocus
+                              value={editName}
+                              onChange={(e) => setEditName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleUpdate(mt.id);
+                                if (e.key === "Escape") cancelEdit();
+                              }}
+                              className="flex-1 border border-slate-200 rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                            />
+                            <button
+                              onClick={() => handleUpdate(mt.id)}
+                              disabled={
+                                updateMealType.isPending || !editName.trim()
+                              }
+                              className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg disabled:opacity-50"
+                              title="Save"
+                            >
+                              {updateMealType.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Check className="h-4 w-4" />
+                              )}
+                            </button>
+                            <button
+                              onClick={cancelEdit}
+                              className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg"
+                              title="Cancel"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
                           </div>
-                        )}
+                          <RecipePicker selectedIds={editRecipeIds} onChange={setEditRecipeIds} />
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="font-semibold text-slate-900 truncate">
+                            {mt.name}
+                          </p>
+                          {mt.recipes.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mt-1.5">
+                              {mt.recipes.map((r) => (
+                                <span
+                                  key={r.id}
+                                  className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 bg-slate-100 rounded-full px-2 py-0.5"
+                                >
+                                  <ChefHat className="h-3 w-3" />
+                                  {r.name}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {editingId !== mt.id && canWrite && (
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => startEdit(mt)}
+                          className="p-1.5 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg opacity-0 group-hover:opacity-100 transition"
+                          title="Edit"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteId(mt.id)}
+                          className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                     )}
                   </div>
-
-                  {editingId !== mt.id && canWrite && (
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        onClick={() => startEdit(mt)}
-                        className="p-1.5 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg opacity-0 group-hover:opacity-100 transition"
-                        title="Edit"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => setConfirmDeleteId(mt.id)}
-                        className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )}
                 </div>
+              ))}
+            </div>
+            {mealTypesList.length > 0 && (
+              <div className="flex items-center justify-between px-6 py-3 border-t border-slate-100">
+                <p className="text-sm text-slate-500">
+                  Showing {pagination.rangeStart}–{pagination.rangeEnd} of {mealTypesList.length}
+                </p>
+                {pagination.totalPages > 1 && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      disabled={!pagination.hasPrev}
+                      onClick={pagination.goPrev}
+                      className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft className="h-3.5 w-3.5" /> Previous
+                    </button>
+                    <span className="text-xs text-slate-500">
+                      Page {pagination.currentPage} of {pagination.totalPages}
+                    </span>
+                    <button
+                      disabled={!pagination.hasNext}
+                      onClick={pagination.goNext}
+                      className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      Next <ChevronRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
 

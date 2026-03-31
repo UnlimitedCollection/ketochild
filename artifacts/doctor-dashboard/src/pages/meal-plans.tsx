@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { PrintButton } from "@/components/print-button";
 import { MealPlanPrintReport } from "@/components/meal-plan-print-report";
 import { usePrint } from "@/hooks/usePrint";
+import { usePagination } from "@/hooks/usePagination";
 import { PrintLayout } from "@/components/print-layout";
 import { PrintFilterDialog, type PrintFilterResult } from "@/components/print-filter-dialog";
 import {
@@ -40,7 +41,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Loader2, Plus, Search, ClipboardList, Pencil, Trash2, ChevronDown, ChevronUp,
-  Coffee, Sun, Moon, BookOpen, Users, Eye, X, UtensilsCrossed,
+  Coffee, Sun, Moon, BookOpen, Users, Eye, X, UtensilsCrossed, ChevronLeft, ChevronRight,
 } from "lucide-react";
 
 const KNOWN_MEAL_STYLES: Record<string, { icon: typeof Coffee; color: string }> = {
@@ -93,6 +94,14 @@ export default function MealPlansPage() {
         (p.description ?? "").toLowerCase().includes(q)
     );
   }, [plans, search]);
+
+  const pagination = usePagination({
+    totalItems: filtered.length,
+    pageSize: 25,
+    resetDeps: [search],
+  });
+
+  const paginatedPlans = filtered.slice(pagination.startIndex, pagination.endIndex);
 
   function handleCreate(name: string, description: string, targetPhase: number | null) {
     createPlan.mutate(
@@ -310,7 +319,7 @@ export default function MealPlansPage() {
             </Card>
           ) : (
             <div className="space-y-2">
-              {filtered.map((plan) => (
+              {paginatedPlans.map((plan) => (
                 <Card
                   key={plan.id}
                   className={`cursor-pointer border transition-all hover:shadow-sm ${
@@ -366,6 +375,38 @@ export default function MealPlansPage() {
                   </CardContent>
                 </Card>
               ))}
+              {filtered.length > 0 && (
+                <div className="no-print flex items-center justify-between pt-1">
+                  <p className="text-xs text-slate-500">
+                    {pagination.rangeStart}–{pagination.rangeEnd} of {filtered.length}
+                  </p>
+                  {pagination.totalPages > 1 && (
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-6 w-6"
+                        disabled={!pagination.hasPrev}
+                        onClick={pagination.goPrev}
+                      >
+                        <ChevronLeft className="h-3.5 w-3.5" />
+                      </Button>
+                      <span className="text-xs text-slate-500">
+                        {pagination.currentPage}/{pagination.totalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-6 w-6"
+                        disabled={!pagination.hasNext}
+                        onClick={pagination.goNext}
+                      >
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
