@@ -58,7 +58,7 @@ type FoodFormData = {
   isActive: boolean;
 };
 
-const CATEGORIES = ["Carb", "Fat", "Protein", "Calories"];
+const CATEGORIES = ["Carb", "Fat", "Protein"];
 
 const BLANK_FORM: FoodFormData = {
   name: "",
@@ -426,7 +426,6 @@ export default function FoodsPage() {
                       Carb:     "bg-green-50 text-green-700 border-green-200",
                       Fat:      "bg-amber-50 text-amber-700 border-amber-200",
                       Protein:  "bg-rose-50 text-rose-700 border-rose-200",
-                      Calories: "bg-purple-50 text-purple-700 border-purple-200",
                     };
                     return (
                       <TableRow
