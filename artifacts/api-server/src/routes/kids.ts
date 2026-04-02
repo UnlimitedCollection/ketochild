@@ -13,7 +13,6 @@ import {
   mealEntriesTable,
   libraryMealPlansTable,
   libraryMealPlanItemsTable,
-  kidFoodApprovalsTable,
   mealPlanAssignmentHistoryTable,
 } from "@workspace/db";
 import { eq, and, desc, asc, gte, sql, inArray } from "drizzle-orm";
@@ -36,7 +35,6 @@ import {
   AddMealPlanItemBody,
   AssignKidMealPlanBody,
   UpdateMealLogImageBody,
-  UpsertKidFoodApprovalBody,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -457,7 +455,6 @@ router.delete("/:kidId", async (req, res) => {
   const isAdmin = req.session.doctorRole === "admin";
   try {
     await db.transaction(async (tx) => {
-      await tx.delete(kidFoodApprovalsTable).where(eq(kidFoodApprovalsTable.kidId, kidId));
       await tx.delete(ketoneReadingsTable).where(eq(ketoneReadingsTable.kidId, kidId));
       await tx.delete(notesTable).where(eq(notesTable.kidId, kidId));
       await tx.delete(weightRecordsTable).where(eq(weightRecordsTable.kidId, kidId));
@@ -1400,55 +1397,6 @@ router.put("/:kidId/meal-logs/:logId/image", async (req, res) => {
     res.json(updated);
   } catch (err) {
     req.log.error({ err }, "Update meal log image error");
-    res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
-  }
-});
-
-router.get("/:kidId/food-approvals", async (req, res) => {
-  const kidId = parseInt(req.params.kidId, 10);
-  try {
-    const approvals = await db
-      .select()
-      .from(kidFoodApprovalsTable)
-      .where(eq(kidFoodApprovalsTable.kidId, kidId));
-    res.json(approvals);
-  } catch (err) {
-    req.log.error({ err }, "Get food approvals error");
-    res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
-  }
-});
-
-router.put("/:kidId/food-approvals/:foodId", async (req, res) => {
-  const kidId = parseInt(req.params.kidId, 10);
-  const foodId = parseInt(req.params.foodId, 10);
-  try {
-    const parsed = UpsertKidFoodApprovalBody.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: "INVALID_INPUT", message: parsed.error.message });
-      return;
-    }
-
-    const { status } = parsed.data;
-
-    if (status === "none") {
-      await db
-        .delete(kidFoodApprovalsTable)
-        .where(and(eq(kidFoodApprovalsTable.kidId, kidId), eq(kidFoodApprovalsTable.foodId, foodId)));
-      res.json({ success: true, message: "Approval removed" });
-      return;
-    }
-
-    await db
-      .insert(kidFoodApprovalsTable)
-      .values({ kidId, foodId, status })
-      .onConflictDoUpdate({
-        target: [kidFoodApprovalsTable.kidId, kidFoodApprovalsTable.foodId],
-        set: { status, updatedAt: sql`now()` },
-      });
-
-    res.json({ success: true, message: "Approval saved" });
-  } catch (err) {
-    req.log.error({ err }, "Upsert food approval error");
     res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
   }
 });

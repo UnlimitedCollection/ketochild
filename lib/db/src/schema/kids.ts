@@ -1,9 +1,7 @@
-import { pgTable, serial, text, timestamp, varchar, integer, real, date, boolean, unique, check } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
+import { pgTable, serial, text, timestamp, varchar, integer, real, date, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { doctorsTable } from "./doctors";
-import { foodsTable } from "./foods";
 
 export const kidsTable = pgTable("kids", {
   id: serial("id").primaryKey(),
@@ -157,18 +155,6 @@ export const mealEntriesTable = pgTable("meal_entries", {
   protein: real("protein").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
-
-export const kidFoodApprovalsTable = pgTable("kid_food_approvals", {
-  id: serial("id").primaryKey(),
-  kidId: integer("kid_id").notNull().references(() => kidsTable.id, { onDelete: "cascade" }),
-  foodId: integer("food_id").notNull().references(() => foodsTable.id, { onDelete: "cascade" }),
-  status: varchar("status", { length: 20 }).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-}, (table) => [
-  unique().on(table.kidId, table.foodId),
-  check("kid_food_approvals_status_chk", sql`${table.status} IN ('approved', 'avoid')`),
-]);
 
 export const mealPlanAssignmentHistoryTable = pgTable("meal_plan_assignment_history", {
   id: serial("id").primaryKey(),

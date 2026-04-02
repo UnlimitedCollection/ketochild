@@ -25756,7 +25756,7 @@ var require_wait = __commonJS({
         return;
       }
       let prior = current;
-      const check3 = (backoff) => {
+      const check2 = (backoff) => {
         if (Date.now() > max) {
           done(null, "timed-out");
         } else {
@@ -25764,7 +25764,7 @@ var require_wait = __commonJS({
             prior = current;
             current = Atomics.load(state, index);
             if (current === prior) {
-              check3(backoff >= MAX_TIMEOUT ? MAX_TIMEOUT : backoff * 2);
+              check2(backoff >= MAX_TIMEOUT ? MAX_TIMEOUT : backoff * 2);
             } else {
               if (current === expected) done(null, "ok");
               else done(null, "not-equal");
@@ -25772,7 +25772,7 @@ var require_wait = __commonJS({
           }, backoff);
         }
       };
-      check3(1);
+      check2(1);
     }
     function waitDiff(state, index, expected, timeout, done) {
       const max = Date.now() + timeout;
@@ -25781,7 +25781,7 @@ var require_wait = __commonJS({
         done(null, "ok");
         return;
       }
-      const check3 = (backoff) => {
+      const check2 = (backoff) => {
         if (Date.now() > max) {
           done(null, "timed-out");
         } else {
@@ -25790,12 +25790,12 @@ var require_wait = __commonJS({
             if (current !== expected) {
               done(null, "ok");
             } else {
-              check3(backoff >= MAX_TIMEOUT ? MAX_TIMEOUT : backoff * 2);
+              check2(backoff >= MAX_TIMEOUT ? MAX_TIMEOUT : backoff * 2);
             }
           }, backoff);
         }
       };
-      check3(1);
+      check2(1);
     }
     module.exports = { wait, waitDiff };
   }
@@ -35674,7 +35674,7 @@ var ZodType = class {
     const result = await (isAsync(maybeAsyncResult) ? maybeAsyncResult : Promise.resolve(maybeAsyncResult));
     return handleResult(ctx, result);
   }
-  refine(check3, message) {
+  refine(check2, message) {
     const getIssueProperties = (val) => {
       if (typeof message === "string" || typeof message === "undefined") {
         return { message };
@@ -35685,7 +35685,7 @@ var ZodType = class {
       }
     };
     return this._refinement((val, ctx) => {
-      const result = check3(val);
+      const result = check2(val);
       const setError = () => ctx.addIssue({
         code: ZodIssueCode.custom,
         ...getIssueProperties(val)
@@ -35708,9 +35708,9 @@ var ZodType = class {
       }
     });
   }
-  refinement(check3, refinementData) {
+  refinement(check2, refinementData) {
     return this._refinement((val, ctx) => {
-      if (!check3(val)) {
+      if (!check2(val)) {
         ctx.addIssue(typeof refinementData === "function" ? refinementData(val, ctx) : refinementData);
         return false;
       } else {
@@ -35932,70 +35932,70 @@ var ZodString = class _ZodString2 extends ZodType {
     }
     const status = new ParseStatus();
     let ctx = void 0;
-    for (const check3 of this._def.checks) {
-      if (check3.kind === "min") {
-        if (input.data.length < check3.value) {
+    for (const check2 of this._def.checks) {
+      if (check2.kind === "min") {
+        if (input.data.length < check2.value) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.too_small,
-            minimum: check3.value,
+            minimum: check2.value,
             type: "string",
             inclusive: true,
             exact: false,
-            message: check3.message
+            message: check2.message
           });
           status.dirty();
         }
-      } else if (check3.kind === "max") {
-        if (input.data.length > check3.value) {
+      } else if (check2.kind === "max") {
+        if (input.data.length > check2.value) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.too_big,
-            maximum: check3.value,
+            maximum: check2.value,
             type: "string",
             inclusive: true,
             exact: false,
-            message: check3.message
+            message: check2.message
           });
           status.dirty();
         }
-      } else if (check3.kind === "length") {
-        const tooBig = input.data.length > check3.value;
-        const tooSmall = input.data.length < check3.value;
+      } else if (check2.kind === "length") {
+        const tooBig = input.data.length > check2.value;
+        const tooSmall = input.data.length < check2.value;
         if (tooBig || tooSmall) {
           ctx = this._getOrReturnCtx(input, ctx);
           if (tooBig) {
             addIssueToContext(ctx, {
               code: ZodIssueCode.too_big,
-              maximum: check3.value,
+              maximum: check2.value,
               type: "string",
               inclusive: true,
               exact: true,
-              message: check3.message
+              message: check2.message
             });
           } else if (tooSmall) {
             addIssueToContext(ctx, {
               code: ZodIssueCode.too_small,
-              minimum: check3.value,
+              minimum: check2.value,
               type: "string",
               inclusive: true,
               exact: true,
-              message: check3.message
+              message: check2.message
             });
           }
           status.dirty();
         }
-      } else if (check3.kind === "email") {
+      } else if (check2.kind === "email") {
         if (!emailRegex.test(input.data)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             validation: "email",
             code: ZodIssueCode.invalid_string,
-            message: check3.message
+            message: check2.message
           });
           status.dirty();
         }
-      } else if (check3.kind === "emoji") {
+      } else if (check2.kind === "emoji") {
         if (!emojiRegex) {
           emojiRegex = new RegExp(_emojiRegex, "u");
         }
@@ -36004,61 +36004,61 @@ var ZodString = class _ZodString2 extends ZodType {
           addIssueToContext(ctx, {
             validation: "emoji",
             code: ZodIssueCode.invalid_string,
-            message: check3.message
+            message: check2.message
           });
           status.dirty();
         }
-      } else if (check3.kind === "uuid") {
+      } else if (check2.kind === "uuid") {
         if (!uuidRegex.test(input.data)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             validation: "uuid",
             code: ZodIssueCode.invalid_string,
-            message: check3.message
+            message: check2.message
           });
           status.dirty();
         }
-      } else if (check3.kind === "nanoid") {
+      } else if (check2.kind === "nanoid") {
         if (!nanoidRegex.test(input.data)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             validation: "nanoid",
             code: ZodIssueCode.invalid_string,
-            message: check3.message
+            message: check2.message
           });
           status.dirty();
         }
-      } else if (check3.kind === "cuid") {
+      } else if (check2.kind === "cuid") {
         if (!cuidRegex.test(input.data)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             validation: "cuid",
             code: ZodIssueCode.invalid_string,
-            message: check3.message
+            message: check2.message
           });
           status.dirty();
         }
-      } else if (check3.kind === "cuid2") {
+      } else if (check2.kind === "cuid2") {
         if (!cuid2Regex.test(input.data)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             validation: "cuid2",
             code: ZodIssueCode.invalid_string,
-            message: check3.message
+            message: check2.message
           });
           status.dirty();
         }
-      } else if (check3.kind === "ulid") {
+      } else if (check2.kind === "ulid") {
         if (!ulidRegex.test(input.data)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             validation: "ulid",
             code: ZodIssueCode.invalid_string,
-            message: check3.message
+            message: check2.message
           });
           status.dirty();
         }
-      } else if (check3.kind === "url") {
+      } else if (check2.kind === "url") {
         try {
           new URL(input.data);
         } catch {
@@ -36066,153 +36066,153 @@ var ZodString = class _ZodString2 extends ZodType {
           addIssueToContext(ctx, {
             validation: "url",
             code: ZodIssueCode.invalid_string,
-            message: check3.message
+            message: check2.message
           });
           status.dirty();
         }
-      } else if (check3.kind === "regex") {
-        check3.regex.lastIndex = 0;
-        const testResult = check3.regex.test(input.data);
+      } else if (check2.kind === "regex") {
+        check2.regex.lastIndex = 0;
+        const testResult = check2.regex.test(input.data);
         if (!testResult) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             validation: "regex",
             code: ZodIssueCode.invalid_string,
-            message: check3.message
+            message: check2.message
           });
           status.dirty();
         }
-      } else if (check3.kind === "trim") {
+      } else if (check2.kind === "trim") {
         input.data = input.data.trim();
-      } else if (check3.kind === "includes") {
-        if (!input.data.includes(check3.value, check3.position)) {
+      } else if (check2.kind === "includes") {
+        if (!input.data.includes(check2.value, check2.position)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.invalid_string,
-            validation: { includes: check3.value, position: check3.position },
-            message: check3.message
+            validation: { includes: check2.value, position: check2.position },
+            message: check2.message
           });
           status.dirty();
         }
-      } else if (check3.kind === "toLowerCase") {
+      } else if (check2.kind === "toLowerCase") {
         input.data = input.data.toLowerCase();
-      } else if (check3.kind === "toUpperCase") {
+      } else if (check2.kind === "toUpperCase") {
         input.data = input.data.toUpperCase();
-      } else if (check3.kind === "startsWith") {
-        if (!input.data.startsWith(check3.value)) {
+      } else if (check2.kind === "startsWith") {
+        if (!input.data.startsWith(check2.value)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.invalid_string,
-            validation: { startsWith: check3.value },
-            message: check3.message
+            validation: { startsWith: check2.value },
+            message: check2.message
           });
           status.dirty();
         }
-      } else if (check3.kind === "endsWith") {
-        if (!input.data.endsWith(check3.value)) {
+      } else if (check2.kind === "endsWith") {
+        if (!input.data.endsWith(check2.value)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.invalid_string,
-            validation: { endsWith: check3.value },
-            message: check3.message
+            validation: { endsWith: check2.value },
+            message: check2.message
           });
           status.dirty();
         }
-      } else if (check3.kind === "datetime") {
-        const regex = datetimeRegex(check3);
+      } else if (check2.kind === "datetime") {
+        const regex = datetimeRegex(check2);
         if (!regex.test(input.data)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.invalid_string,
             validation: "datetime",
-            message: check3.message
+            message: check2.message
           });
           status.dirty();
         }
-      } else if (check3.kind === "date") {
+      } else if (check2.kind === "date") {
         const regex = dateRegex;
         if (!regex.test(input.data)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.invalid_string,
             validation: "date",
-            message: check3.message
+            message: check2.message
           });
           status.dirty();
         }
-      } else if (check3.kind === "time") {
-        const regex = timeRegex(check3);
+      } else if (check2.kind === "time") {
+        const regex = timeRegex(check2);
         if (!regex.test(input.data)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.invalid_string,
             validation: "time",
-            message: check3.message
+            message: check2.message
           });
           status.dirty();
         }
-      } else if (check3.kind === "duration") {
+      } else if (check2.kind === "duration") {
         if (!durationRegex.test(input.data)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             validation: "duration",
             code: ZodIssueCode.invalid_string,
-            message: check3.message
+            message: check2.message
           });
           status.dirty();
         }
-      } else if (check3.kind === "ip") {
-        if (!isValidIP(input.data, check3.version)) {
+      } else if (check2.kind === "ip") {
+        if (!isValidIP(input.data, check2.version)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             validation: "ip",
             code: ZodIssueCode.invalid_string,
-            message: check3.message
+            message: check2.message
           });
           status.dirty();
         }
-      } else if (check3.kind === "jwt") {
-        if (!isValidJWT(input.data, check3.alg)) {
+      } else if (check2.kind === "jwt") {
+        if (!isValidJWT(input.data, check2.alg)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             validation: "jwt",
             code: ZodIssueCode.invalid_string,
-            message: check3.message
+            message: check2.message
           });
           status.dirty();
         }
-      } else if (check3.kind === "cidr") {
-        if (!isValidCidr(input.data, check3.version)) {
+      } else if (check2.kind === "cidr") {
+        if (!isValidCidr(input.data, check2.version)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             validation: "cidr",
             code: ZodIssueCode.invalid_string,
-            message: check3.message
+            message: check2.message
           });
           status.dirty();
         }
-      } else if (check3.kind === "base64") {
+      } else if (check2.kind === "base64") {
         if (!base64Regex.test(input.data)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             validation: "base64",
             code: ZodIssueCode.invalid_string,
-            message: check3.message
+            message: check2.message
           });
           status.dirty();
         }
-      } else if (check3.kind === "base64url") {
+      } else if (check2.kind === "base64url") {
         if (!base64urlRegex.test(input.data)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             validation: "base64url",
             code: ZodIssueCode.invalid_string,
-            message: check3.message
+            message: check2.message
           });
           status.dirty();
         }
       } else {
-        util.assertNever(check3);
+        util.assertNever(check2);
       }
     }
     return { status: status.value, value: input.data };
@@ -36224,10 +36224,10 @@ var ZodString = class _ZodString2 extends ZodType {
       ...errorUtil.errToObj(message)
     });
   }
-  _addCheck(check3) {
+  _addCheck(check2) {
     return new _ZodString2({
       ...this._def,
-      checks: [...this._def.checks, check3]
+      checks: [...this._def.checks, check2]
     });
   }
   email(message) {
@@ -36492,67 +36492,67 @@ var ZodNumber = class _ZodNumber extends ZodType {
     }
     let ctx = void 0;
     const status = new ParseStatus();
-    for (const check3 of this._def.checks) {
-      if (check3.kind === "int") {
+    for (const check2 of this._def.checks) {
+      if (check2.kind === "int") {
         if (!util.isInteger(input.data)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.invalid_type,
             expected: "integer",
             received: "float",
-            message: check3.message
+            message: check2.message
           });
           status.dirty();
         }
-      } else if (check3.kind === "min") {
-        const tooSmall = check3.inclusive ? input.data < check3.value : input.data <= check3.value;
+      } else if (check2.kind === "min") {
+        const tooSmall = check2.inclusive ? input.data < check2.value : input.data <= check2.value;
         if (tooSmall) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.too_small,
-            minimum: check3.value,
+            minimum: check2.value,
             type: "number",
-            inclusive: check3.inclusive,
+            inclusive: check2.inclusive,
             exact: false,
-            message: check3.message
+            message: check2.message
           });
           status.dirty();
         }
-      } else if (check3.kind === "max") {
-        const tooBig = check3.inclusive ? input.data > check3.value : input.data >= check3.value;
+      } else if (check2.kind === "max") {
+        const tooBig = check2.inclusive ? input.data > check2.value : input.data >= check2.value;
         if (tooBig) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.too_big,
-            maximum: check3.value,
+            maximum: check2.value,
             type: "number",
-            inclusive: check3.inclusive,
+            inclusive: check2.inclusive,
             exact: false,
-            message: check3.message
+            message: check2.message
           });
           status.dirty();
         }
-      } else if (check3.kind === "multipleOf") {
-        if (floatSafeRemainder(input.data, check3.value) !== 0) {
+      } else if (check2.kind === "multipleOf") {
+        if (floatSafeRemainder(input.data, check2.value) !== 0) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.not_multiple_of,
-            multipleOf: check3.value,
-            message: check3.message
+            multipleOf: check2.value,
+            message: check2.message
           });
           status.dirty();
         }
-      } else if (check3.kind === "finite") {
+      } else if (check2.kind === "finite") {
         if (!Number.isFinite(input.data)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.not_finite,
-            message: check3.message
+            message: check2.message
           });
           status.dirty();
         }
       } else {
-        util.assertNever(check3);
+        util.assertNever(check2);
       }
     }
     return { status: status.value, value: input.data };
@@ -36583,10 +36583,10 @@ var ZodNumber = class _ZodNumber extends ZodType {
       ]
     });
   }
-  _addCheck(check3) {
+  _addCheck(check2) {
     return new _ZodNumber({
       ...this._def,
-      checks: [...this._def.checks, check3]
+      checks: [...this._def.checks, check2]
     });
   }
   int(message) {
@@ -36721,45 +36721,45 @@ var ZodBigInt = class _ZodBigInt extends ZodType {
     }
     let ctx = void 0;
     const status = new ParseStatus();
-    for (const check3 of this._def.checks) {
-      if (check3.kind === "min") {
-        const tooSmall = check3.inclusive ? input.data < check3.value : input.data <= check3.value;
+    for (const check2 of this._def.checks) {
+      if (check2.kind === "min") {
+        const tooSmall = check2.inclusive ? input.data < check2.value : input.data <= check2.value;
         if (tooSmall) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.too_small,
             type: "bigint",
-            minimum: check3.value,
-            inclusive: check3.inclusive,
-            message: check3.message
+            minimum: check2.value,
+            inclusive: check2.inclusive,
+            message: check2.message
           });
           status.dirty();
         }
-      } else if (check3.kind === "max") {
-        const tooBig = check3.inclusive ? input.data > check3.value : input.data >= check3.value;
+      } else if (check2.kind === "max") {
+        const tooBig = check2.inclusive ? input.data > check2.value : input.data >= check2.value;
         if (tooBig) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.too_big,
             type: "bigint",
-            maximum: check3.value,
-            inclusive: check3.inclusive,
-            message: check3.message
+            maximum: check2.value,
+            inclusive: check2.inclusive,
+            message: check2.message
           });
           status.dirty();
         }
-      } else if (check3.kind === "multipleOf") {
-        if (input.data % check3.value !== BigInt(0)) {
+      } else if (check2.kind === "multipleOf") {
+        if (input.data % check2.value !== BigInt(0)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.not_multiple_of,
-            multipleOf: check3.value,
-            message: check3.message
+            multipleOf: check2.value,
+            message: check2.message
           });
           status.dirty();
         }
       } else {
-        util.assertNever(check3);
+        util.assertNever(check2);
       }
     }
     return { status: status.value, value: input.data };
@@ -36799,10 +36799,10 @@ var ZodBigInt = class _ZodBigInt extends ZodType {
       ]
     });
   }
-  _addCheck(check3) {
+  _addCheck(check2) {
     return new _ZodBigInt({
       ...this._def,
-      checks: [...this._def.checks, check3]
+      checks: [...this._def.checks, check2]
     });
   }
   positive(message) {
@@ -36922,35 +36922,35 @@ var ZodDate = class _ZodDate extends ZodType {
     }
     const status = new ParseStatus();
     let ctx = void 0;
-    for (const check3 of this._def.checks) {
-      if (check3.kind === "min") {
-        if (input.data.getTime() < check3.value) {
+    for (const check2 of this._def.checks) {
+      if (check2.kind === "min") {
+        if (input.data.getTime() < check2.value) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.too_small,
-            message: check3.message,
+            message: check2.message,
             inclusive: true,
             exact: false,
-            minimum: check3.value,
+            minimum: check2.value,
             type: "date"
           });
           status.dirty();
         }
-      } else if (check3.kind === "max") {
-        if (input.data.getTime() > check3.value) {
+      } else if (check2.kind === "max") {
+        if (input.data.getTime() > check2.value) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode.too_big,
-            message: check3.message,
+            message: check2.message,
             inclusive: true,
             exact: false,
-            maximum: check3.value,
+            maximum: check2.value,
             type: "date"
           });
           status.dirty();
         }
       } else {
-        util.assertNever(check3);
+        util.assertNever(check2);
       }
     }
     return {
@@ -36958,10 +36958,10 @@ var ZodDate = class _ZodDate extends ZodType {
       value: new Date(input.data.getTime())
     };
   }
-  _addCheck(check3) {
+  _addCheck(check2) {
     return new _ZodDate({
       ...this._def,
-      checks: [...this._def.checks, check3]
+      checks: [...this._def.checks, check2]
     });
   }
   min(minDate, message) {
@@ -38822,10 +38822,10 @@ function cleanParams(params, data) {
   const p2 = typeof p === "string" ? { message: p } : p;
   return p2;
 }
-function custom(check3, _params = {}, fatal) {
-  if (check3)
+function custom(check2, _params = {}, fatal) {
+  if (check2)
     return ZodAny.create().superRefine((data, ctx) => {
-      const r = check3(data);
+      const r = check2(data);
       if (r instanceof Promise) {
         return r.then((r2) => {
           if (!r2) {
@@ -39405,31 +39405,6 @@ var UpdateMealLogImageResponse = objectType({
   notes: stringType().optional(),
   imageUrl: stringType().nullish(),
   createdAt: dateType()
-});
-var GetKidFoodApprovalsParams = objectType({
-  kidId: coerce.number()
-});
-var GetKidFoodApprovalsResponseItem = objectType({
-  id: numberType(),
-  kidId: numberType(),
-  foodId: numberType(),
-  status: enumType(["approved", "avoid"]),
-  createdAt: dateType(),
-  updatedAt: dateType()
-});
-var GetKidFoodApprovalsResponse = arrayType(
-  GetKidFoodApprovalsResponseItem
-);
-var UpsertKidFoodApprovalParams = objectType({
-  kidId: coerce.number(),
-  foodId: coerce.number()
-});
-var UpsertKidFoodApprovalBody = objectType({
-  status: enumType(["approved", "avoid", "none"]).describe('Use "none" to delete the approval record')
-});
-var UpsertKidFoodApprovalResponse = objectType({
-  success: booleanType(),
-  message: stringType().optional()
 });
 var ListTokensResponseItem = objectType({
   id: numberType(),
@@ -40431,9 +40406,6 @@ function iife(fn, ...args) {
 }
 
 // ../../node_modules/.pnpm/drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/drizzle-orm/pg-core/unique-constraint.js
-function unique(name) {
-  return new UniqueOnConstraintBuilder(name);
-}
 function uniqueKeyName(table, columns) {
   return `${table[TableName]}_${columns.join("_")}_unique`;
 }
@@ -40804,10 +40776,10 @@ var PgEnumColumn = class extends PgColumn {
 // ../../node_modules/.pnpm/drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/drizzle-orm/subquery.js
 var Subquery = class {
   static [entityKind] = "Subquery";
-  constructor(sql2, fields, alias, isWith = false, usedTables = []) {
+  constructor(sql3, fields, alias, isWith = false, usedTables = []) {
     this._ = {
       brand: "Subquery",
-      sql: sql2,
+      sql: sql3,
       selectedFields: fields,
       alias,
       isWith,
@@ -41208,19 +41180,19 @@ function sql(strings, ...params) {
   }
   return new SQL(queryChunks);
 }
-((sql2) => {
+((sql22) => {
   function empty() {
     return new SQL([]);
   }
-  sql2.empty = empty;
+  sql22.empty = empty;
   function fromList(list) {
     return new SQL(list);
   }
-  sql2.fromList = fromList;
+  sql22.fromList = fromList;
   function raw(str) {
     return new SQL([new StringChunk(str)]);
   }
-  sql2.raw = raw;
+  sql22.raw = raw;
   function join(chunks, separator) {
     const result = [];
     for (const [i, chunk] of chunks.entries()) {
@@ -41231,24 +41203,24 @@ function sql(strings, ...params) {
     }
     return new SQL(result);
   }
-  sql2.join = join;
+  sql22.join = join;
   function identifier(value) {
     return new Name(value);
   }
-  sql2.identifier = identifier;
+  sql22.identifier = identifier;
   function placeholder2(name2) {
     return new Placeholder(name2);
   }
-  sql2.placeholder = placeholder2;
+  sql22.placeholder = placeholder2;
   function param2(value, encoder) {
     return new Param(value, encoder);
   }
-  sql2.param = param2;
+  sql22.param = param2;
 })(sql || (sql = {}));
 ((SQL2) => {
   class Aliased {
-    constructor(sql2, fieldAlias) {
-      this.sql = sql2;
+    constructor(sql22, fieldAlias) {
+      this.sql = sql22;
       this.fieldAlias = fieldAlias;
     }
     static [entityKind] = "SQL.Aliased";
@@ -43055,33 +43027,6 @@ var pgTable = (name, columns, extraConfig) => {
   return pgTableWithSchema(name, columns, extraConfig, void 0);
 };
 
-// ../../node_modules/.pnpm/drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/drizzle-orm/pg-core/checks.js
-var CheckBuilder = class {
-  constructor(name, value) {
-    this.name = name;
-    this.value = value;
-  }
-  static [entityKind] = "PgCheckBuilder";
-  brand;
-  /** @internal */
-  build(table) {
-    return new Check(table, this);
-  }
-};
-var Check = class {
-  constructor(table, builder) {
-    this.table = table;
-    this.name = builder.name;
-    this.value = builder.value;
-  }
-  static [entityKind] = "PgCheck";
-  name;
-  value;
-};
-function check(name, value) {
-  return new CheckBuilder(name, value);
-}
-
 // ../../node_modules/.pnpm/drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/drizzle-orm/pg-core/primary-keys.js
 function primaryKey(...config2) {
   if (config2[0].columns) {
@@ -43983,8 +43928,8 @@ var PgDialect = class {
       return "none";
     }
   }
-  sqlToQuery(sql2, invokeSource) {
-    return sql2.toQuery({
+  sqlToQuery(sql22, invokeSource) {
+    return sql22.toQuery({
       casing: this.casing,
       escapeName: this.escapeName,
       escapeParam: this.escapeParam,
@@ -46343,10 +46288,10 @@ var PgRelationalQuery = class extends QueryPromise {
 
 // ../../node_modules/.pnpm/drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/drizzle-orm/pg-core/query-builders/raw.js
 var PgRaw = class extends QueryPromise {
-  constructor(execute, sql2, query, mapBatchResult) {
+  constructor(execute, sql3, query, mapBatchResult) {
     super();
     this.execute = execute;
-    this.sql = sql2;
+    this.sql = sql3;
     this.query = query;
     this.mapBatchResult = mapBatchResult;
   }
@@ -46666,8 +46611,8 @@ var NoopCache = class extends Cache {
   async onMutate(_params) {
   }
 };
-async function hashQuery(sql2, params) {
-  const dataToHash = `${sql2}-${JSON.stringify(params)}`;
+async function hashQuery(sql3, params) {
+  const dataToHash = `${sql3}-${JSON.stringify(params)}`;
   const encoder = new TextEncoder();
   const data = encoder.encode(dataToHash);
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
@@ -46800,8 +46745,8 @@ var PgSession = class {
     ).all();
   }
   /** @internal */
-  async count(sql2, token) {
-    const res = await this.execute(sql2, token);
+  async count(sql22, token) {
+    const res = await this.execute(sql22, token);
     return Number(
       res[0]["count"]
     );
@@ -47023,8 +46968,8 @@ var NodePgSession = class _NodePgSession extends PgSession {
       if (isPool) session2.client.release();
     }
   }
-  async count(sql2) {
-    const res = await this.execute(sql2);
+  async count(sql22) {
+    const res = await this.execute(sql22);
     return Number(
       res["rows"][0]["count"]
     );
@@ -47134,7 +47079,6 @@ __export(schema_exports, {
   insertNoteSchema: () => insertNoteSchema,
   insertWeightRecordSchema: () => insertWeightRecordSchema,
   ketoneReadingsTable: () => ketoneReadingsTable,
-  kidFoodApprovalsTable: () => kidFoodApprovalsTable,
   kidsTable: () => kidsTable,
   libraryMealPlanItemsTable: () => libraryMealPlanItemsTable,
   libraryMealPlansTable: () => libraryMealPlansTable,
@@ -47241,7 +47185,7 @@ __export(external_exports2, {
   bigint: () => bigint3,
   boolean: () => boolean3,
   catch: () => _catch2,
-  check: () => check2,
+  check: () => check,
   cidrv4: () => cidrv42,
   cidrv6: () => cidrv62,
   clone: () => clone,
@@ -57333,7 +57277,7 @@ var ZodType2 = /* @__PURE__ */ $constructor("ZodType", (inst, def) => {
   inst.parseAsync = async (data, params) => parseAsync2(inst, data, params, { callee: inst.parseAsync });
   inst.safeParseAsync = async (data, params) => safeParseAsync2(inst, data, params);
   inst.spa = inst.safeParseAsync;
-  inst.refine = (check3, params) => inst.check(refine(check3, params));
+  inst.refine = (check2, params) => inst.check(refine(check2, params));
   inst.superRefine = (refinement) => inst.check(superRefine(refinement));
   inst.overwrite = (fn) => inst.check(_overwrite(fn));
   inst.optional = () => optional(inst);
@@ -58179,7 +58123,7 @@ var ZodCustom = /* @__PURE__ */ $constructor("ZodCustom", (inst, def) => {
   $ZodCustom.init(inst, def);
   ZodType2.init(inst, def);
 });
-function check2(fn) {
+function check(fn) {
   const ch = new $ZodCheck({
     check: "custom"
     // ...util.normalizeParams(params),
@@ -58194,7 +58138,7 @@ function refine(fn, _params = {}) {
   return _refine(ZodCustom, fn, _params);
 }
 function superRefine(fn) {
-  const ch = check2((payload) => {
+  const ch = check((payload) => {
     payload.addIssue = (issue2) => {
       if (typeof issue2 === "string") {
         payload.issues.push(util_exports.issue(issue2, payload.value, ch._zod.def));
@@ -58556,23 +58500,6 @@ var doctorsTable = pgTable("doctors", {
 });
 var insertDoctorSchema = createInsertSchema(doctorsTable).omit({ id: true, createdAt: true });
 
-// ../../lib/db/src/schema/foods.ts
-var foodsTable = pgTable("foods", {
-  id: serial("id").primaryKey(),
-  name: varchar("name", { length: 200 }).notNull(),
-  category: varchar("category", { length: 100 }).notNull(),
-  carbs: real("carbs").notNull().default(0),
-  fat: real("fat").notNull().default(0),
-  protein: real("protein").notNull().default(0),
-  calories: real("calories").notNull().default(0),
-  imageUrl: text("image_url").default(""),
-  description: text("description").default(""),
-  indicator: varchar("indicator", { length: 50 }).default("vegi"),
-  isActive: boolean("is_active").notNull().default(true),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull()
-});
-
 // ../../lib/db/src/schema/kids.ts
 var kidsTable = pgTable("kids", {
   id: serial("id").primaryKey(),
@@ -58713,17 +58640,6 @@ var mealEntriesTable = pgTable("meal_entries", {
   protein: real("protein").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
-var kidFoodApprovalsTable = pgTable("kid_food_approvals", {
-  id: serial("id").primaryKey(),
-  kidId: integer("kid_id").notNull().references(() => kidsTable.id, { onDelete: "cascade" }),
-  foodId: integer("food_id").notNull().references(() => foodsTable.id, { onDelete: "cascade" }),
-  status: varchar("status", { length: 20 }).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull()
-}, (table) => [
-  unique().on(table.kidId, table.foodId),
-  check("kid_food_approvals_status_chk", sql`${table.status} IN ('approved', 'avoid')`)
-]);
 var mealPlanAssignmentHistoryTable = pgTable("meal_plan_assignment_history", {
   id: serial("id").primaryKey(),
   kidId: integer("kid_id").notNull().references(() => kidsTable.id, { onDelete: "cascade" }),
@@ -58738,6 +58654,23 @@ var mealPlanAssignmentHistoryTable = pgTable("meal_plan_assignment_history", {
 var insertKidSchema = createInsertSchema(kidsTable).omit({ id: true, createdAt: true });
 var insertWeightRecordSchema = createInsertSchema(weightRecordsTable).omit({ id: true, createdAt: true });
 var insertNoteSchema = createInsertSchema(notesTable).omit({ id: true, createdAt: true });
+
+// ../../lib/db/src/schema/foods.ts
+var foodsTable = pgTable("foods", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 200 }).notNull(),
+  category: varchar("category", { length: 100 }).notNull(),
+  carbs: real("carbs").notNull().default(0),
+  fat: real("fat").notNull().default(0),
+  protein: real("protein").notNull().default(0),
+  calories: real("calories").notNull().default(0),
+  imageUrl: text("image_url").default(""),
+  description: text("description").default(""),
+  indicator: varchar("indicator", { length: 50 }).default("vegi"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
 
 // ../../lib/db/src/schema/tokens.ts
 var parentTokensTable = pgTable("parent_tokens", {
@@ -61352,7 +61285,6 @@ router5.delete("/:kidId", async (req, res) => {
   const isAdmin = req.session.doctorRole === "admin";
   try {
     await db.transaction(async (tx) => {
-      await tx.delete(kidFoodApprovalsTable).where(eq(kidFoodApprovalsTable.kidId, kidId));
       await tx.delete(ketoneReadingsTable).where(eq(ketoneReadingsTable.kidId, kidId));
       await tx.delete(notesTable).where(eq(notesTable.kidId, kidId));
       await tx.delete(weightRecordsTable).where(eq(weightRecordsTable.kidId, kidId));
@@ -62023,41 +61955,6 @@ router5.put("/:kidId/meal-logs/:logId/image", async (req, res) => {
     res.json(updated);
   } catch (err) {
     req.log.error({ err }, "Update meal log image error");
-    res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
-  }
-});
-router5.get("/:kidId/food-approvals", async (req, res) => {
-  const kidId = parseInt(req.params.kidId, 10);
-  try {
-    const approvals = await db.select().from(kidFoodApprovalsTable).where(eq(kidFoodApprovalsTable.kidId, kidId));
-    res.json(approvals);
-  } catch (err) {
-    req.log.error({ err }, "Get food approvals error");
-    res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
-  }
-});
-router5.put("/:kidId/food-approvals/:foodId", async (req, res) => {
-  const kidId = parseInt(req.params.kidId, 10);
-  const foodId = parseInt(req.params.foodId, 10);
-  try {
-    const parsed = UpsertKidFoodApprovalBody.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: "INVALID_INPUT", message: parsed.error.message });
-      return;
-    }
-    const { status } = parsed.data;
-    if (status === "none") {
-      await db.delete(kidFoodApprovalsTable).where(and(eq(kidFoodApprovalsTable.kidId, kidId), eq(kidFoodApprovalsTable.foodId, foodId)));
-      res.json({ success: true, message: "Approval removed" });
-      return;
-    }
-    await db.insert(kidFoodApprovalsTable).values({ kidId, foodId, status }).onConflictDoUpdate({
-      target: [kidFoodApprovalsTable.kidId, kidFoodApprovalsTable.foodId],
-      set: { status, updatedAt: sql`now()` }
-    });
-    res.json({ success: true, message: "Approval saved" });
-  } catch (err) {
-    req.log.error({ err }, "Upsert food approval error");
     res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
   }
 });

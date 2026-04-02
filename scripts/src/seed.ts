@@ -14,7 +14,6 @@ import {
   mealPlanItemsTable,
   mealEntriesTable,
   ketoneReadingsTable,
-  kidFoodApprovalsTable,
   mealTypesTable,
   mealTypeRecipesTable,
   recipesTable,
@@ -478,7 +477,6 @@ async function seed() {
     await db.delete(mealEntriesTable).where(inArray(mealEntriesTable.kidId, existingKidIds));
     await db.delete(ketoneReadingsTable).where(inArray(ketoneReadingsTable.kidId, existingKidIds));
     await db.delete(mealLogsTable).where(inArray(mealLogsTable.kidId, existingKidIds));
-    await db.delete(kidFoodApprovalsTable).where(inArray(kidFoodApprovalsTable.kidId, existingKidIds));
     const existingMealPlans = await db.select({ id: mealPlansTable.id }).from(mealPlansTable).where(inArray(mealPlansTable.kidId, existingKidIds));
     if (existingMealPlans.length > 0) {
       await db.delete(mealPlanItemsTable).where(inArray(mealPlanItemsTable.planId, existingMealPlans.map((p) => p.id)));

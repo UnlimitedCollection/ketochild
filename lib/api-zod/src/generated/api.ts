@@ -656,44 +656,6 @@ export const UpdateMealLogImageResponse = zod.object({
 });
 
 /**
- * @summary Get all food approval records for a kid
- */
-export const GetKidFoodApprovalsParams = zod.object({
-  kidId: zod.coerce.number(),
-});
-
-export const GetKidFoodApprovalsResponseItem = zod.object({
-  id: zod.number(),
-  kidId: zod.number(),
-  foodId: zod.number(),
-  status: zod.enum(["approved", "avoid"]),
-  createdAt: zod.date(),
-  updatedAt: zod.date(),
-});
-export const GetKidFoodApprovalsResponse = zod.array(
-  GetKidFoodApprovalsResponseItem,
-);
-
-/**
- * @summary Set or delete a food approval status for a kid
- */
-export const UpsertKidFoodApprovalParams = zod.object({
-  kidId: zod.coerce.number(),
-  foodId: zod.coerce.number(),
-});
-
-export const UpsertKidFoodApprovalBody = zod.object({
-  status: zod
-    .enum(["approved", "avoid", "none"])
-    .describe('Use \"none\" to delete the approval record'),
-});
-
-export const UpsertKidFoodApprovalResponse = zod.object({
-  success: zod.boolean(),
-  message: zod.string().optional(),
-});
-
-/**
  * @summary List all parent access tokens for the doctor's kids
  */
 export const ListTokensResponseItem = zod.object({

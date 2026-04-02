@@ -4,7 +4,7 @@ import { PrintLayout } from "@/components/print-layout";
 import { PrintButton } from "@/components/print-button";
 import { PrintFilterDialog, type PrintFilterResult } from "@/components/print-filter-dialog";
 import { useParams, Link, useLocation } from "wouter";
-import { useGetKid, useAddWeightRecord, useDeleteWeightRecord, useUpdateKidMedical, useUpdateKid, useDeleteKid, useGetKidMealHistory, useGetKidKetoneReadings, useAddKetoneReading, useDeleteKetoneReading, useGetKidMealLogs, useAddMealLog, useDeleteMealLog, useGetKidMealLog, useGetKidAssignedMealPlan, useAssignKidMealPlan, useGetLibraryMealPlans, useGetFoods, useGetKidFoodApprovals, useUpsertKidFoodApproval, useUpdateMealLogImage, getGetKidAssignedMealPlanQueryKey, useListMealTypes, useGetKidMealPlanHistory, getGetKidMealPlanHistoryQueryKey, type LibraryMealPlanDetail, type LibraryMealPlanItem, type FoodApproval, type MedicalSettingsRequest, type UpdateKidRequest, type MealPlanAssignmentHistory } from "@workspace/api-client-react";
+import { useGetKid, useAddWeightRecord, useDeleteWeightRecord, useUpdateKidMedical, useUpdateKid, useDeleteKid, useGetKidMealHistory, useGetKidKetoneReadings, useAddKetoneReading, useDeleteKetoneReading, useGetKidMealLogs, useAddMealLog, useDeleteMealLog, useGetKidMealLog, useGetKidAssignedMealPlan, useAssignKidMealPlan, useGetLibraryMealPlans, useGetFoods, useUpdateMealLogImage, getGetKidAssignedMealPlanQueryKey, useListMealTypes, useGetKidMealPlanHistory, getGetKidMealPlanHistoryQueryKey, type LibraryMealPlanDetail, type LibraryMealPlanItem, type MedicalSettingsRequest, type UpdateKidRequest, type MealPlanAssignmentHistory } from "@workspace/api-client-react";
 import { useUpload } from "@workspace/object-storage-web";
 import { z } from "zod";
 import { useForm, useWatch } from "react-hook-form";
@@ -30,7 +30,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCanWrite } from "@/hooks/useRole";
-import { Activity, User, Scale, Calendar, FileText, Trash2, Settings, Plus, Loader2, BarChart2, TrendingUp, Flame, FlaskConical, AlertTriangle, ClipboardList, CheckCircle2, Circle, ChevronDown, ChevronUp, Coffee, Sun, Moon, LayoutGrid, Camera, ThumbsUp, ThumbsDown, Minus, ImageIcon, X, Search, Pencil, LineChart as LineChartIcon, UtensilsCrossed } from "lucide-react";
+import { Activity, User, Scale, Calendar, FileText, Trash2, Settings, Plus, Loader2, BarChart2, TrendingUp, Flame, FlaskConical, AlertTriangle, ClipboardList, CheckCircle2, Circle, ChevronDown, ChevronUp, Coffee, Sun, Moon, LayoutGrid, Camera, ImageIcon, X, Pencil, LineChart as LineChartIcon, UtensilsCrossed } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function KidProfilePage() {
@@ -54,7 +54,6 @@ export default function KidProfilePage() {
     { id: "ketone", label: "Ketone Readings", defaultChecked: true },
     { id: "mealplan", label: "Meal Plan", defaultChecked: true },
     { id: "compliance", label: "Compliance Calendar", defaultChecked: true },
-    { id: "foods", label: "Approved Foods", defaultChecked: true },
   ], []);
 
   const handlePrintFilterConfirm = useCallback((result: PrintFilterResult) => {
@@ -220,9 +219,6 @@ export default function KidProfilePage() {
           <TabsTrigger value="compliance" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white py-2.5 px-4 flex items-center gap-2 transition-all">
             <LayoutGrid className="h-4 w-4" /> Compliance
           </TabsTrigger>
-          <TabsTrigger value="approved-foods" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white py-2.5 px-4 flex items-center gap-2 transition-all">
-            <ThumbsUp className="h-4 w-4" /> Approved Foods
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="focus-visible:outline-none">
@@ -331,10 +327,6 @@ export default function KidProfilePage() {
         <TabsContent value="compliance" className="focus-visible:outline-none">
           <ComplianceTab kidId={kidId} />
         </TabsContent>
-
-        <TabsContent value="approved-foods" className="focus-visible:outline-none">
-          <ApprovedFoodsTab kidId={kidId} />
-        </TabsContent>
       </Tabs>
 
       {isPrinting && (
@@ -412,13 +404,6 @@ export default function KidProfilePage() {
               <ComplianceTab kidId={kidId} />
             </>
           )}
-          {printSections.has("foods") && (
-            <>
-              <hr className="border-slate-300 my-4" />
-              <h2 className="text-lg font-bold text-slate-800">Approved Foods</h2>
-              <ApprovedFoodsPrintSection kidId={kidId} />
-            </>
-          )}
           <PrintReadySignal kidId={kidId} onReady={onDataReady} />
         </div>
       )}
@@ -466,12 +451,10 @@ function PrintReadySignal({ kidId, onReady }: { kidId: number; onReady: (status:
   const { isLoading: mealHistoryLoading, isError: mealHistoryError } = useGetKidMealHistory(kidId);
   const { isLoading: ketoneLoading, isError: ketoneError } = useGetKidKetoneReadings(kidId);
   const { isLoading: assignedPlanLoading, isError: assignedPlanError } = useGetKidAssignedMealPlan(kidId);
-  const { isLoading: approvalsLoading, isError: approvalsError } = useGetKidFoodApprovals(kidId);
-  const { isLoading: foodsLoading, isError: foodsError } = useGetFoods({});
   const { isLoading: mealTypesLoading, isError: mealTypesError } = useListMealTypes();
 
-  const isLoading = kidLoading || mealHistoryLoading || ketoneLoading || assignedPlanLoading || approvalsLoading || foodsLoading || mealTypesLoading;
-  const hasError = kidError || mealHistoryError || ketoneError || assignedPlanError || approvalsError || foodsError || mealTypesError;
+  const isLoading = kidLoading || mealHistoryLoading || ketoneLoading || assignedPlanLoading || mealTypesLoading;
+  const hasError = kidError || mealHistoryError || ketoneError || assignedPlanError || mealTypesError;
 
   const signaled = useRef(false);
 
@@ -2455,171 +2438,3 @@ function MealPlanPrintSection({ kidId }: { kidId: number }) {
   );
 }
 
-/**
- * Read-only print version of approved foods.
- * Renders a static table with approval status — no clickable buttons.
- */
-function ApprovedFoodsPrintSection({ kidId }: { kidId: number }) {
-  const { data: foods, isLoading: foodsLoading } = useGetFoods({});
-  const { data: approvals, isLoading: approvalsLoading } = useGetKidFoodApprovals(kidId);
-
-  const approvalsMap = useMemo(() => {
-    const map: Record<number, string> = {};
-    approvals?.forEach((a: FoodApproval) => { map[a.foodId] = a.status; });
-    return map;
-  }, [approvals]);
-
-  if (foodsLoading || approvalsLoading) return <p className="text-xs text-slate-400 italic">Loading foods…</p>;
-
-  const activeFoods = (foods ?? []).filter((f) => f.isActive !== false);
-  if (activeFoods.length === 0) return <p className="text-xs text-slate-400 italic">No foods available.</p>;
-
-  return (
-    <table className="w-full text-xs border-collapse">
-      <thead>
-        <tr className="bg-slate-100">
-          <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Food</th>
-          <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Category</th>
-          <th className="text-right py-1.5 px-2 font-semibold text-slate-600">Cal</th>
-          <th className="text-right py-1.5 px-2 font-semibold text-slate-600">C (g)</th>
-          <th className="text-right py-1.5 px-2 font-semibold text-slate-600">F (g)</th>
-          <th className="text-right py-1.5 px-2 font-semibold text-slate-600">P (g)</th>
-          <th className="text-center py-1.5 px-2 font-semibold text-slate-600">Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        {activeFoods.map((food) => {
-          const status = approvalsMap[food.id];
-          const label = status === "approved" ? "Approved" : status === "avoid" ? "Avoid" : "—";
-          return (
-            <tr key={food.id} className="border-b border-slate-100">
-              <td className="py-1.5 px-2 font-medium text-slate-800">{food.name}</td>
-              <td className="py-1.5 px-2 text-slate-600">{food.category ?? "—"}</td>
-              <td className="py-1.5 px-2 text-right text-slate-600">{Math.round(food.calories ?? 0)}</td>
-              <td className="py-1.5 px-2 text-right text-slate-600">{(food.carbs ?? 0).toFixed(1)}</td>
-              <td className="py-1.5 px-2 text-right text-slate-600">{(food.fat ?? 0).toFixed(1)}</td>
-              <td className="py-1.5 px-2 text-right text-slate-600">{(food.protein ?? 0).toFixed(1)}</td>
-              <td className="py-1.5 px-2 text-center font-semibold text-slate-700">{label}</td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
-  );
-}
-
-function ApprovedFoodsTab({ kidId }: { kidId: number }) {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const canWrite = useCanWrite();
-  const [search, setSearch] = useState("");
-  const { data: foods, isLoading: foodsLoading } = useGetFoods({ search: search || undefined });
-  const { data: approvals, isLoading: approvalsLoading } = useGetKidFoodApprovals(kidId);
-  const upsert = useUpsertKidFoodApproval();
-
-  const approvalsMap = useMemo(() => {
-    const map: Record<number, string> = {};
-    approvals?.forEach(a => { map[a.foodId] = a.status; });
-    return map;
-  }, [approvals]);
-
-  async function handleToggle(foodId: number, current: string | undefined) {
-    const next = current === undefined ? "approved" : current === "approved" ? "avoid" : "none";
-    try {
-      await upsert.mutateAsync({ kidId, foodId, data: { status: next as "approved" | "avoid" | "none" } });
-      queryClient.invalidateQueries({ queryKey: [`/api/kids/${kidId}/food-approvals`] });
-    } catch {
-      toast({ title: "Failed to update approval", variant: "destructive" });
-    }
-  }
-
-  const isLoading = foodsLoading || approvalsLoading;
-
-  return (
-    <div className="space-y-4">
-      <Card className="rounded-2xl shadow-sm border-slate-200 bg-white">
-        <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <ThumbsUp className="h-4 w-4 text-primary" /> Approved Food List
-          </CardTitle>
-          <CardDescription>Set per-food preferences for this patient. Approved foods show green, Avoid shows red.</CardDescription>
-        </CardHeader>
-        <CardContent className="pt-4">
-          <div className="flex items-center gap-2 mb-4">
-            <Search className="h-4 w-4 text-slate-400 shrink-0" />
-            <Input
-              placeholder="Search foods..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="h-9 text-sm"
-            />
-            {search && (
-              <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={() => setSearch("")}>
-                <X className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-
-          <div className="flex items-center gap-4 mb-3 text-xs text-slate-500 font-medium">
-            <span className="flex items-center gap-1"><ThumbsUp className="h-3 w-3 text-green-500" /> Approved</span>
-            <span className="flex items-center gap-1"><ThumbsDown className="h-3 w-3 text-red-500" /> Avoid</span>
-            <span className="flex items-center gap-1"><Minus className="h-3 w-3 text-slate-400" /> No preference</span>
-            <span className="text-slate-400 ml-auto italic">Click to cycle through states</span>
-          </div>
-
-          {isLoading ? (
-            <div className="py-8 text-center"><Loader2 className="h-5 w-5 animate-spin mx-auto text-primary" /></div>
-          ) : !foods || foods.length === 0 ? (
-            <div className="py-8 text-center text-slate-400 text-sm">No foods found.</div>
-          ) : (
-            <div className="space-y-1.5">
-              {foods.filter(f => f.isActive).map(food => {
-                const status = approvalsMap[food.id];
-                const isApproved = status === "approved";
-                const isAvoid = status === "avoid";
-                return (
-                  <button
-                    key={food.id}
-                    onClick={() => canWrite ? handleToggle(food.id, status) : undefined}
-                    disabled={upsert.isPending || !canWrite}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all text-left ${!canWrite ? "cursor-default " : ""}${
-                      isApproved
-                        ? "border-green-200 bg-green-50 hover:bg-green-100"
-                        : isAvoid
-                        ? "border-red-200 bg-red-50 hover:bg-red-100"
-                        : "border-slate-100 bg-slate-50 hover:bg-slate-100"
-                    }`}
-                  >
-                    <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${
-                      isApproved ? "bg-green-100" : isAvoid ? "bg-red-100" : "bg-slate-100"
-                    }`}>
-                      {isApproved ? (
-                        <ThumbsUp className="h-4 w-4 text-green-600" />
-                      ) : isAvoid ? (
-                        <ThumbsDown className="h-4 w-4 text-red-600" />
-                      ) : (
-                        <Minus className="h-4 w-4 text-slate-400" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className={`font-medium text-sm truncate ${isApproved ? "text-green-800" : isAvoid ? "text-red-800" : "text-slate-800"}`}>
-                          {food.name}
-                        </span>
-                        {isApproved && <Badge className="text-xs bg-green-100 text-green-700 border-0 shrink-0">Approved</Badge>}
-                        {isAvoid && <Badge className="text-xs bg-red-100 text-red-700 border-0 shrink-0">Avoid</Badge>}
-                      </div>
-                      <div className="text-xs text-slate-400 mt-0.5">
-                        {food.category} · {Math.round(food.calories ?? 0)} kcal · F{(food.fat ?? 0).toFixed(1)}g · P{(food.protein ?? 0).toFixed(1)}g · C{(food.carbs ?? 0).toFixed(1)}g
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}

@@ -327,40 +327,6 @@ export interface UpdateMealLogImageRequest {
   imageUrl?: string | null;
 }
 
-export type FoodApprovalStatus =
-  (typeof FoodApprovalStatus)[keyof typeof FoodApprovalStatus];
-
-export const FoodApprovalStatus = {
-  approved: "approved",
-  avoid: "avoid",
-} as const;
-
-export interface FoodApproval {
-  id: number;
-  kidId: number;
-  foodId: number;
-  status: FoodApprovalStatus;
-  createdAt: string;
-  updatedAt: string;
-}
-
-/**
- * Use "none" to delete the approval record
- */
-export type FoodApprovalRequestStatus =
-  (typeof FoodApprovalRequestStatus)[keyof typeof FoodApprovalRequestStatus];
-
-export const FoodApprovalRequestStatus = {
-  approved: "approved",
-  avoid: "avoid",
-  none: "none",
-} as const;
-
-export interface FoodApprovalRequest {
-  /** Use "none" to delete the approval record */
-  status: FoodApprovalRequestStatus;
-}
-
 export interface UploadUrlRequest {
   /** @minLength 1 */
   name: string;

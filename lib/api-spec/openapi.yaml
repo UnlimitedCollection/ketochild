@@ -697,57 +697,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/MealLog"
 
-  /kids/{kidId}/food-approvals:
-    get:
-      operationId: getKidFoodApprovals
-      tags: [kids]
-      summary: Get all food approval records for a kid
-      parameters:
-        - name: kidId
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: List of food approval records
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/FoodApproval"
-
-  /kids/{kidId}/food-approvals/{foodId}:
-    put:
-      operationId: upsertKidFoodApproval
-      tags: [kids]
-      summary: Set or delete a food approval status for a kid
-      parameters:
-        - name: kidId
-          in: path
-          required: true
-          schema:
-            type: integer
-        - name: foodId
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/FoodApprovalRequest"
-      responses:
-        "200":
-          description: Approval updated or removed
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SuccessResponse"
-
   /tokens:
     get:
       operationId: listTokens
@@ -2439,42 +2388,6 @@ components:
           type: string
           nullable: true
           description: Object storage path or null to clear
-
-    FoodApproval:
-      type: object
-      properties:
-        id:
-          type: integer
-        kidId:
-          type: integer
-        foodId:
-          type: integer
-        status:
-          type: string
-          enum: [approved, avoid]
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-      required:
-        - id
-        - kidId
-        - foodId
-        - status
-        - createdAt
-        - updatedAt
-
-    FoodApprovalRequest:
-      type: object
-      properties:
-        status:
-          type: string
-          enum: [approved, avoid, none]
-          description: Use "none" to delete the approval record
-      required:
-        - status
 
     UploadUrlRequest:
       type: object
