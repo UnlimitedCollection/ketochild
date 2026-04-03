@@ -169,17 +169,17 @@ export default function DashboardPage() {
 
       <div className="no-print space-y-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-          <KpiCard label="Total Children"    value={stats.totalChildren}          icon="👧" accent={BLUE} />
-          <KpiCard label="High-Risk"         value={stats.highRiskChildren}       icon="⚠️" accent={RED}  badge="Urgent" />
+          <KpiCard label="Total Children"    value={stats.totalChildren}                  icon="👧" accent={BLUE}  />
           <KpiCard label="Unfilled Records"  value={stats.last24hUnfilledMealRecords} sub={`All-time: ${stats.unfilledMealRecords}`} icon="📋" accent={AMBER} />
-          <KpiCard label="Avg Weight Change" value={`${stats.averageWeightChange > 0 ? "+" : ""}${stats.averageWeightChange} kg`} icon="📊" accent={GREEN} />
+          <KpiCard label="Registered Doctors" value={stats.totalDoctors ?? 0}             icon="🩺" accent={GREEN} />
+          <KpiCard label="Active Tokens"     value={stats.tokenSummary?.active ?? 0} sub={`${stats.tokenSummary?.total ?? 0} total`} icon="🔑" accent={RED} />
         </div>
 
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-5">
-          <KpiCard label="Registered Doctors" value={stats.totalDoctors ?? 0}  icon="🩺" accent={BLUE}  />
-          <KpiCard label="Active Foods"        value={stats.totalFoods ?? 0}    icon="🥑" accent={GREEN} />
-          <KpiCard label="My Recipes"          value={stats.totalRecipes ?? 0}  icon="🍳" accent={AMBER} />
-          <KpiCard label="Active Tokens"       value={stats.tokenSummary?.active ?? 0} sub={`${stats.tokenSummary?.total ?? 0} total`} icon="🔑" accent={RED} />
+          <KpiCard label="Classic Ketogenic Diet Children"          value={stats.classicChildren ?? 0} icon="🥗" accent={BLUE}  />
+          <KpiCard label="Modified Atkins Diet (MAD) Children"      value={stats.madChildren ?? 0}     icon="🍽️" accent={GREEN} />
+          <KpiCard label="MCT (Medium Chain Triglyceride) Children" value={stats.mctChildren ?? 0}     icon="💧" accent={AMBER} />
+          <KpiCard label="Low Glycemic Index (Low GI) Children"     value={stats.lowgiChildren ?? 0}   icon="🌿" accent={RED}   />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -356,32 +356,32 @@ export default function DashboardPage() {
                   <td className="py-1 px-2 text-slate-800 font-bold">{stats.totalChildren}</td>
                 </tr>
                 <tr className="border-b border-slate-100">
-                  <td className="py-1 px-2 font-semibold text-slate-600">High-Risk Children</td>
-                  <td className="py-1 px-2 text-slate-800 font-bold">{stats.highRiskChildren}</td>
-                </tr>
-                <tr className="border-b border-slate-100">
                   <td className="py-1 px-2 font-semibold text-slate-600">Unfilled Records (24h)</td>
                   <td className="py-1 px-2 text-slate-800 font-bold">{stats.last24hUnfilledMealRecords}</td>
-                </tr>
-                <tr className="border-b border-slate-100">
-                  <td className="py-1 px-2 font-semibold text-slate-600">Avg Weight Change</td>
-                  <td className="py-1 px-2 text-slate-800 font-bold">{stats.averageWeightChange > 0 ? "+" : ""}{stats.averageWeightChange} kg</td>
                 </tr>
                 <tr className="border-b border-slate-100">
                   <td className="py-1 px-2 font-semibold text-slate-600">Registered Doctors</td>
                   <td className="py-1 px-2 text-slate-800">{stats.totalDoctors ?? 0}</td>
                 </tr>
                 <tr className="border-b border-slate-100">
-                  <td className="py-1 px-2 font-semibold text-slate-600">Active Foods</td>
-                  <td className="py-1 px-2 text-slate-800">{stats.totalFoods ?? 0}</td>
-                </tr>
-                <tr className="border-b border-slate-100">
-                  <td className="py-1 px-2 font-semibold text-slate-600">Recipes</td>
-                  <td className="py-1 px-2 text-slate-800">{stats.totalRecipes ?? 0}</td>
-                </tr>
-                <tr>
                   <td className="py-1 px-2 font-semibold text-slate-600">Active Tokens</td>
                   <td className="py-1 px-2 text-slate-800">{stats.tokenSummary?.active ?? 0} / {stats.tokenSummary?.total ?? 0}</td>
+                </tr>
+                <tr className="border-b border-slate-100">
+                  <td className="py-1 px-2 font-semibold text-slate-600">Classic Ketogenic Diet Children</td>
+                  <td className="py-1 px-2 text-slate-800 font-bold">{stats.classicChildren ?? 0}</td>
+                </tr>
+                <tr className="border-b border-slate-100">
+                  <td className="py-1 px-2 font-semibold text-slate-600">Modified Atkins Diet (MAD) Children</td>
+                  <td className="py-1 px-2 text-slate-800 font-bold">{stats.madChildren ?? 0}</td>
+                </tr>
+                <tr className="border-b border-slate-100">
+                  <td className="py-1 px-2 font-semibold text-slate-600">MCT Diet Children</td>
+                  <td className="py-1 px-2 text-slate-800 font-bold">{stats.mctChildren ?? 0}</td>
+                </tr>
+                <tr>
+                  <td className="py-1 px-2 font-semibold text-slate-600">Low Glycemic Index (Low GI) Children</td>
+                  <td className="py-1 px-2 text-slate-800 font-bold">{stats.lowgiChildren ?? 0}</td>
                 </tr>
               </tbody>
             </table>

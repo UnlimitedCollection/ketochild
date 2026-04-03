@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { kidsTable, weightRecordsTable, mealDaysTable, mealLogsTable, notesTable, doctorsTable, foodsTable, parentTokensTable, recipesTable } from "@workspace/db";
+import { kidsTable, weightRecordsTable, mealDaysTable, mealLogsTable, notesTable, doctorsTable, parentTokensTable } from "@workspace/db";
 import { eq, gte, desc, inArray, count } from "drizzle-orm";
 import { calcAgeMonths } from "../lib/utils";
 
@@ -20,14 +20,10 @@ router.get("/stats", async (req, res) => {
 
     if (kidIds.length === 0) {
       const [{ value: totalDoctors }] = await db.select({ value: count() }).from(doctorsTable);
-      const [{ value: totalFoods }] = await db.select({ value: count() }).from(foodsTable).where(eq(foodsTable.isActive, true));
-      const [{ value: totalRecipes }] = await db.select({ value: count() }).from(recipesTable);
       res.json({
         totalChildren: 0,
-        highRiskChildren: 0,
         unfilledMealRecords: 0,
         last24hUnfilledMealRecords: 0,
-        averageWeightChange: 0,
         classicDistribution: [
           { ratio: "2:1",   count: 0, label: "2:1"   },
           { ratio: "2.5:1", count: 0, label: "2.5:1" },
@@ -37,9 +33,11 @@ router.get("/stats", async (req, res) => {
         ],
         recentHighRiskKids: [],
         totalDoctors: Number(totalDoctors),
-        totalFoods: Number(totalFoods),
-        totalRecipes: Number(totalRecipes),
         tokenSummary: { active: 0, used: 0, expired: 0, total: 0 },
+        classicChildren: 0,
+        madChildren: 0,
+        mctChildren: 0,
+        lowgiChildren: 0,
       });
       return;
     }
@@ -65,7 +63,6 @@ router.get("/stats", async (req, res) => {
       if (m.isFilled) stats.filled++;
     }
 
-    let highRiskChildren = 0;
     let unfilledMealRecords = 0;
     const recentHighRiskKids: unknown[] = [];
 
@@ -76,7 +73,6 @@ router.get("/stats", async (req, res) => {
 
       const isHighRisk = completionRate < 0.6 && stats.total > 0;
       if (isHighRisk) {
-        highRiskChildren++;
         if (recentHighRiskKids.length < 5) {
           recentHighRiskKids.push({
             id: kid.id,
@@ -90,6 +86,11 @@ router.get("/stats", async (req, res) => {
         }
       }
     }
+
+    const classicChildren = allKids.filter((k) => k.dietType === "classic").length;
+    const madChildren = allKids.filter((k) => k.dietType === "mad").length;
+    const mctChildren = allKids.filter((k) => k.dietType === "mct").length;
+    const lowgiChildren = allKids.filter((k) => k.dietType === "lowgi").length;
 
     const classicRatios = ["2:1", "2.5:1", "3:1", "3.5:1", "4:1"];
     const classicCountMap = new Map<string, number>();
@@ -108,30 +109,7 @@ router.get("/stats", async (req, res) => {
       label: ratio,
     }));
 
-    const allWeights = await db.select().from(weightRecordsTable);
-    const ownedWeights = allWeights.filter((w) => kidIds.includes(w.kidId));
-
-    const kidWeights = new Map<number, { weight: number; date: string }[]>();
-    for (const w of ownedWeights) {
-      if (!kidWeights.has(w.kidId)) kidWeights.set(w.kidId, []);
-      kidWeights.get(w.kidId)!.push({ weight: w.weight, date: w.date });
-    }
-
-    let totalWeightChange = 0;
-    let weightChangeCount = 0;
-    for (const [, weights] of kidWeights) {
-      if (weights.length >= 2) {
-        weights.sort((a, b) => a.date.localeCompare(b.date));
-        totalWeightChange += weights[weights.length - 1].weight - weights[0].weight;
-        weightChangeCount++;
-      }
-    }
-
     const [{ value: totalDoctors }] = await db.select({ value: count() }).from(doctorsTable);
-    const [{ value: totalFoods }] = await db.select({ value: count() }).from(foodsTable).where(eq(foodsTable.isActive, true));
-    const [{ value: totalRecipes }] = isAdmin
-      ? await db.select({ value: count() }).from(recipesTable).where(eq(recipesTable.doctorId, doctorId))
-      : await db.select({ value: count() }).from(recipesTable);
 
     let tokenSummary = { active: 0, used: 0, expired: 0, total: 0 };
     if (kidIds.length > 0) {
@@ -151,18 +129,16 @@ router.get("/stats", async (req, res) => {
 
     res.json({
       totalChildren,
-      highRiskChildren,
       unfilledMealRecords,
       last24hUnfilledMealRecords,
-      averageWeightChange: weightChangeCount > 0
-        ? Math.round((totalWeightChange / weightChangeCount) * 100) / 100
-        : 0,
       classicDistribution,
       recentHighRiskKids,
       totalDoctors: Number(totalDoctors),
-      totalFoods: Number(totalFoods),
-      totalRecipes: Number(totalRecipes),
       tokenSummary,
+      classicChildren,
+      madChildren,
+      mctChildren,
+      lowgiChildren,
     });
   } catch (err) {
     req.log.error({ err }, "Dashboard stats error");

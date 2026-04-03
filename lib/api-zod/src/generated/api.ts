@@ -120,10 +120,8 @@ export const ChangeDoctorPasswordResponse = zod.object({
  */
 export const GetDashboardStatsResponse = zod.object({
   totalChildren: zod.number(),
-  highRiskChildren: zod.number(),
   unfilledMealRecords: zod.number(),
   last24hUnfilledMealRecords: zod.number(),
-  averageWeightChange: zod.number(),
   classicDistribution: zod.array(
     zod.object({
       ratio: zod.enum(["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]),
@@ -143,14 +141,16 @@ export const GetDashboardStatsResponse = zod.object({
     }),
   ),
   totalDoctors: zod.number(),
-  totalFoods: zod.number(),
-  totalRecipes: zod.number(),
   tokenSummary: zod.object({
     active: zod.number(),
     used: zod.number(),
     expired: zod.number(),
     total: zod.number(),
   }),
+  classicChildren: zod.number(),
+  madChildren: zod.number(),
+  mctChildren: zod.number(),
+  lowgiChildren: zod.number(),
 });
 
 /**

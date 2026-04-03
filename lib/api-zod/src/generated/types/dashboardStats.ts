@@ -11,14 +11,14 @@ import type { TokenSummary } from "./tokenSummary";
 
 export interface DashboardStats {
   totalChildren: number;
-  highRiskChildren: number;
   unfilledMealRecords: number;
   last24hUnfilledMealRecords: number;
-  averageWeightChange: number;
   classicDistribution: ClassicDistributionEntry[];
   recentHighRiskKids: HighRiskKid[];
   totalDoctors: number;
-  totalFoods: number;
-  totalRecipes: number;
   tokenSummary: TokenSummary;
+  classicChildren: number;
+  madChildren: number;
+  mctChildren: number;
+  lowgiChildren: number;
 }

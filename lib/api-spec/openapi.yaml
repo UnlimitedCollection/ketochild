@@ -1974,14 +1974,10 @@ components:
       properties:
         totalChildren:
           type: integer
-        highRiskChildren:
-          type: integer
         unfilledMealRecords:
           type: integer
         last24hUnfilledMealRecords:
           type: integer
-        averageWeightChange:
-          type: number
         classicDistribution:
           type: array
           items:
@@ -1992,24 +1988,28 @@ components:
             $ref: "#/components/schemas/HighRiskKid"
         totalDoctors:
           type: integer
-        totalFoods:
-          type: integer
-        totalRecipes:
-          type: integer
         tokenSummary:
           $ref: "#/components/schemas/TokenSummary"
+        classicChildren:
+          type: integer
+        madChildren:
+          type: integer
+        mctChildren:
+          type: integer
+        lowgiChildren:
+          type: integer
       required:
         - totalChildren
-        - highRiskChildren
         - unfilledMealRecords
         - last24hUnfilledMealRecords
-        - averageWeightChange
         - classicDistribution
         - recentHighRiskKids
         - totalDoctors
-        - totalFoods
-        - totalRecipes
         - tokenSummary
+        - classicChildren
+        - madChildren
+        - mctChildren
+        - lowgiChildren
 
     ClassicDistributionEntry:
       type: object
