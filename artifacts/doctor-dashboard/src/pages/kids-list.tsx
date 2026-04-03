@@ -566,12 +566,6 @@ export default function KidsListPage() {
           <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
             <Filter className="h-4 w-4 text-slate-400 shrink-0" />
             <MultiSelectDropdown
-              label="Keto Status"
-              options={KETO_STATUS_OPTIONS}
-              selected={selectedKetoStatus}
-              onSelectionChange={setSelectedKetoStatus}
-            />
-            <MultiSelectDropdown
               label="Side Effects"
               options={RISK_OPTIONS}
               selected={selectedRisk}
@@ -621,7 +615,6 @@ export default function KidsListPage() {
                   <TableHead className="font-semibold text-slate-600">Diet Type</TableHead>
                   <TableHead className="font-semibold text-slate-600">Parent Info</TableHead>
                   <TableHead className="font-semibold text-slate-600">Meal Completion</TableHead>
-                  <TableHead className="font-semibold text-slate-600">Keto Status</TableHead>
                   <TableHead className="font-semibold text-slate-600">Side Effects</TableHead>
                   <TableHead className="no-print text-right font-semibold text-slate-600">Action</TableHead>
                 </TableRow>
