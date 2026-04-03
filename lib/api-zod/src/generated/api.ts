@@ -454,7 +454,6 @@ export const UpdateKidMedicalParams = zod.object({
 export const UpdateKidMedicalBody = zod.object({
   dietType: zod.enum(["classic", "mad", "mct", "lowgi"]).optional(),
   dietSubCategory: zod.enum(["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]).nullish(),
-  ketoRatio: zod.number().optional(),
   dailyCalories: zod.number().optional(),
   dailyCarbs: zod.number().optional(),
   dailyFat: zod.number().optional(),

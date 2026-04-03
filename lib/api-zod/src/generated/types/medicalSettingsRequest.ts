@@ -11,7 +11,6 @@ import type { MedicalSettingsRequestDietType } from "./medicalSettingsRequestDie
 export interface MedicalSettingsRequest {
   dietType?: MedicalSettingsRequestDietType;
   dietSubCategory?: MedicalSettingsRequestDietSubCategory;
-  ketoRatio?: number;
   dailyCalories?: number;
   dailyCarbs?: number;
   dailyFat?: number;

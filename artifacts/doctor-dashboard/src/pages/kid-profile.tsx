@@ -425,7 +425,6 @@ export default function KidProfilePage() {
 function MedicalSummaryPrint({ data }: { data: MedicalSettings }) {
   const rows: { label: string; value: string }[] = [
     { label: "Diet Type", value: data.dietType === "classic" ? `Classic Ketogenic${data.dietSubCategory ? ` (${data.dietSubCategory})` : ""}` : data.dietType === "mad" ? "Modified Atkins" : data.dietType === "mct" ? "MCT Diet" : "Low GI Diet" },
-    { label: "Keto Ratio", value: `${data.ketoRatio}:1` },
     { label: "Daily Calories", value: `${data.dailyCalories} kcal` },
     { label: "Daily Carbs", value: `${data.dailyCarbs} g` },
     { label: "Daily Fat", value: `${data.dailyFat} g` },
@@ -843,7 +842,6 @@ function WeightReadingsList({ kidId, weights, canWrite }: { kidId: number; weigh
 const medicalSchema = z.object({
   dietType: z.enum(["classic", "mad", "mct", "lowgi"]),
   dietSubCategory: z.string().optional(),
-  ketoRatio: z.coerce.number().positive(),
   dailyCalories: z.coerce.number().min(0).max(3000),
   dailyCarbs: z.coerce.number().min(0),
   dailyFat: z.coerce.number().min(0),
@@ -874,7 +872,6 @@ function MedicalSettingsForm({ kidId, initialData }: { kidId: number, initialDat
     defaultValues: {
       dietType: (initialData.dietType ?? "classic") as "classic" | "mad" | "mct" | "lowgi",
       dietSubCategory: initialData.dietSubCategory ?? undefined,
-      ketoRatio: initialData.ketoRatio,
       dailyCalories: initialData.dailyCalories,
       dailyCarbs: initialData.dailyCarbs,
       dailyFat: initialData.dailyFat,
@@ -956,14 +953,6 @@ function MedicalSettingsForm({ kidId, initialData }: { kidId: number, initialDat
                         ))}
                       </SelectContent>
                     </Select>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-
-                <FormField control={form.control} name="ketoRatio" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Keto Ratio (e.g. 3.0 = 3:1)</FormLabel>
-                    <FormControl><Input type="number" step="0.1" className="rounded-xl" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />

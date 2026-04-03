@@ -382,7 +382,6 @@ export const MedicalSettingsRequestDietSubCategory = {
 export interface MedicalSettingsRequest {
   dietType?: MedicalSettingsRequestDietType;
   dietSubCategory?: MedicalSettingsRequestDietSubCategory;
-  ketoRatio?: number;
   dailyCalories?: number;
   dailyCarbs?: number;
   dailyFat?: number;
