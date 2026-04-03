@@ -24,8 +24,8 @@ import { format, parseISO, differenceInDays } from "date-fns";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
 
 const RISK_OPTIONS = [
-  { label: "High Risk", value: "true" },
-  { label: "Normal", value: "false" },
+  { label: "Present", value: "true" },
+  { label: "Absent", value: "false" },
 ];
 
 const DIET_TYPE_OPTIONS = [
@@ -151,11 +151,11 @@ function KidViewDialog({ kidId, open, onOpenChange }: { kidId: number | null; op
                         <p className="font-semibold text-slate-800">{format(parseISO(kid.dateOfBirth), 'MMM d, yyyy')}</p>
                       </div>
                       <div>
-                        <p className="text-slate-500 text-xs">Health Status</p>
+                        <p className="text-slate-500 text-xs">Side Effects</p>
                         {kid.isHighRisk ? (
-                          <Badge variant="destructive" className="bg-destructive/10 text-destructive border border-destructive/20 text-xs mt-0.5">High Risk</Badge>
+                          <Badge variant="destructive" className="bg-destructive/10 text-destructive border border-destructive/20 text-xs mt-0.5">Present</Badge>
                         ) : (
-                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs mt-0.5">Stable</Badge>
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs mt-0.5">Absent</Badge>
                         )}
                       </div>
                     </div>
@@ -537,7 +537,13 @@ export default function KidsListPage() {
           <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
             <Filter className="h-4 w-4 text-slate-400 shrink-0" />
             <MultiSelectDropdown
-              label="Risk"
+              label="Keto Status"
+              options={KETO_STATUS_OPTIONS}
+              selected={selectedKetoStatus}
+              onSelectionChange={setSelectedKetoStatus}
+            />
+            <MultiSelectDropdown
+              label="Side Effects"
               options={RISK_OPTIONS}
               selected={selectedRisk}
               onSelectionChange={setSelectedRisk}
@@ -586,7 +592,8 @@ export default function KidsListPage() {
                   <TableHead className="font-semibold text-slate-600">Diet Type</TableHead>
                   <TableHead className="font-semibold text-slate-600">Parent Info</TableHead>
                   <TableHead className="font-semibold text-slate-600">Meal Completion</TableHead>
-                  <TableHead className="font-semibold text-slate-600">Risk</TableHead>
+                  <TableHead className="font-semibold text-slate-600">Keto Status</TableHead>
+                  <TableHead className="font-semibold text-slate-600">Side Effects</TableHead>
                   <TableHead className="no-print text-right font-semibold text-slate-600">Action</TableHead>
                 </TableRow>
               </TableHeader>
@@ -634,11 +641,11 @@ export default function KidsListPage() {
                     <TableCell>
                       {kid.isHighRisk ? (
                         <Badge variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20">
-                          High Risk
+                          Present
                         </Badge>
                       ) : (
                         <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                          Stable
+                          Absent
                         </Badge>
                       )}
                     </TableCell>
@@ -733,7 +740,7 @@ export default function KidsListPage() {
                     <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Diet Type</th>
                     <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Parent</th>
                     <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Contact</th>
-                    <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Risk</th>
+                    <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Side Effects</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -746,7 +753,7 @@ export default function KidsListPage() {
                       <td className="py-1.5 px-2 text-slate-600">{DIET_TYPE_LABELS[kid.dietType] || kid.dietType}</td>
                       <td className="py-1.5 px-2 text-slate-600">{kid.parentName}</td>
                       <td className="py-1.5 px-2 text-slate-600">{kid.parentContact}</td>
-                      <td className="py-1.5 px-2 text-slate-600">{kid.isHighRisk ? "High Risk" : "Stable"}</td>
+                      <td className="py-1.5 px-2 text-slate-600">{kid.isHighRisk ? "Present" : "Absent"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -812,7 +819,7 @@ export default function KidsListPage() {
                   <tr className="bg-slate-100">
                     <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Patient</th>
                     <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Diet Type</th>
-                    <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Risk Status</th>
+                    <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Side Effects</th>
                     <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Last Weight</th>
                     <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Weight (kg)</th>
                   </tr>
@@ -822,7 +829,7 @@ export default function KidsListPage() {
                     <tr key={kid.id} className="border-b border-slate-100">
                       <td className="py-1.5 px-2 text-slate-800 font-medium">{kid.name}</td>
                       <td className="py-1.5 px-2 text-slate-600">{DIET_TYPE_LABELS[kid.dietType] || kid.dietType}</td>
-                      <td className="py-1.5 px-2 text-slate-600">{kid.isHighRisk ? "High Risk" : "Stable"}</td>
+                      <td className="py-1.5 px-2 text-slate-600">{kid.isHighRisk ? "Present" : "Absent"}</td>
                       <td className="py-1.5 px-2 text-slate-600">{kid.lastWeightDate ?? "—"}</td>
                       <td className="py-1.5 px-2 text-slate-600">{kid.currentWeight ?? "—"}</td>
                     </tr>
