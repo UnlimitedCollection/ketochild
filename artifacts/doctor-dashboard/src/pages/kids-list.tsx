@@ -162,7 +162,7 @@ function KidViewDialog({ kidId, open, onOpenChange }: { kidId: number | null; op
                       </div>
                       <div>
                         <p className="text-slate-500 text-xs">Side Effects</p>
-                        {kid.isHighRisk ? (
+                        {kid.hasSideEffects ? (
                           <Badge variant="destructive" className="bg-destructive/10 text-destructive border border-destructive/20 text-xs mt-0.5">Present</Badge>
                         ) : (
                           <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs mt-0.5">Absent</Badge>
@@ -409,7 +409,7 @@ export default function KidsListPage() {
       params.dietType = apiDietTypes as GetKidsParams["dietType"];
     }
     if (selectedRisk.length === 1) {
-      params.highRisk = selectedRisk[0] === "true";
+      params.hasSideEffects = selectedRisk[0] === "true";
     }
     return params;
   }, [debouncedSearch, selectedDietTypes, selectedRisk]);
@@ -661,7 +661,7 @@ export default function KidsListPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {kid.isHighRisk ? (
+                      {kid.hasSideEffects ? (
                         <Badge variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20">
                           Present
                         </Badge>
@@ -775,7 +775,7 @@ export default function KidsListPage() {
                       <td className="py-1.5 px-2 text-slate-600">{DIET_TYPE_LABELS[kid.dietType] || kid.dietType}</td>
                       <td className="py-1.5 px-2 text-slate-600">{kid.parentName}</td>
                       <td className="py-1.5 px-2 text-slate-600">{kid.parentContact}</td>
-                      <td className="py-1.5 px-2 text-slate-600">{kid.isHighRisk ? "Present" : "Absent"}</td>
+                      <td className="py-1.5 px-2 text-slate-600">{kid.hasSideEffects ? "Present" : "Absent"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -851,7 +851,7 @@ export default function KidsListPage() {
                     <tr key={kid.id} className="border-b border-slate-100">
                       <td className="py-1.5 px-2 text-slate-800 font-medium">{kid.name}</td>
                       <td className="py-1.5 px-2 text-slate-600">{DIET_TYPE_LABELS[kid.dietType] || kid.dietType}</td>
-                      <td className="py-1.5 px-2 text-slate-600">{kid.isHighRisk ? "Present" : "Absent"}</td>
+                      <td className="py-1.5 px-2 text-slate-600">{kid.hasSideEffects ? "Present" : "Absent"}</td>
                       <td className="py-1.5 px-2 text-slate-600">{kid.lastWeightDate ?? "—"}</td>
                       <td className="py-1.5 px-2 text-slate-600">{kid.currentWeight ?? "—"}</td>
                     </tr>

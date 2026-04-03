@@ -184,6 +184,10 @@ export const GetKidsQueryParams = zod.object({
     .boolean()
     .optional()
     .describe("Filter high-risk children only"),
+  hasSideEffects: zod.coerce
+    .boolean()
+    .optional()
+    .describe("Filter by whether kids have side effects recorded"),
   ketoStatus: zod.coerce
     .boolean()
     .optional()
@@ -205,6 +209,7 @@ export const GetKidsResponseItem = zod.object({
   parentName: zod.string(),
   parentContact: zod.string(),
   isHighRisk: zod.boolean(),
+  hasSideEffects: zod.boolean(),
   mealCompletionRate: zod.number(),
   inKetoStatus: zod
     .boolean()
@@ -263,6 +268,7 @@ export const GetKidResponse = zod.object({
     parentName: zod.string(),
     parentContact: zod.string(),
     isHighRisk: zod.boolean(),
+    hasSideEffects: zod.boolean(),
     mealCompletionRate: zod.number(),
     inKetoStatus: zod
       .boolean()
@@ -357,6 +363,7 @@ export const UpdateKidResponse = zod.object({
   parentName: zod.string(),
   parentContact: zod.string(),
   isHighRisk: zod.boolean(),
+  hasSideEffects: zod.boolean(),
   mealCompletionRate: zod.number(),
   inKetoStatus: zod
     .boolean()

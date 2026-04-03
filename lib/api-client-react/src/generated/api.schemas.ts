@@ -172,6 +172,7 @@ export interface Kid {
   parentName: string;
   parentContact: string;
   isHighRisk: boolean;
+  hasSideEffects: boolean;
   mealCompletionRate: number;
   /** Whether the child's avg carb intake (last 7 days) is within the prescribed daily carb limit */
   inKetoStatus: boolean;
@@ -902,6 +903,10 @@ export type GetKidsParams = {
    * Filter high-risk children only
    */
   highRisk?: boolean;
+  /**
+   * Filter by whether kids have side effects recorded
+   */
+  hasSideEffects?: boolean;
   /**
    * Filter by keto status (true = in keto, false = not in keto)
    */
