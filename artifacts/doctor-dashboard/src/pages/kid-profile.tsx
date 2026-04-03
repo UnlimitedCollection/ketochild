@@ -967,14 +967,14 @@ function MedicalSettingsForm({ kidId, initialData }: { kidId: number, initialDat
                       </div>
                       <FormControl>
                         <Slider
-                          min={0} max={3000} step={10}
+                          min={0} max={2200} step={10}
                           value={[Number(field.value) || 0]}
                           onValueChange={(vals) => field.onChange(vals[0])}
                           className="py-1"
                         />
                       </FormControl>
                       <div className="flex justify-between text-[10px] text-slate-400 mt-0.5">
-                        <span>0 kcal</span><span>3000 kcal</span>
+                        <span>0 kcal</span><span>2200 kcal</span>
                       </div>
                       <FormMessage />
                     </FormItem>
@@ -988,14 +988,14 @@ function MedicalSettingsForm({ kidId, initialData }: { kidId: number, initialDat
                       </div>
                       <FormControl>
                         <Slider
-                          min={0} max={300} step={1}
+                          min={0} max={100} step={1}
                           value={[Number(field.value) || 0]}
                           onValueChange={(vals) => field.onChange(vals[0])}
                           className="py-1"
                         />
                       </FormControl>
                       <div className="flex justify-between text-[10px] text-slate-400 mt-0.5">
-                        <span>0 g</span><span>300 g</span>
+                        <span>0 g</span><span>100 g</span>
                       </div>
                       <FormMessage />
                     </FormItem>
@@ -1009,14 +1009,14 @@ function MedicalSettingsForm({ kidId, initialData }: { kidId: number, initialDat
                       </div>
                       <FormControl>
                         <Slider
-                          min={0} max={150} step={1}
+                          min={0} max={50} step={1}
                           value={[Number(field.value) || 0]}
                           onValueChange={(vals) => field.onChange(vals[0])}
                           className="py-1"
                         />
                       </FormControl>
                       <div className="flex justify-between text-[10px] text-slate-400 mt-0.5">
-                        <span>0 g</span><span>150 g</span>
+                        <span>0 g</span><span>50 g</span>
                       </div>
                       <FormMessage />
                     </FormItem>
@@ -1030,14 +1030,14 @@ function MedicalSettingsForm({ kidId, initialData }: { kidId: number, initialDat
                       </div>
                       <FormControl>
                         <Slider
-                          min={0} max={50} step={1}
+                          min={0} max={300} step={1}
                           value={[Number(field.value) || 0]}
                           onValueChange={(vals) => field.onChange(vals[0])}
                           className="py-1"
                         />
                       </FormControl>
                       <div className="flex justify-between text-[10px] text-slate-400 mt-0.5">
-                        <span>0 g</span><span>50 g</span>
+                        <span>0 g</span><span>300 g</span>
                       </div>
                       <FormMessage />
                     </FormItem>
