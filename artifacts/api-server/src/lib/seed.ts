@@ -26,11 +26,14 @@ const PREDEFINED_SIDE_EFFECTS = [
 
 export async function seedSideEffects(): Promise<void> {
   try {
-    const values = PREDEFINED_SIDE_EFFECTS.map((name) => ({ name }));
+    const values = PREDEFINED_SIDE_EFFECTS.map((name) => ({ name, isSeeded: true }));
     await db
       .insert(sideEffectsTable)
       .values(values)
-      .onConflictDoNothing();
+      .onConflictDoUpdate({
+        target: sideEffectsTable.name,
+        set: { isSeeded: true },
+      });
     logger.info({ count: values.length }, "Side effects seeded");
   } catch (err) {
     logger.error({ err }, "Failed to seed side effects");

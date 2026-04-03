@@ -2530,6 +2530,7 @@ function MealPlanPrintSection({ kidId }: { kidId: number }) {
 type SideEffectItem = {
   id: number;
   name: string;
+  isSeeded: boolean;
   createdAt: string;
 };
 
@@ -2548,6 +2549,7 @@ function SideEffectsTab({ kidId, canWrite }: { kidId: number; canWrite: boolean 
   const [customInput, setCustomInput] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const { data: allEffects = [], isLoading: loadingAll } = useQuery<SideEffectItem[]>({
     queryKey: ["/api/side-effects"],
@@ -2616,6 +2618,26 @@ function SideEffectsTab({ kidId, canWrite }: { kidId: number; canWrite: boolean 
     }
   }
 
+  async function deleteEffect(sideEffectId: number) {
+    if (!canWrite) return;
+    if (!confirm("Delete this custom side effect? It will be removed from all patients.")) return;
+    setDeletingId(sideEffectId);
+    try {
+      const res = await fetch(`/api/side-effects/${sideEffectId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Delete failed");
+      queryClient.invalidateQueries({ queryKey: ["/api/side-effects"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/kids", kidId, "side-effects"] });
+      toast({ title: "Side effect deleted" });
+    } catch {
+      toast({ title: "Failed to delete side effect", variant: "destructive" });
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   const isLoading = loadingAll || loadingKid;
 
   if (isLoading) {
@@ -2653,28 +2675,45 @@ function SideEffectsTab({ kidId, canWrite }: { kidId: number; canWrite: boolean 
             {allEffects.map((effect) => {
               const checked = selectedIds.has(effect.id);
               const toggling = togglingId === effect.id;
+              const deleting = deletingId === effect.id;
               return (
-                <button
-                  key={effect.id}
-                  onClick={() => toggleEffect(effect.id)}
-                  disabled={!canWrite || toggling}
-                  className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all text-sm font-medium
-                    ${checked
-                      ? "border-primary bg-primary/5 text-primary"
-                      : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
-                    }
-                    ${!canWrite ? "cursor-default opacity-70" : "cursor-pointer"}
-                  `}
-                >
-                  {toggling ? (
-                    <Loader2 className="h-4 w-4 animate-spin shrink-0" />
-                  ) : checked ? (
-                    <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
-                  ) : (
-                    <Circle className="h-4 w-4 shrink-0 text-slate-400" />
+                <div key={effect.id} className="relative group">
+                  <button
+                    onClick={() => toggleEffect(effect.id)}
+                    disabled={!canWrite || toggling || deleting}
+                    className={`w-full flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all text-sm font-medium
+                      ${checked
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                      }
+                      ${!canWrite ? "cursor-default opacity-70" : "cursor-pointer"}
+                      ${!effect.isSeeded && canWrite ? "pr-10" : ""}
+                    `}
+                  >
+                    {toggling ? (
+                      <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                    ) : checked ? (
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
+                    ) : (
+                      <Circle className="h-4 w-4 shrink-0 text-slate-400" />
+                    )}
+                    <span className="truncate">{effect.name}</span>
+                  </button>
+                  {!effect.isSeeded && canWrite && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); deleteEffect(effect.id); }}
+                      disabled={deleting || toggling}
+                      title="Delete custom side effect"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                    >
+                      {deleting ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-3.5 w-3.5" />
+                      )}
+                    </button>
                   )}
-                  <span>{effect.name}</span>
-                </button>
+                </div>
               );
             })}
           </div>

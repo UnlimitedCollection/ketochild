@@ -173,6 +173,7 @@ export const mealPlanAssignmentHistoryTable = pgTable("meal_plan_assignment_hist
 export const sideEffectsTable = pgTable("side_effects", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 200 }).notNull().unique(),
+  isSeeded: boolean("is_seeded").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -16,6 +16,7 @@ router.get("/", async (req, res) => {
       effects.map((e) => ({
         id: e.id,
         name: e.name,
+        isSeeded: e.isSeeded,
         createdAt: e.createdAt.toISOString(),
       }))
     );
@@ -46,16 +47,48 @@ router.post("/", async (req, res) => {
 
     const [effect] = await db
       .insert(sideEffectsTable)
-      .values({ name: trimmed })
+      .values({ name: trimmed, isSeeded: false })
       .returning();
 
     res.status(201).json({
       id: effect.id,
       name: effect.name,
+      isSeeded: effect.isSeeded,
       createdAt: effect.createdAt.toISOString(),
     });
   } catch (err) {
     req.log.error({ err }, "Create side effect error");
+    res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
+  }
+});
+
+router.delete("/:id", async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "VALIDATION_ERROR", message: "Invalid id" });
+    return;
+  }
+  try {
+    const [effect] = await db
+      .select()
+      .from(sideEffectsTable)
+      .where(eq(sideEffectsTable.id, id))
+      .limit(1);
+
+    if (!effect) {
+      res.status(404).json({ error: "NOT_FOUND", message: "Side effect not found" });
+      return;
+    }
+
+    if (effect.isSeeded) {
+      res.status(403).json({ error: "FORBIDDEN", message: "Cannot delete a predefined side effect" });
+      return;
+    }
+
+    await db.delete(sideEffectsTable).where(eq(sideEffectsTable.id, id));
+    res.status(204).end();
+  } catch (err) {
+    req.log.error({ err }, "Delete side effect error");
     res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
   }
 });

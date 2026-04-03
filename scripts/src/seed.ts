@@ -1406,7 +1406,10 @@ async function seed() {
     "Hair Loss",
   ];
   for (const name of predefinedSideEffects) {
-    await db.insert(sideEffectsTable).values({ name }).onConflictDoNothing();
+    await db.insert(sideEffectsTable).values({ name, isSeeded: true }).onConflictDoUpdate({
+      target: sideEffectsTable.name,
+      set: { isSeeded: true },
+    });
   }
   console.log(`Side effects seeded: ${predefinedSideEffects.length} entries`);
 
