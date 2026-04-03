@@ -45,6 +45,7 @@ const createKidSchema = z.object({
   parentContact: z.string().regex(/^\d{10}$/, "Mobile number must be exactly 10 digits"),
   dietType: z.enum(["classic", "mad", "mct", "lowgi"]),
   dietSubCategory: z.string().optional(),
+  kidCode: z.string().regex(/^PHN\d{4,}$/, "PHN must start with 'PHN' followed by at least 4 digits (e.g. PHN45129)"),
 });
 
 export default function AddKidPage() {
@@ -73,6 +74,7 @@ export default function AddKidPage() {
       parentContact: "",
       dietType: "classic",
       dietSubCategory: "4:1",
+      kidCode: "",
     }
   });
 
@@ -191,11 +193,14 @@ export default function AddKidPage() {
                 )} />
               </div>
 
-              <div className="space-y-1.5">
-                <p className="text-sm font-medium text-slate-700">PHN No.</p>
-                <div className="h-10 flex items-center px-3 rounded-xl bg-slate-100 border border-slate-200 text-slate-400 text-sm font-mono">Auto-generated on registration</div>
-                <p className="text-xs text-slate-500">A unique Patient Health Number (PHN) will be assigned automatically.</p>
-              </div>
+              <FormField control={form.control} name="kidCode" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>PHN No.</FormLabel>
+                  <FormControl><Input className="rounded-xl bg-slate-50 font-mono" placeholder="e.g. PHN45129" {...field} /></FormControl>
+                  <FormMessage />
+                  <p className="text-xs text-slate-500">Enter the Patient Health Number assigned externally (e.g. PHN45129).</p>
+                </FormItem>
+              )} />
 
               <p className="text-xs text-slate-500">You can adjust specific macros later in the Medical Controls tab.</p>
 

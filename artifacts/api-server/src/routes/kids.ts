@@ -39,18 +39,7 @@ import {
 
 const router: IRouter = Router();
 
-function generatePHNCode(): string {
-  const digits = Math.floor(10000 + Math.random() * 90000);
-  return `PHN${digits}`;
-}
-
-async function generateUniqueKidCode(): Promise<string> {
-  while (true) {
-    const code = generatePHNCode();
-    const existing = await db.select({ id: kidsTable.id }).from(kidsTable).where(eq(kidsTable.kidCode, code));
-    if (existing.length === 0) return code;
-  }
-}
+const PHN_FORMAT_REGEX = /^PHN\d{4,}$/;
 
 async function getKidCompletionRate(kidId: number): Promise<number> {
   const mealDays = await db.select().from(mealDaysTable).where(eq(mealDaysTable.kidId, kidId));
@@ -220,30 +209,41 @@ router.post("/", async (req, res) => {
     return;
   }
 
+  const { kidCode } = parsed.data;
+  if (!PHN_FORMAT_REGEX.test(kidCode)) {
+    res.status(400).json({ error: "VALIDATION_ERROR", message: "PHN must start with 'PHN' followed by at least 4 digits (e.g. PHN45129)" });
+    return;
+  }
+
+  const existingPHN = await db.select({ id: kidsTable.id }).from(kidsTable).where(eq(kidsTable.kidCode, kidCode));
+  if (existingPHN.length > 0) {
+    res.status(409).json({ error: "DUPLICATE_PHN", message: `PHN ${kidCode} is already in use. Please enter a different PHN.` });
+    return;
+  }
+
   try {
     const sessionDoctorId = req.session?.doctorId ?? null;
     const { dateOfBirth, ...rest } = parsed.data;
     const dobString = dateOfBirth.toISOString().split("T")[0];
     let kid: typeof kidsTable.$inferSelect | undefined;
-    for (let attempt = 0; attempt < 5; attempt++) {
-      try {
-        [kid] = await db
-          .insert(kidsTable)
-          .values({
-            ...rest,
-            dateOfBirth: dobString,
-            kidCode: await generateUniqueKidCode(),
-            doctorId: sessionDoctorId,
-          })
-          .returning();
-        break;
-      } catch (err: unknown) {
-        const pgErr = err as { code?: string };
-        if (pgErr?.code === "23505" && attempt < 4) continue;
-        throw err;
+    try {
+      [kid] = await db
+        .insert(kidsTable)
+        .values({
+          ...rest,
+          dateOfBirth: dobString,
+          doctorId: sessionDoctorId,
+        })
+        .returning();
+    } catch (err: unknown) {
+      const pgErr = err as { code?: string };
+      if (pgErr?.code === "23505") {
+        res.status(409).json({ error: "DUPLICATE_PHN", message: `PHN ${kidCode} is already in use. Please enter a different PHN.` });
+        return;
       }
+      throw err;
     }
-    if (!kid) throw new Error("Failed to generate unique PHN after retries");
+    if (!kid) throw new Error("Failed to insert kid record");
 
     const effectiveSubCategory = parsed.data.dietType === "classic" ? (parsed.data.dietSubCategory ?? null) : null;
 

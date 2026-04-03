@@ -294,6 +294,7 @@ export interface CreateKidRequest {
   parentContact: string;
   dietType: CreateKidRequestDietType;
   dietSubCategory?: CreateKidRequestDietSubCategory;
+  kidCode: string;
 }
 
 export type UpdateKidRequestGender =

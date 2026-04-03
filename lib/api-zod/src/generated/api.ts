@@ -231,6 +231,11 @@ export const CreateKidBody = zod.object({
   parentContact: zod.string(),
   dietType: zod.enum(["classic", "mad", "mct", "lowgi"]),
   dietSubCategory: zod.enum(["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]).nullish(),
+  kidCode: zod
+    .string()
+    .describe(
+      "Patient Health Number (PHN) in format PHN followed by at least 4 digits (e.g. PHN45129). Must be unique.",
+    ),
 });
 
 /**
