@@ -923,10 +923,10 @@ function MedicalSettingsForm({ kidId, initialData, lastWeight }: { kidId: number
   function handleAutoCalc() {
     if (!canAutoCalc || parsedRatio === null || lastWeight === undefined) return;
     const { calories, fat, protein, carbs } = computeKetoMacros(lastWeight, parsedRatio);
-    form.setValue("dailyCalories", calories, { shouldDirty: true });
-    form.setValue("dailyFat", fat, { shouldDirty: true });
-    form.setValue("dailyProtein", protein, { shouldDirty: true });
-    form.setValue("dailyCarbs", carbs, { shouldDirty: true });
+    form.setValue("dailyCalories", Math.min(calories, 2200), { shouldDirty: true });
+    form.setValue("dailyFat", Math.min(fat, fatMax), { shouldDirty: true });
+    form.setValue("dailyProtein", Math.min(protein, 50), { shouldDirty: true });
+    form.setValue("dailyCarbs", Math.min(carbs, carbsMax), { shouldDirty: true });
   }
 
   const calculatedRatio = useMemo(() => {
