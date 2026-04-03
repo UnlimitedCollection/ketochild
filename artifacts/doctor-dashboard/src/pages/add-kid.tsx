@@ -8,17 +8,34 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 
-const DIET_TYPE_OPTIONS = [
-  { value: "classic", label: "Classic Ketogenic Diet" },
+const CLASSIC_RATIOS = ["2:1", "2.5:1", "3:1", "3.5:1", "4:1"];
+
+const NON_CLASSIC_OPTIONS = [
   { value: "mad", label: "Modified Atkins Diet" },
   { value: "mct", label: "MCT Diet" },
   { value: "lowgi", label: "Low GI Diet" },
 ];
 
-const RATIO_OPTIONS = ["2:1", "2.5:1", "3:1", "3.5:1", "4:1"];
+function getDietCombinedValue(dietType: string, dietSubCategory?: string) {
+  if (dietType === "classic") return `classic|${dietSubCategory ?? "4:1"}`;
+  return dietType;
+}
+
+function parseDietCombinedValue(combined: string): { dietType: string; dietSubCategory?: string } {
+  if (combined.startsWith("classic|")) {
+    return { dietType: "classic", dietSubCategory: combined.slice(8) };
+  }
+  return { dietType: combined, dietSubCategory: undefined };
+}
+
+function getDietDisplayLabel(dietType: string, dietSubCategory?: string) {
+  if (dietType === "classic") return `Classic Ketogenic Diet (${dietSubCategory ?? "4:1"})`;
+  const opt = NON_CLASSIC_OPTIONS.find(o => o.value === dietType);
+  return opt?.label ?? dietType;
+}
 
 const createKidSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -59,7 +76,9 @@ export default function AddKidPage() {
     }
   });
 
-  const selectedDietType = useWatch({ control: form.control, name: "dietType" });
+  const watchedDietType = useWatch({ control: form.control, name: "dietType" });
+  const watchedDietSubCategory = useWatch({ control: form.control, name: "dietSubCategory" });
+  const combinedDietValue = getDietCombinedValue(watchedDietType, watchedDietSubCategory);
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -135,41 +154,41 @@ export default function AddKidPage() {
                   </FormItem>
                 )} />
 
-                <FormField control={form.control} name="dietType" render={({ field }) => (
-                  <FormItem>
+                <FormField control={form.control} name="dietType" render={() => (
+                  <FormItem className="md:col-span-2">
                     <FormLabel>Diet Type</FormLabel>
-                    <Select onValueChange={(v) => { field.onChange(v); if (v !== "classic") form.setValue("dietSubCategory", undefined); else form.setValue("dietSubCategory", "4:1"); }} defaultValue={field.value}>
+                    <Select
+                      value={combinedDietValue}
+                      onValueChange={(v) => {
+                        const parsed = parseDietCombinedValue(v);
+                        form.setValue("dietType", parsed.dietType as "classic" | "mad" | "mct" | "lowgi");
+                        form.setValue("dietSubCategory", parsed.dietSubCategory);
+                      }}
+                    >
                       <FormControl>
                         <SelectTrigger className="rounded-xl bg-slate-50">
-                          <SelectValue placeholder="Select diet type" />
+                          <SelectValue placeholder="Select diet type">
+                            {getDietDisplayLabel(watchedDietType, watchedDietSubCategory)}
+                          </SelectValue>
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {DIET_TYPE_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                        <SelectGroup>
+                          <SelectLabel>Classic Ketogenic Diet</SelectLabel>
+                          {CLASSIC_RATIOS.map(r => (
+                            <SelectItem key={r} value={`classic|${r}`} className="pl-6">
+                              Classic Ketogenic Diet - {r}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                        {NON_CLASSIC_OPTIONS.map(o => (
+                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
                   </FormItem>
                 )} />
-
-                {selectedDietType === "classic" && (
-                  <FormField control={form.control} name="dietSubCategory" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Keto Ratio</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value || "4:1"}>
-                        <FormControl>
-                          <SelectTrigger className="rounded-xl bg-slate-50">
-                            <SelectValue placeholder="Select ratio" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {RATIO_OPTIONS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                )}
               </div>
 
               <div className="space-y-1.5">
