@@ -709,7 +709,7 @@ function AddWeightDialog({ kidId, lastWeight }: { kidId: number; lastWeight?: nu
         queryClient.invalidateQueries({ queryKey: getGetKidMedicalQueryKey(kidId) });
         setOpen(false);
         if (data.macrosRecalculated) {
-          toast({ title: "Weight Saved", description: "Macros have been auto-recalculated based on the new weight." });
+          toast({ title: "Weight Saved", description: "Calories and macros have been auto-recalculated based on the new weight." });
         } else {
           toast({ title: "Success", description: "Weight record added." });
         }
