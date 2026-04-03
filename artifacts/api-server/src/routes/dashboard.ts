@@ -28,11 +28,12 @@ router.get("/stats", async (req, res) => {
         unfilledMealRecords: 0,
         last24hUnfilledMealRecords: 0,
         averageWeightChange: 0,
-        dietTypeDistribution: [
-          { dietType: "classic", count: 0, label: "Classic Ketogenic Diet" },
-          { dietType: "mad", count: 0, label: "Modified Atkins Diet" },
-          { dietType: "mct", count: 0, label: "MCT Diet" },
-          { dietType: "lowgi", count: 0, label: "Low GI Diet" },
+        classicDistribution: [
+          { ratio: "2:1",   count: 0, label: "2:1"   },
+          { ratio: "2.5:1", count: 0, label: "2.5:1" },
+          { ratio: "3:1",   count: 0, label: "3:1"   },
+          { ratio: "3.5:1", count: 0, label: "3.5:1" },
+          { ratio: "4:1",   count: 0, label: "4:1"   },
         ],
         recentHighRiskKids: [],
         totalDoctors: Number(totalDoctors),
@@ -90,20 +91,21 @@ router.get("/stats", async (req, res) => {
       }
     }
 
-    const dietTypeLabels: Record<string, string> = {
-      classic: "Classic Ketogenic Diet",
-      mad: "Modified Atkins Diet",
-      mct: "MCT Diet",
-      lowgi: "Low GI Diet",
-    };
-    const dietTypeCountMap = new Map<string, number>();
+    const classicRatios = ["2:1", "2.5:1", "3:1", "3.5:1", "4:1"];
+    const classicCountMap = new Map<string, number>();
+    for (const ratio of classicRatios) classicCountMap.set(ratio, 0);
     for (const kid of allKids) {
-      dietTypeCountMap.set(kid.dietType, (dietTypeCountMap.get(kid.dietType) || 0) + 1);
+      if (kid.dietType === "classic" && kid.dietSubCategory) {
+        const ratio = kid.dietSubCategory;
+        if (classicCountMap.has(ratio)) {
+          classicCountMap.set(ratio, (classicCountMap.get(ratio) || 0) + 1);
+        }
+      }
     }
-    const dietTypeDistribution = ["classic", "mad", "mct", "lowgi"].map((dt) => ({
-      dietType: dt,
-      count: dietTypeCountMap.get(dt) || 0,
-      label: dietTypeLabels[dt] || dt,
+    const classicDistribution = classicRatios.map((ratio) => ({
+      ratio,
+      count: classicCountMap.get(ratio) || 0,
+      label: ratio,
     }));
 
     const allWeights = await db.select().from(weightRecordsTable);
@@ -155,7 +157,7 @@ router.get("/stats", async (req, res) => {
       averageWeightChange: weightChangeCount > 0
         ? Math.round((totalWeightChange / weightChangeCount) * 100) / 100
         : 0,
-      dietTypeDistribution,
+      classicDistribution,
       recentHighRiskKids,
       totalDoctors: Number(totalDoctors),
       totalFoods: Number(totalFoods),

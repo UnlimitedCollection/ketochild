@@ -12,11 +12,12 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid
 } from "recharts";
 
-const DIET_TYPE_COLORS: Record<string, string> = {
-  classic: "#004ac6",
-  mad: "#2563eb",
-  mct: "#855300",
-  lowgi: "#b45309",
+const CLASSIC_RATIO_COLORS: Record<string, string> = {
+  "2:1":   "#93c5fd",
+  "2.5:1": "#3b82f6",
+  "3:1":   "#1d4ed8",
+  "3.5:1": "#1e3a8a",
+  "4:1":   "#172554",
 };
 const BLUE  = "#004ac6";
 const AMBER = "#855300";
@@ -94,11 +95,11 @@ function KpiCard({
 }
 
 const DASHBOARD_PRINT_SECTIONS = [
-  { id: "kpi",        label: "KPI Summary Cards",         defaultChecked: true },
-  { id: "dietType",   label: "Diet Type Distribution Chart",  defaultChecked: true },
-  { id: "trend",      label: "Compliance & Weight Trend", defaultChecked: true },
-  { id: "high-risk",  label: "High-Risk Children Table",  defaultChecked: true },
-  { id: "activity",   label: "Recent Activity",           defaultChecked: true },
+  { id: "kpi",             label: "KPI Summary Cards",          defaultChecked: true },
+  { id: "dietType",        label: "Classic Distribution Chart", defaultChecked: true },
+  { id: "trend",           label: "Compliance & Weight Trend",  defaultChecked: true },
+  { id: "high-risk",       label: "High-Risk Children Table",   defaultChecked: true },
+  { id: "activity",        label: "Recent Activity",            defaultChecked: true },
 ];
 
 export default function DashboardPage() {
@@ -139,8 +140,8 @@ export default function DashboardPage() {
     );
   }
 
-  const dietTypeData = stats.dietTypeDistribution;
-  const totalDietType = dietTypeData.reduce((s, p) => s + p.count, 0);
+  const classicData = stats.classicDistribution;
+  const totalClassic = classicData.reduce((s, p) => s + p.count, 0);
 
   return (
     <PrintLayout innerRef={printRef} className="space-y-8 pb-10">
@@ -183,32 +184,32 @@ export default function DashboardPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-            <h2 className="font-bold text-slate-800 mb-1">Diet Type Distribution</h2>
-            <p className="text-xs text-slate-400 mb-4">Patients across diet types</p>
-            {dietTypeData.length === 0 ? (
-              <p className="text-sm text-slate-400 py-8 text-center">No diet type data available</p>
+            <h2 className="font-bold text-slate-800 mb-1">Classic Distribution</h2>
+            <p className="text-xs text-slate-400 mb-4">Patients across classic ratios</p>
+            {classicData.every((d) => d.count === 0) ? (
+              <p className="text-sm text-slate-400 py-8 text-center">No classic ratio data available</p>
             ) : (
               <div className="flex items-center gap-6">
                 <div className="relative w-44 h-44 shrink-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={dietTypeData} cx="50%" cy="50%" innerRadius={52} outerRadius={72} paddingAngle={4} dataKey="count" nameKey="label" strokeWidth={0}>
-                        {dietTypeData.map((d) => <Cell key={d.dietType} fill={DIET_TYPE_COLORS[d.dietType] || "#999"} />)}
+                      <Pie data={classicData} cx="50%" cy="50%" innerRadius={52} outerRadius={72} paddingAngle={4} dataKey="count" nameKey="label" strokeWidth={0}>
+                        {classicData.map((d) => <Cell key={d.ratio} fill={CLASSIC_RATIO_COLORS[d.ratio] || "#999"} />)}
                       </Pie>
                       <RechartsTooltip contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "0 4px 12px rgba(0,0,0,.12)" }} />
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <p className="text-2xl font-black text-slate-900">{totalDietType}</p>
+                    <p className="text-2xl font-black text-slate-900">{totalClassic}</p>
                     <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Total</p>
                   </div>
                 </div>
                 <ul className="flex flex-col gap-2">
-                  {dietTypeData.map((ph) => (
-                    <li key={ph.dietType} className="flex items-center gap-2 text-sm">
-                      <span className="w-3 h-3 rounded-full shrink-0" style={{ background: DIET_TYPE_COLORS[ph.dietType] || "#999" }} />
-                      <span className="text-slate-600 font-medium">{ph.label}</span>
-                      <span className="ml-auto font-bold text-slate-800">{ph.count}</span>
+                  {classicData.map((d) => (
+                    <li key={d.ratio} className="flex items-center gap-2 text-sm">
+                      <span className="w-3 h-3 rounded-full shrink-0" style={{ background: CLASSIC_RATIO_COLORS[d.ratio] || "#999" }} />
+                      <span className="text-slate-600 font-medium">{d.label}</span>
+                      <span className="ml-auto font-bold text-slate-800">{d.count}</span>
                     </li>
                   ))}
                 </ul>
@@ -387,23 +388,23 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {printSections.has("dietType") && dietTypeData.length > 0 && (
+        {printSections.has("dietType") && classicData.some((d) => d.count > 0) && (
           <div>
-            <h2 className="text-sm font-bold text-slate-800 mb-2">Diet Type Distribution</h2>
+            <h2 className="text-sm font-bold text-slate-800 mb-2">Classic Distribution</h2>
             <table className="w-full text-xs border-collapse max-w-xs">
               <thead>
                 <tr className="bg-slate-100">
-                  <th className="text-left py-1 px-2 font-semibold text-slate-600">Diet Type</th>
+                  <th className="text-left py-1 px-2 font-semibold text-slate-600">Ratio</th>
                   <th className="text-left py-1 px-2 font-semibold text-slate-600">Count</th>
                   <th className="text-left py-1 px-2 font-semibold text-slate-600">%</th>
                 </tr>
               </thead>
               <tbody>
-                {dietTypeData.map((ph) => (
-                  <tr key={ph.dietType} className="border-b border-slate-100">
-                    <td className="py-1 px-2 text-slate-700">{ph.label}</td>
-                    <td className="py-1 px-2 text-slate-800 font-bold">{ph.count}</td>
-                    <td className="py-1 px-2 text-slate-600">{totalDietType > 0 ? ((ph.count / totalDietType) * 100).toFixed(1) : "0"}%</td>
+                {classicData.map((d) => (
+                  <tr key={d.ratio} className="border-b border-slate-100">
+                    <td className="py-1 px-2 text-slate-700">{d.label}</td>
+                    <td className="py-1 px-2 text-slate-800 font-bold">{d.count}</td>
+                    <td className="py-1 px-2 text-slate-600">{totalClassic > 0 ? ((d.count / totalClassic) * 100).toFixed(1) : "0"}%</td>
                   </tr>
                 ))}
               </tbody>

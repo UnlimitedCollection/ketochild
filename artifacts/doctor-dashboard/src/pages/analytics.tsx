@@ -6,11 +6,12 @@ import {
 } from "recharts";
 import { Link } from "wouter";
 
-const DIET_TYPE_COLORS: Record<string, string> = {
-  classic: "#004ac6",
-  mad: "#2563eb",
-  mct: "#0a7c42",
-  lowgi: "#b45309",
+const CLASSIC_RATIO_COLORS: Record<string, string> = {
+  "2:1":   "#93c5fd",
+  "2.5:1": "#3b82f6",
+  "3:1":   "#1d4ed8",
+  "3.5:1": "#1e3a8a",
+  "4:1":   "#172554",
 };
 const RISK_COLORS: Record<string, string> = {
   high: "#ae0010",
@@ -20,7 +21,7 @@ const RISK_COLORS: Record<string, string> = {
 
 type AnalyticsData = {
   weeklyCompliance: { week: string; compliance: number | null; filled: number; total: number }[];
-  dietTypeDistribution: { dietType: string; label: string; count: number }[];
+  classicDistribution: { ratio: string; label: string; count: number }[];
   patientCompliance: {
     id: number;
     name: string;
@@ -184,16 +185,16 @@ export default function AnalyticsPage() {
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-          <h2 className="font-bold text-slate-800 mb-1">Diet Type Distribution</h2>
-          <p className="text-xs text-slate-400 mb-4">Patients per diet type</p>
-          {data.dietTypeDistribution.every((p) => p.count === 0) ? (
-            <div className="h-48 flex items-center justify-center text-slate-400 text-sm">No patients enrolled</div>
+          <h2 className="font-bold text-slate-800 mb-1">Classic Distribution</h2>
+          <p className="text-xs text-slate-400 mb-4">Patients across classic ratios</p>
+          {data.classicDistribution.every((p) => p.count === 0) ? (
+            <div className="h-48 flex items-center justify-center text-slate-400 text-sm">No classic ratio data available</div>
           ) : (
             <>
               <ResponsiveContainer width="100%" height={160}>
                 <PieChart>
                   <Pie
-                    data={data.dietTypeDistribution}
+                    data={data.classicDistribution}
                     cx="50%"
                     cy="50%"
                     innerRadius={45}
@@ -202,8 +203,8 @@ export default function AnalyticsPage() {
                     nameKey="label"
                     paddingAngle={3}
                   >
-                    {data.dietTypeDistribution.map((d) => (
-                      <Cell key={d.dietType} fill={DIET_TYPE_COLORS[d.dietType] || "#999"} />
+                    {data.classicDistribution.map((d) => (
+                      <Cell key={d.ratio} fill={CLASSIC_RATIO_COLORS[d.ratio] || "#999"} />
                     ))}
                   </Pie>
                   <Tooltip
@@ -213,10 +214,10 @@ export default function AnalyticsPage() {
                 </PieChart>
               </ResponsiveContainer>
               <div className="grid grid-cols-2 gap-1 mt-2">
-                {data.dietTypeDistribution.map((p) => (
-                  <div key={p.dietType} className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: DIET_TYPE_COLORS[p.dietType] || "#999" }} />
-                    <span className="text-xs text-slate-600">{p.label}: <strong>{p.count}</strong></span>
+                {data.classicDistribution.map((d) => (
+                  <div key={d.ratio} className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: CLASSIC_RATIO_COLORS[d.ratio] || "#999" }} />
+                    <span className="text-xs text-slate-600">{d.label}: <strong>{d.count}</strong></span>
                   </div>
                 ))}
               </div>

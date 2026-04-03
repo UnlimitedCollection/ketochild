@@ -1982,10 +1982,10 @@ components:
           type: integer
         averageWeightChange:
           type: number
-        dietTypeDistribution:
+        classicDistribution:
           type: array
           items:
-            $ref: "#/components/schemas/DietTypeCount"
+            $ref: "#/components/schemas/ClassicDistributionEntry"
         recentHighRiskKids:
           type: array
           items:
@@ -2004,25 +2004,25 @@ components:
         - unfilledMealRecords
         - last24hUnfilledMealRecords
         - averageWeightChange
-        - dietTypeDistribution
+        - classicDistribution
         - recentHighRiskKids
         - totalDoctors
         - totalFoods
         - totalRecipes
         - tokenSummary
 
-    DietTypeCount:
+    ClassicDistributionEntry:
       type: object
       properties:
-        dietType:
+        ratio:
           type: string
-          enum: [classic, mad, mct, lowgi]
+          enum: ["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]
         count:
           type: integer
         label:
           type: string
       required:
-        - dietType
+        - ratio
         - count
         - label
 

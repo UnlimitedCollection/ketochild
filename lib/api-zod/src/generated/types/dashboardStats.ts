@@ -5,7 +5,7 @@
  * Keto Diet Doctor Dashboard API
  * OpenAPI spec version: 0.1.0
  */
-import type { DietTypeCount } from "./dietTypeCount";
+import type { ClassicDistributionEntry } from "./classicDistributionEntry";
 import type { HighRiskKid } from "./highRiskKid";
 import type { TokenSummary } from "./tokenSummary";
 
@@ -15,7 +15,7 @@ export interface DashboardStats {
   unfilledMealRecords: number;
   last24hUnfilledMealRecords: number;
   averageWeightChange: number;
-  dietTypeDistribution: DietTypeCount[];
+  classicDistribution: ClassicDistributionEntry[];
   recentHighRiskKids: HighRiskKid[];
   totalDoctors: number;
   totalFoods: number;

@@ -74,18 +74,19 @@ export interface ChangeDoctorPasswordRequest {
   confirmPassword: string;
 }
 
-export type DietTypeCountDietType =
-  (typeof DietTypeCountDietType)[keyof typeof DietTypeCountDietType];
+export type ClassicDistributionEntryRatio =
+  (typeof ClassicDistributionEntryRatio)[keyof typeof ClassicDistributionEntryRatio];
 
-export const DietTypeCountDietType = {
-  classic: "classic",
-  mad: "mad",
-  mct: "mct",
-  lowgi: "lowgi",
+export const ClassicDistributionEntryRatio = {
+  "2:1": "2:1",
+  "25:1": "2.5:1",
+  "3:1": "3:1",
+  "35:1": "3.5:1",
+  "4:1": "4:1",
 } as const;
 
-export interface DietTypeCount {
-  dietType: DietTypeCountDietType;
+export interface ClassicDistributionEntry {
+  ratio: ClassicDistributionEntryRatio;
   count: number;
   label: string;
 }
@@ -123,7 +124,7 @@ export interface DashboardStats {
   unfilledMealRecords: number;
   last24hUnfilledMealRecords: number;
   averageWeightChange: number;
-  dietTypeDistribution: DietTypeCount[];
+  classicDistribution: ClassicDistributionEntry[];
   recentHighRiskKids: HighRiskKid[];
   totalDoctors: number;
   totalFoods: number;

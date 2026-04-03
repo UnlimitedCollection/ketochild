@@ -124,9 +124,9 @@ export const GetDashboardStatsResponse = zod.object({
   unfilledMealRecords: zod.number(),
   last24hUnfilledMealRecords: zod.number(),
   averageWeightChange: zod.number(),
-  dietTypeDistribution: zod.array(
+  classicDistribution: zod.array(
     zod.object({
-      dietType: zod.enum(["classic", "mad", "mct", "lowgi"]),
+      ratio: zod.enum(["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]),
       count: zod.number(),
       label: zod.string(),
     }),

@@ -5,10 +5,10 @@
  * Keto Diet Doctor Dashboard API
  * OpenAPI spec version: 0.1.0
  */
-import type { DietTypeCountDietType } from "./dietTypeCountDietType";
+import type { ClassicDistributionEntryRatio } from "./classicDistributionEntryRatio";
 
-export interface DietTypeCount {
-  dietType: DietTypeCountDietType;
+export interface ClassicDistributionEntry {
+  ratio: ClassicDistributionEntryRatio;
   count: number;
   label: string;
 }

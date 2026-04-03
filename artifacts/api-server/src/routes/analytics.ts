@@ -20,7 +20,7 @@ router.get("/population", async (req, res) => {
     if (kidIds.length === 0) {
       res.json({
         weeklyCompliance: [],
-        dietTypeDistribution: [],
+        classicDistribution: [],
         patientCompliance: [],
         ketoneDistribution: { low: 0, optimal: 0, high: 0, total: 0 },
         weightTrend: [],
@@ -66,21 +66,19 @@ router.get("/population", async (req, res) => {
         total,
       }));
 
-    // ─── Diet type distribution ──────────────────────────────────────────────
-    const dietTypeLabels: Record<string, string> = {
-      classic: "Classic Ketogenic Diet",
-      mad: "Modified Atkins Diet",
-      mct: "MCT Diet",
-      lowgi: "Low GI Diet",
-    };
-    const dietTypeCounts: Record<string, number> = { classic: 0, mad: 0, mct: 0, lowgi: 0 };
+    // ─── Classic distribution ────────────────────────────────────────────────
+    const classicRatios = ["2:1", "2.5:1", "3:1", "3.5:1", "4:1"];
+    const classicCountMap: Record<string, number> = {};
+    for (const ratio of classicRatios) classicCountMap[ratio] = 0;
     for (const kid of allKids) {
-      dietTypeCounts[kid.dietType] = (dietTypeCounts[kid.dietType] ?? 0) + 1;
+      if (kid.dietType === "classic" && kid.dietSubCategory && classicCountMap[kid.dietSubCategory] !== undefined) {
+        classicCountMap[kid.dietSubCategory]++;
+      }
     }
-    const dietTypeDistribution = ["classic", "mad", "mct", "lowgi"].map((dt) => ({
-      dietType: dt,
-      label: dietTypeLabels[dt] || dt,
-      count: dietTypeCounts[dt] ?? 0,
+    const classicDistribution = classicRatios.map((ratio) => ({
+      ratio,
+      label: ratio,
+      count: classicCountMap[ratio] ?? 0,
     }));
 
     // ─── Gender distribution ────────────────────────────────────────────────
@@ -168,7 +166,7 @@ router.get("/population", async (req, res) => {
 
     res.json({
       weeklyCompliance,
-      dietTypeDistribution,
+      classicDistribution,
       patientCompliance,
       ketoneDistribution: ketoneDist,
       weightTrend,
