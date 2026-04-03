@@ -243,7 +243,7 @@ export default function KidProfilePage() {
                 ) : (
                   <div className="h-[300px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={[...recentWeights].reverse()}>
+                      <LineChart data={recentWeights}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                         <XAxis 
                           dataKey="date" 

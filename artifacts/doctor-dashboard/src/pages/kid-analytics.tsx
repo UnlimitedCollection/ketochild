@@ -197,7 +197,7 @@ export default function KidAnalyticsPage() {
 
   const { kid, recentWeights } = profile;
 
-  const weightChartData = [...recentWeights].reverse();
+  const weightChartData = recentWeights;
 
   return (
     <div className="space-y-6">
