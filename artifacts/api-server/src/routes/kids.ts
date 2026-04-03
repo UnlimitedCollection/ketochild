@@ -559,10 +559,39 @@ router.post("/:kidId/weight", async (req, res) => {
     : String(parsed.data.date);
 
   try {
-    const [record] = await db
-      .insert(weightRecordsTable)
-      .values({ kidId, weight: parsed.data.weight, date: dateStr, note: parsed.data.note })
-      .returning();
+    const { record, macrosRecalculated } = await db.transaction(async (tx) => {
+      const [record] = await tx
+        .insert(weightRecordsTable)
+        .values({ kidId, weight: parsed.data.weight, date: dateStr, note: parsed.data.note })
+        .returning();
+
+      const [medical] = await tx
+        .select()
+        .from(medicalSettingsTable)
+        .where(eq(medicalSettingsTable.kidId, kidId))
+        .limit(1);
+
+      if (!medical) {
+        return { record, macrosRecalculated: false };
+      }
+
+      const weightKg = parsed.data.weight;
+      const ketoRatio = medical.ketoRatio;
+      const dailyCalories = medical.dailyCalories;
+
+      const protein = Math.round(weightKg * 1);
+      const energyPerUnit = ketoRatio * 9 + 4;
+      const dietaryUnits = energyPerUnit > 0 ? dailyCalories / energyPerUnit : 0;
+      const carbs = Math.max(0, Math.round(dietaryUnits - protein));
+      const fat = Math.round(dietaryUnits * ketoRatio);
+
+      await tx
+        .update(medicalSettingsTable)
+        .set({ dailyProtein: protein, dailyCarbs: carbs, dailyFat: fat, updatedAt: new Date() })
+        .where(eq(medicalSettingsTable.kidId, kidId));
+
+      return { record, macrosRecalculated: true };
+    });
 
     res.status(201).json({
       id: record.id,
@@ -570,6 +599,7 @@ router.post("/:kidId/weight", async (req, res) => {
       weight: record.weight,
       date: record.date,
       note: record.note,
+      macrosRecalculated,
     });
   } catch (err) {
     req.log.error({ err }, "Add weight error");

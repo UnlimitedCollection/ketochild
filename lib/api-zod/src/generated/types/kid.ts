@@ -21,7 +21,6 @@ export interface Kid {
   parentName: string;
   parentContact: string;
   isHighRisk: boolean;
-  hasSideEffects: boolean;
   mealCompletionRate: number;
   /** Whether the child's avg carb intake (last 7 days) is within the prescribed daily carb limit */
   inKetoStatus: boolean;

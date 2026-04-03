@@ -380,7 +380,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WeightRecord"
+                $ref: "#/components/schemas/WeightRecordResponse"
 
     get:
       operationId: getWeightHistory
@@ -2215,6 +2215,30 @@ components:
         - kidId
         - weight
         - date
+
+    WeightRecordResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        kidId:
+          type: integer
+        weight:
+          type: number
+        date:
+          type: string
+          format: date
+        note:
+          type: string
+        macrosRecalculated:
+          type: boolean
+          description: Whether macros were auto-recalculated from the new weight
+      required:
+        - id
+        - kidId
+        - weight
+        - date
+        - macrosRecalculated
 
     WeightRecordRequest:
       type: object

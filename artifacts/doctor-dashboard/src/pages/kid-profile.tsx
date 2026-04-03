@@ -4,7 +4,7 @@ import { PrintLayout } from "@/components/print-layout";
 import { PrintButton } from "@/components/print-button";
 import { PrintFilterDialog, type PrintFilterResult } from "@/components/print-filter-dialog";
 import { useParams, Link, useLocation } from "wouter";
-import { useGetKid, useAddWeightRecord, useDeleteWeightRecord, useUpdateKidMedical, useUpdateKid, useDeleteKid, useGetKidMealHistory, useGetKidKetoneReadings, useAddKetoneReading, useDeleteKetoneReading, useGetKidMealLogs, useAddMealLog, useDeleteMealLog, useGetKidMealLog, useGetKidAssignedMealPlan, useAssignKidMealPlan, useGetLibraryMealPlans, useGetFoods, useUpdateMealLogImage, getGetKidAssignedMealPlanQueryKey, useListMealTypes, useGetKidMealPlanHistory, getGetKidMealPlanHistoryQueryKey, type LibraryMealPlanDetail, type LibraryMealPlanItem, type MedicalSettingsRequest, type UpdateKidRequest, type MealPlanAssignmentHistory } from "@workspace/api-client-react";
+import { useGetKid, useAddWeightRecord, useDeleteWeightRecord, useUpdateKidMedical, useUpdateKid, useDeleteKid, useGetKidMealHistory, useGetKidKetoneReadings, useAddKetoneReading, useDeleteKetoneReading, useGetKidMealLogs, useAddMealLog, useDeleteMealLog, useGetKidMealLog, useGetKidAssignedMealPlan, useAssignKidMealPlan, useGetLibraryMealPlans, useGetFoods, useUpdateMealLogImage, getGetKidAssignedMealPlanQueryKey, useListMealTypes, useGetKidMealPlanHistory, getGetKidMealPlanHistoryQueryKey, getGetKidQueryKey, getGetKidMedicalQueryKey, type WeightRecordResponse, type LibraryMealPlanDetail, type LibraryMealPlanItem, type MedicalSettingsRequest, type UpdateKidRequest, type MealPlanAssignmentHistory } from "@workspace/api-client-react";
 import { useUpload } from "@workspace/object-storage-web";
 import { z } from "zod";
 import { useForm, useWatch } from "react-hook-form";
@@ -232,7 +232,7 @@ export default function KidProfilePage() {
                   <CardTitle className="text-lg">Weight History</CardTitle>
                   <CardDescription>Track patient's weight trajectory over time</CardDescription>
                 </div>
-                {canWrite && <AddWeightDialog kidId={kidId} />}
+                {canWrite && <AddWeightDialog kidId={kidId} lastWeight={recentWeights[recentWeights.length - 1]?.weight} />}
               </CardHeader>
               <CardContent className="pt-4">
                 {recentWeights.length < 2 ? (
@@ -683,7 +683,7 @@ const weightSchema = z.object({
   note: z.string().optional(),
 });
 
-function AddWeightDialog({ kidId }: { kidId: number }) {
+function AddWeightDialog({ kidId, lastWeight }: { kidId: number; lastWeight?: number }) {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -691,19 +691,29 @@ function AddWeightDialog({ kidId }: { kidId: number }) {
   const form = useForm<z.infer<typeof weightSchema>>({
     resolver: zodResolver(weightSchema),
     defaultValues: {
-      weight: undefined,
+      weight: lastWeight,
       date: format(new Date(), 'yyyy-MM-dd'),
       note: ""
     }
   });
 
+  useEffect(() => {
+    if (open) {
+      form.reset({ weight: lastWeight, date: format(new Date(), 'yyyy-MM-dd'), note: "" });
+    }
+  }, [open, lastWeight]);
+
   const mutation = useAddWeightRecord({
     mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: [`/api/kids/${kidId}`] });
+      onSuccess: (data: WeightRecordResponse) => {
+        queryClient.invalidateQueries({ queryKey: getGetKidQueryKey(kidId) });
+        queryClient.invalidateQueries({ queryKey: getGetKidMedicalQueryKey(kidId) });
         setOpen(false);
-        form.reset();
-        toast({ title: "Success", description: "Weight record added." });
+        if (data.macrosRecalculated) {
+          toast({ title: "Weight Saved", description: "Macros have been auto-recalculated based on the new weight." });
+        } else {
+          toast({ title: "Success", description: "Weight record added." });
+        }
       }
     }
   });
@@ -728,6 +738,9 @@ function AddWeightDialog({ kidId }: { kidId: number }) {
                   <FormControl>
                     <Input type="number" step="0.1" placeholder="0.0" className="rounded-xl" {...field} />
                   </FormControl>
+                  {lastWeight !== undefined && (
+                    <p className="text-[11px] text-slate-400 mt-0.5">Last recorded: {lastWeight} kg</p>
+                  )}
                   <FormMessage />
                 </FormItem>
               )} />

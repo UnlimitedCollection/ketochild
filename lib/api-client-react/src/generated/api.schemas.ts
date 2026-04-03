@@ -172,7 +172,6 @@ export interface Kid {
   parentName: string;
   parentContact: string;
   isHighRisk: boolean;
-  hasSideEffects: boolean;
   mealCompletionRate: number;
   /** Whether the child's avg carb intake (last 7 days) is within the prescribed daily carb limit */
   inKetoStatus: boolean;
@@ -295,6 +294,10 @@ export interface CreateKidRequest {
   parentContact: string;
   dietType: CreateKidRequestDietType;
   dietSubCategory?: CreateKidRequestDietSubCategory;
+  /**
+   * Patient Health Number (PHN) in format PHN followed by at least 4 digits (e.g. PHN45129). Must be unique.
+   * @pattern ^PHN\d{4,}$
+   */
   kidCode: string;
 }
 
@@ -336,6 +339,16 @@ export interface UpdateKidRequest {
   parentContact?: string;
   dietType?: UpdateKidRequestDietType;
   dietSubCategory?: UpdateKidRequestDietSubCategory;
+}
+
+export interface WeightRecordResponse {
+  id: number;
+  kidId: number;
+  weight: number;
+  date: string;
+  note?: string;
+  /** Whether macros were auto-recalculated from the new weight */
+  macrosRecalculated: boolean;
 }
 
 export interface WeightRecordRequest {
@@ -903,10 +916,6 @@ export type GetKidsParams = {
    * Filter high-risk children only
    */
   highRisk?: boolean;
-  /**
-   * Filter by whether kids have side effects recorded
-   */
-  hasSideEffects?: boolean;
   /**
    * Filter by keto status (true = in keto, false = not in keto)
    */

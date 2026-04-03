@@ -17,5 +17,9 @@ export interface CreateKidRequest {
   parentContact: string;
   dietType: CreateKidRequestDietType;
   dietSubCategory?: CreateKidRequestDietSubCategory;
+  /**
+   * Patient Health Number (PHN) in format PHN followed by at least 4 digits (e.g. PHN45129). Must be unique.
+   * @pattern ^PHN\d{4,}$
+   */
   kidCode: string;
 }

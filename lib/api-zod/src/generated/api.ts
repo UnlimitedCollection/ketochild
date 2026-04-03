@@ -184,10 +184,6 @@ export const GetKidsQueryParams = zod.object({
     .boolean()
     .optional()
     .describe("Filter high-risk children only"),
-  hasSideEffects: zod.coerce
-    .boolean()
-    .optional()
-    .describe("Filter by whether kids have side effects recorded"),
   ketoStatus: zod.coerce
     .boolean()
     .optional()
@@ -209,7 +205,6 @@ export const GetKidsResponseItem = zod.object({
   parentName: zod.string(),
   parentContact: zod.string(),
   isHighRisk: zod.boolean(),
-  hasSideEffects: zod.boolean(),
   mealCompletionRate: zod.number(),
   inKetoStatus: zod
     .boolean()
@@ -228,6 +223,8 @@ export const GetKidsResponse = zod.array(GetKidsResponseItem);
 /**
  * @summary Create a new kid profile
  */
+export const createKidBodyKidCodeRegExp = new RegExp("^PHN\\d{4,}$");
+
 export const CreateKidBody = zod.object({
   name: zod.string(),
   dateOfBirth: zod.date(),
@@ -238,6 +235,7 @@ export const CreateKidBody = zod.object({
   dietSubCategory: zod.enum(["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]).nullish(),
   kidCode: zod
     .string()
+    .regex(createKidBodyKidCodeRegExp)
     .describe(
       "Patient Health Number (PHN) in format PHN followed by at least 4 digits (e.g. PHN45129). Must be unique.",
     ),
@@ -268,7 +266,6 @@ export const GetKidResponse = zod.object({
     parentName: zod.string(),
     parentContact: zod.string(),
     isHighRisk: zod.boolean(),
-    hasSideEffects: zod.boolean(),
     mealCompletionRate: zod.number(),
     inKetoStatus: zod
       .boolean()
@@ -363,7 +360,6 @@ export const UpdateKidResponse = zod.object({
   parentName: zod.string(),
   parentContact: zod.string(),
   isHighRisk: zod.boolean(),
-  hasSideEffects: zod.boolean(),
   mealCompletionRate: zod.number(),
   inKetoStatus: zod
     .boolean()

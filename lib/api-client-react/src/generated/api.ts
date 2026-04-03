@@ -83,6 +83,7 @@ import type {
   VisibilityRequest,
   WeightRecord,
   WeightRecordRequest,
+  WeightRecordResponse,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -1249,8 +1250,8 @@ export const addWeightRecord = async (
   kidId: number,
   weightRecordRequest: WeightRecordRequest,
   options?: RequestInit,
-): Promise<WeightRecord> => {
-  return customFetch<WeightRecord>(getAddWeightRecordUrl(kidId), {
+): Promise<WeightRecordResponse> => {
+  return customFetch<WeightRecordResponse>(getAddWeightRecordUrl(kidId), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },

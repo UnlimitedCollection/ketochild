@@ -106,3 +106,4 @@ export * from "./userResponseRole";
 export * from "./visibilityRequest";
 export * from "./weightRecord";
 export * from "./weightRecordRequest";
+export * from "./weightRecordResponse";
