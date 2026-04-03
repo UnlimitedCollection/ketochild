@@ -43,7 +43,7 @@ export default function HighRiskPage() {
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h3 className="font-bold text-xl text-slate-900">{kid.name}</h3>
-                    <p className="text-sm font-mono text-slate-500 mt-0.5">{kid.kidCode} • {kid.ageMonths} months</p>
+                    <p className="text-sm text-slate-500 mt-0.5"><span className="font-medium">PHN No.</span> <span className="font-mono">{kid.kidCode}</span> • {kid.ageMonths} months</p>
                   </div>
                   <Badge variant="secondary" className="bg-destructive/10 text-destructive border-none">
                     {kid.dietType === "classic" ? "Classic Ketogenic" : kid.dietType === "mad" ? "Modified Atkins" : kid.dietType === "mct" ? "MCT Diet" : "Low GI Diet"}

@@ -2061,6 +2061,8 @@ components:
           type: string
         kidCode:
           type: string
+          description: Patient Health Number (PHN) in format PHNxxxxx (e.g. PHN45129). Auto-generated unique identifier.
+          example: PHN45129
         dateOfBirth:
           type: string
           format: date

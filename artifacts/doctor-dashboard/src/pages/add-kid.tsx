@@ -172,6 +172,12 @@ export default function AddKidPage() {
                 )}
               </div>
 
+              <div className="space-y-1.5">
+                <p className="text-sm font-medium text-slate-700">PHN No.</p>
+                <div className="h-10 flex items-center px-3 rounded-xl bg-slate-100 border border-slate-200 text-slate-400 text-sm font-mono">Auto-generated on registration</div>
+                <p className="text-xs text-slate-500">A unique Patient Health Number (PHN) will be assigned automatically.</p>
+              </div>
+
               <p className="text-xs text-slate-500">You can adjust specific macros later in the Medical Controls tab.</p>
 
               <div className="flex justify-end pt-6 border-t border-slate-100">

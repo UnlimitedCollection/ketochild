@@ -214,7 +214,7 @@ export default function KidAnalyticsPage() {
                 <div>
                   <h1 className="text-2xl font-bold text-slate-900">{kid.name}</h1>
                   <div className="flex items-center gap-3 mt-1 text-slate-500 text-sm">
-                    <span className="font-mono bg-slate-100 px-2 py-0.5 rounded">{kid.kidCode}</span>
+                    <span className="text-slate-500 font-medium">PHN No.</span><span className="font-mono bg-slate-100 px-2 py-0.5 rounded">{kid.kidCode}</span>
                     <span>{kid.ageMonths} months old</span>
                     <span className="capitalize">{kid.gender}</span>
                   </div>

@@ -193,7 +193,11 @@ export const GetKidsQueryParams = zod.object({
 export const GetKidsResponseItem = zod.object({
   id: zod.number(),
   name: zod.string(),
-  kidCode: zod.string(),
+  kidCode: zod
+    .string()
+    .describe(
+      "Patient Health Number (PHN) in format PHNxxxxx (e.g. PHN45129). Auto-generated unique identifier.",
+    ),
   dateOfBirth: zod.date(),
   ageMonths: zod.number(),
   dietType: zod.enum(["classic", "mad", "mct", "lowgi"]),
@@ -240,7 +244,11 @@ export const GetKidResponse = zod.object({
   kid: zod.object({
     id: zod.number(),
     name: zod.string(),
-    kidCode: zod.string(),
+    kidCode: zod
+      .string()
+      .describe(
+        "Patient Health Number (PHN) in format PHNxxxxx (e.g. PHN45129). Auto-generated unique identifier.",
+      ),
     dateOfBirth: zod.date(),
     ageMonths: zod.number(),
     dietType: zod.enum(["classic", "mad", "mct", "lowgi"]),
@@ -332,7 +340,11 @@ export const UpdateKidBody = zod.object({
 export const UpdateKidResponse = zod.object({
   id: zod.number(),
   name: zod.string(),
-  kidCode: zod.string(),
+  kidCode: zod
+    .string()
+    .describe(
+      "Patient Health Number (PHN) in format PHNxxxxx (e.g. PHN45129). Auto-generated unique identifier.",
+    ),
   dateOfBirth: zod.date(),
   ageMonths: zod.number(),
   dietType: zod.enum(["classic", "mad", "mct", "lowgi"]),

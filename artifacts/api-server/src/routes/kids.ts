@@ -39,8 +39,17 @@ import {
 
 const router: IRouter = Router();
 
-function generateKidCode(): string {
-  return "KID-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+function generatePHNCode(): string {
+  const digits = Math.floor(10000 + Math.random() * 90000);
+  return `PHN${digits}`;
+}
+
+async function generateUniqueKidCode(): Promise<string> {
+  while (true) {
+    const code = generatePHNCode();
+    const existing = await db.select({ id: kidsTable.id }).from(kidsTable).where(eq(kidsTable.kidCode, code));
+    if (existing.length === 0) return code;
+  }
 }
 
 async function getKidCompletionRate(kidId: number): Promise<number> {
@@ -214,15 +223,27 @@ router.post("/", async (req, res) => {
   try {
     const sessionDoctorId = req.session?.doctorId ?? null;
     const { dateOfBirth, ...rest } = parsed.data;
-    const [kid] = await db
-      .insert(kidsTable)
-      .values({
-        ...rest,
-        dateOfBirth: dateOfBirth.toISOString().split("T")[0],
-        kidCode: generateKidCode(),
-        doctorId: sessionDoctorId,
-      })
-      .returning();
+    const dobString = dateOfBirth.toISOString().split("T")[0];
+    let kid: typeof kidsTable.$inferSelect | undefined;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        [kid] = await db
+          .insert(kidsTable)
+          .values({
+            ...rest,
+            dateOfBirth: dobString,
+            kidCode: await generateUniqueKidCode(),
+            doctorId: sessionDoctorId,
+          })
+          .returning();
+        break;
+      } catch (err: unknown) {
+        const pgErr = err as { code?: string };
+        if (pgErr?.code === "23505" && attempt < 4) continue;
+        throw err;
+      }
+    }
+    if (!kid) throw new Error("Failed to generate unique PHN after retries");
 
     const effectiveSubCategory = parsed.data.dietType === "classic" ? (parsed.data.dietSubCategory ?? null) : null;
 

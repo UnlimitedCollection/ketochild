@@ -128,7 +128,7 @@ function KidViewDialog({ kidId, open, onOpenChange }: { kidId: number | null; op
               <div>
                 <h2 className="text-xl font-bold text-slate-900">{kid.name}</h2>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-600">{kid.kidCode}</span>
+                  <span className="text-xs text-slate-500 font-medium">PHN No.</span><span className="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-600">{kid.kidCode}</span>
                   <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">{DIET_TYPE_LABELS[kid.dietType] || kid.dietType}{kid.dietSubCategory ? ` (${kid.dietSubCategory})` : ""}</Badge>
                   {kid.isHighRisk && (
                     <Badge variant="destructive" className="bg-destructive/10 text-destructive border border-destructive/20 text-xs">High Risk</Badge>
@@ -608,7 +608,7 @@ export default function KidsListPage() {
               <TableHeader className="bg-slate-50">
                 <TableRow className="border-b-slate-200">
                   <TableHead className="font-semibold text-slate-600">Patient</TableHead>
-                  <TableHead className="font-semibold text-slate-600">ID / Code</TableHead>
+                  <TableHead className="font-semibold text-slate-600">PHN No.</TableHead>
                   <TableHead className="font-semibold text-slate-600">Diet Type</TableHead>
                   <TableHead className="font-semibold text-slate-600">Parent Info</TableHead>
                   <TableHead className="font-semibold text-slate-600">Meal Completion</TableHead>
@@ -776,7 +776,7 @@ export default function KidsListPage() {
                 <thead>
                   <tr className="bg-slate-100">
                     <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Patient</th>
-                    <th className="text-left py-1.5 px-2 font-semibold text-slate-600">ID / Code</th>
+                    <th className="text-left py-1.5 px-2 font-semibold text-slate-600">PHN No.</th>
                     <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Diet Type</th>
                     <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Parent</th>
                     <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Contact</th>

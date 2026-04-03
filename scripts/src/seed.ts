@@ -22,8 +22,41 @@ import {
 import { eq, inArray } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
+function generatePHNCode(usedCodes?: Set<string>): string {
+  let code: string;
+  do {
+    const digits = Math.floor(10000 + Math.random() * 90000);
+    code = `PHN${digits}`;
+  } while (usedCodes && usedCodes.has(code));
+  if (usedCodes) usedCodes.add(code);
+  return code;
+}
+
+async function migrateLegacyKidCodes() {
+  const legacyKids = await db.select({ id: kidsTable.id, kidCode: kidsTable.kidCode }).from(kidsTable);
+  const legacyToMigrate = legacyKids.filter((k) => k.kidCode.startsWith("KID-") || k.kidCode.startsWith("KKC-"));
+  if (legacyToMigrate.length === 0) {
+    console.log("No legacy KID- codes to migrate.");
+    return;
+  }
+  const usedCodes = new Set(legacyKids.map((k) => k.kidCode));
+  for (const kid of legacyToMigrate) {
+    let newCode: string;
+    do {
+      newCode = generatePHNCode();
+    } while (usedCodes.has(newCode));
+    usedCodes.add(newCode);
+    await db.update(kidsTable).set({ kidCode: newCode }).where(eq(kidsTable.id, kid.id));
+    console.log(`Migrated kid ${kid.id}: ${kid.kidCode} → ${newCode}`);
+  }
+  console.log(`Migrated ${legacyToMigrate.length} legacy KID- codes to PHN format.`);
+}
+
 async function seed() {
   console.log("Seeding database...");
+
+  // ── 0. Migrate legacy KID- codes → PHN format ────────────────────────────────
+  await migrateLegacyKidCodes();
 
   // ── 1. Migrate legacy "doctor" username → "admin" (one-time rename) ─────────
   const legacyDoctors = await db.select().from(doctorsTable).where(eq(doctorsTable.username, "doctor"));
@@ -562,6 +595,7 @@ async function seed() {
   };
 
   const createdKids: { id: number; dietType: string; dietSubCategory: string | null; name: string }[] = [];
+  const usedPHNCodes = new Set<string>();
 
   for (const kid of kidsData) {
     const { baseWeight, ...kidFields } = kid;
@@ -569,7 +603,7 @@ async function seed() {
       .insert(kidsTable)
       .values({
         ...kidFields,
-        kidCode: `KKC-${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
+        kidCode: generatePHNCode(usedPHNCodes),
         doctorId,
       })
       .returning();
