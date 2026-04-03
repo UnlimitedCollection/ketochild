@@ -575,34 +575,18 @@ router.post("/:kidId/weight", async (req, res) => {
         return { record, macrosRecalculated: false };
       }
 
-      const [kid] = await tx
-        .select({ dateOfBirth: kidsTable.dateOfBirth })
-        .from(kidsTable)
-        .where(eq(kidsTable.id, kidId))
-        .limit(1);
-
       const weightKg = parsed.data.weight;
       const ketoRatio = medical.ketoRatio;
 
-      let dailyCalories = medical.dailyCalories;
-
-      if (kid?.dateOfBirth) {
-        const dob = new Date(kid.dateOfBirth);
-        const now = new Date();
-        const ageYears = (now.getTime() - dob.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
-        let kcalPerKg: number;
-        if (ageYears < 1) {
-          kcalPerKg = 90;
-        } else if (ageYears < 4) {
-          kcalPerKg = 85;
-        } else if (ageYears < 9) {
-          kcalPerKg = 67.5;
-        } else if (ageYears < 14) {
-          kcalPerKg = 47.5;
-        } else {
-          kcalPerKg = 37.5;
-        }
-        dailyCalories = Math.round(weightKg * kcalPerKg);
+      // Weight-tiered pediatric calorie formula:
+      // First 10 kg → 110 kcal/kg, next 10 kg → 70 kcal/kg, remainder → 30 kcal/kg
+      let dailyCalories: number;
+      if (weightKg <= 10) {
+        dailyCalories = Math.round(110 * weightKg);
+      } else if (weightKg <= 20) {
+        dailyCalories = Math.round(110 * 10 + 70 * (weightKg - 10));
+      } else {
+        dailyCalories = Math.round(110 * 10 + 70 * 10 + 30 * (weightKg - 20));
       }
 
       const protein = Math.round(weightKg * 1);

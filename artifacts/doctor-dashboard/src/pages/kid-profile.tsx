@@ -312,7 +312,7 @@ export default function KidProfilePage() {
         </TabsContent>
 
         <TabsContent value="medical" className="focus-visible:outline-none">
-          <MedicalSettingsForm kidId={kidId} initialData={medical} />
+          <MedicalSettingsForm kidId={kidId} initialData={medical} lastWeight={recentWeights.length > 0 ? recentWeights[recentWeights.length - 1].weight : undefined} />
         </TabsContent>
 
         <TabsContent value="meals" className="focus-visible:outline-none">
@@ -862,7 +862,24 @@ type MedicalSettings = {
   showAllRecipes: boolean;
 };
 
-function MedicalSettingsForm({ kidId, initialData }: { kidId: number, initialData: MedicalSettings }) {
+function computeKetoMacros(weightKg: number, ratio: number) {
+  let calories: number;
+  if (weightKg <= 10) {
+    calories = Math.round(110 * weightKg);
+  } else if (weightKg <= 20) {
+    calories = Math.round(110 * 10 + 70 * (weightKg - 10));
+  } else {
+    calories = Math.round(110 * 10 + 70 * 10 + 30 * (weightKg - 20));
+  }
+  const energyPerUnit = ratio * 9 + 4;
+  const units = energyPerUnit > 0 ? calories / energyPerUnit : 0;
+  const protein = Math.round(weightKg);
+  const carbs = Math.max(0, Math.round(units - protein));
+  const fat = Math.round(units * ratio);
+  return { calories, fat, protein, carbs };
+}
+
+function MedicalSettingsForm({ kidId, initialData, lastWeight }: { kidId: number, initialData: MedicalSettings, lastWeight?: number }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const canWrite = useCanWrite();
@@ -887,6 +904,30 @@ function MedicalSettingsForm({ kidId, initialData }: { kidId: number, initialDat
   const watchedMedDietType = useWatch({ control: form.control, name: "dietType" });
   const watchedMedDietSubCategory = useWatch({ control: form.control, name: "dietSubCategory" });
   const combinedMedDietValue = getDietCombinedValue(watchedMedDietType, watchedMedDietSubCategory ?? undefined);
+
+  const isClassicKeto = watchedMedDietType === "classic";
+
+  const fatMax = isClassicKeto ? 200 : 100;
+  const carbsMax = isClassicKeto ? 80 : 300;
+
+  const parsedRatio = useMemo(() => {
+    if (!isClassicKeto || !watchedMedDietSubCategory) return null;
+    const match = watchedMedDietSubCategory.match(/^(\d+(?:\.\d+)?)/);
+    if (!match) return null;
+    const r = parseFloat(match[1]);
+    return isNaN(r) || r <= 0 ? null : r;
+  }, [isClassicKeto, watchedMedDietSubCategory]);
+
+  const canAutoCalc = isClassicKeto && parsedRatio !== null && lastWeight !== undefined && lastWeight > 0;
+
+  function handleAutoCalc() {
+    if (!canAutoCalc || parsedRatio === null || lastWeight === undefined) return;
+    const { calories, fat, protein, carbs } = computeKetoMacros(lastWeight, parsedRatio);
+    form.setValue("dailyCalories", calories, { shouldDirty: true });
+    form.setValue("dailyFat", fat, { shouldDirty: true });
+    form.setValue("dailyProtein", protein, { shouldDirty: true });
+    form.setValue("dailyCarbs", carbs, { shouldDirty: true });
+  }
 
   const calculatedRatio = useMemo(() => {
     const f = Number(watchedFat) || 0;
@@ -957,6 +998,27 @@ function MedicalSettingsForm({ kidId, initialData }: { kidId: number, initialDat
                   </FormItem>
                 )} />
 
+                {/* Auto-Calculate button */}
+                {canAutoCalc && canWrite && (
+                  <div className="rounded-xl border border-green-200 bg-green-50 p-3 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold text-green-800">Auto-Calculate from Last Weight</p>
+                      <p className="text-[11px] text-green-600 mt-0.5">
+                        Last weight: <span className="font-bold">{lastWeight} kg</span> · Ratio: <span className="font-bold">{watchedMedDietSubCategory}</span>
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="shrink-0 rounded-lg border-green-400 text-green-800 hover:bg-green-100"
+                      onClick={handleAutoCalc}
+                    >
+                      Calculate
+                    </Button>
+                  </div>
+                )}
+
                 {/* Macro Sliders */}
                 <div className="space-y-5 pt-2">
                   <FormField control={form.control} name="dailyCalories" render={({ field }) => (
@@ -988,14 +1050,14 @@ function MedicalSettingsForm({ kidId, initialData }: { kidId: number, initialDat
                       </div>
                       <FormControl>
                         <Slider
-                          min={0} max={100} step={1}
-                          value={[Number(field.value) || 0]}
+                          min={0} max={fatMax} step={1}
+                          value={[Math.min(Number(field.value) || 0, fatMax)]}
                           onValueChange={(vals) => field.onChange(vals[0])}
                           className="py-1"
                         />
                       </FormControl>
                       <div className="flex justify-between text-[10px] text-slate-400 mt-0.5">
-                        <span>0 g</span><span>100 g</span>
+                        <span>0 g</span><span>{fatMax} g</span>
                       </div>
                       <FormMessage />
                     </FormItem>
@@ -1030,14 +1092,14 @@ function MedicalSettingsForm({ kidId, initialData }: { kidId: number, initialDat
                       </div>
                       <FormControl>
                         <Slider
-                          min={0} max={300} step={1}
-                          value={[Number(field.value) || 0]}
+                          min={0} max={carbsMax} step={1}
+                          value={[Math.min(Number(field.value) || 0, carbsMax)]}
                           onValueChange={(vals) => field.onChange(vals[0])}
                           className="py-1"
                         />
                       </FormControl>
                       <div className="flex justify-between text-[10px] text-slate-400 mt-0.5">
-                        <span>0 g</span><span>300 g</span>
+                        <span>0 g</span><span>{carbsMax} g</span>
                       </div>
                       <FormMessage />
                     </FormItem>
