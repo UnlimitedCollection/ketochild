@@ -23,11 +23,6 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { format, parseISO, differenceInDays } from "date-fns";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
 
-const KETO_STATUS_OPTIONS = [
-  { label: "In Keto", value: "true" },
-  { label: "Not In Keto", value: "false" },
-];
-
 const RISK_OPTIONS = [
   { label: "High Risk", value: "true" },
   { label: "Normal", value: "false" },
@@ -309,17 +304,7 @@ function KidViewDialog({ kidId, open, onOpenChange }: { kidId: number | null; op
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 p-3.5 flex flex-col gap-1.5">
-                <div className="flex items-center gap-1.5 text-slate-600 text-xs font-medium">
-                  <Flame className="h-3.5 w-3.5" /> Keto Status
-                </div>
-                {kid.inKetoStatus ? (
-                  <Badge className="bg-emerald-100 text-emerald-700 border border-emerald-200 w-fit gap-1 text-xs font-semibold shadow-sm">In Keto</Badge>
-                ) : (
-                  <Badge variant="outline" className="bg-orange-100 text-orange-700 border-orange-200 w-fit text-xs font-semibold shadow-sm">Not in Keto</Badge>
-                )}
-              </div>
+            <div className="grid grid-cols-2 gap-3">
               <div className="rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 p-3.5 flex flex-col gap-1.5">
                 <div className="flex items-center gap-1.5 text-slate-600 text-xs font-medium">
                   <Scale className="h-3.5 w-3.5" /> Latest Weight
@@ -395,14 +380,12 @@ export default function KidsListPage() {
 
   const canWrite = useCanWrite();
   const [selectedDietTypes, setSelectedDietTypes] = useState<string[]>([]);
-  const [selectedKetoStatus, setSelectedKetoStatus] = useState<string[]>([]);
   const [selectedRisk, setSelectedRisk] = useState<string[]>([]);
 
-  const hasActiveFilters = selectedDietTypes.length > 0 || selectedKetoStatus.length > 0 || selectedRisk.length > 0;
+  const hasActiveFilters = selectedDietTypes.length > 0 || selectedRisk.length > 0;
 
   const clearAllFilters = () => {
     setSelectedDietTypes([]);
-    setSelectedKetoStatus([]);
     setSelectedRisk([]);
   };
 
@@ -415,21 +398,18 @@ export default function KidsListPage() {
     if (selectedRisk.length === 1) {
       params.highRisk = selectedRisk[0] === "true";
     }
-    if (selectedKetoStatus.length === 1) {
-      params.ketoStatus = selectedKetoStatus[0] === "true";
-    }
     return params;
-  }, [debouncedSearch, selectedDietTypes, selectedRisk, selectedKetoStatus]);
+  }, [debouncedSearch, selectedDietTypes, selectedRisk]);
 
   const { data: kids, isLoading } = useGetKids(
     apiParams,
-    { query: { queryKey: ["/api/kids", debouncedSearch, selectedDietTypes, selectedRisk, selectedKetoStatus] } }
+    { query: { queryKey: ["/api/kids", debouncedSearch, selectedDietTypes, selectedRisk] } }
   );
 
   const pagination = usePagination({
     totalItems: kids?.length ?? 0,
     pageSize: 25,
-    resetDeps: [debouncedSearch, selectedDietTypes, selectedRisk, selectedKetoStatus],
+    resetDeps: [debouncedSearch, selectedDietTypes, selectedRisk],
   });
 
   const paginatedKids = useMemo(
@@ -557,12 +537,6 @@ export default function KidsListPage() {
           <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
             <Filter className="h-4 w-4 text-slate-400 shrink-0" />
             <MultiSelectDropdown
-              label="Keto Status"
-              options={KETO_STATUS_OPTIONS}
-              selected={selectedKetoStatus}
-              onSelectionChange={setSelectedKetoStatus}
-            />
-            <MultiSelectDropdown
               label="Risk"
               options={RISK_OPTIONS}
               selected={selectedRisk}
@@ -612,7 +586,6 @@ export default function KidsListPage() {
                   <TableHead className="font-semibold text-slate-600">Diet Type</TableHead>
                   <TableHead className="font-semibold text-slate-600">Parent Info</TableHead>
                   <TableHead className="font-semibold text-slate-600">Meal Completion</TableHead>
-                  <TableHead className="font-semibold text-slate-600">Keto Status</TableHead>
                   <TableHead className="font-semibold text-slate-600">Risk</TableHead>
                   <TableHead className="no-print text-right font-semibold text-slate-600">Action</TableHead>
                 </TableRow>
@@ -657,26 +630,6 @@ export default function KidsListPage() {
                           </Tooltip>
                         </TooltipProvider>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div>
-                              {kid.inKetoStatus ? (
-                                <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 gap-1">
-                                  <Flame className="h-3 w-3" /> In Keto
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100">
-                                  Not in Keto
-                                </Badge>
-                              )}
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>Based on avg carb intake vs target (last 7 days)</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
                     </TableCell>
                     <TableCell>
                       {kid.isHighRisk ? (
@@ -812,7 +765,6 @@ export default function KidsListPage() {
                     <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Patient</th>
                     <th className="text-right py-1.5 px-2 font-semibold text-slate-600">Current Weight (kg)</th>
                     <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Last Weighed</th>
-                    <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Keto Status</th>
                     <th className="text-right py-1.5 px-2 font-semibold text-slate-600">Meal Completion</th>
                   </tr>
                 </thead>
@@ -822,7 +774,6 @@ export default function KidsListPage() {
                       <td className="py-1.5 px-2 text-slate-800 font-medium">{kid.name}</td>
                       <td className="py-1.5 px-2 text-right text-slate-600">{kid.currentWeight ?? "—"}</td>
                       <td className="py-1.5 px-2 text-slate-600">{kid.lastWeightDate ?? "—"}</td>
-                      <td className="py-1.5 px-2 text-slate-600">{kid.inKetoStatus ? "In Keto" : "Not in Keto"}</td>
                       <td className="py-1.5 px-2 text-right text-slate-600">{Math.round(kid.mealCompletionRate * 100)}%</td>
                     </tr>
                   ))}
@@ -839,7 +790,6 @@ export default function KidsListPage() {
                     <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Patient</th>
                     <th className="text-right py-1.5 px-2 font-semibold text-slate-600">Overall Completion</th>
                     <th className="text-right py-1.5 px-2 font-semibold text-slate-600">Last 24h</th>
-                    <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Keto Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -848,7 +798,6 @@ export default function KidsListPage() {
                       <td className="py-1.5 px-2 text-slate-800 font-medium">{kid.name}</td>
                       <td className="py-1.5 px-2 text-right text-slate-600">{Math.round(kid.mealCompletionRate * 100)}%</td>
                       <td className="py-1.5 px-2 text-right text-slate-600">{Math.round((kid.last24hCompletionRate ?? 0) * 100)}%</td>
-                      <td className="py-1.5 px-2 text-slate-600">{kid.inKetoStatus ? "In Keto" : "Not in Keto"}</td>
                     </tr>
                   ))}
                 </tbody>
