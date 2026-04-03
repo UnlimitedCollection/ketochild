@@ -168,11 +168,6 @@ export default function KidProfilePage() {
                       </Button>
                     </>
                   )}
-                  {kid.isHighRisk && (
-                    <Badge variant="destructive" className="bg-destructive/10 text-destructive border border-destructive/20 text-xs ml-2">
-                      High Risk
-                    </Badge>
-                  )}
                 </div>
               </div>
             </div>

@@ -15,7 +15,6 @@ import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/login";
 import DashboardPage from "@/pages/dashboard";
 import KidsListPage from "@/pages/kids-list";
-import HighRiskPage from "@/pages/high-risk";
 import KidProfilePage from "@/pages/kid-profile";
 import AddKidPage from "@/pages/add-kid";
 import FoodsPage from "@/pages/foods";
@@ -112,7 +111,6 @@ function Router() {
       <Route path="/kids/new" component={() => <AdminRoute component={AddKidPage} />} />
       <Route path="/kids/:id/analytics" component={() => <ProtectedRoute component={KidAnalyticsPage} />} />
       <Route path="/kids/:id" component={() => <ProtectedRoute component={KidProfilePage} />} />
-      <Route path="/high-risk" component={() => <ProtectedRoute component={HighRiskPage} />} />
       <Route path="/foods" component={() => <ProtectedRoute component={FoodsPage} />} />
       <Route path="/meal-plans" component={() => <ProtectedRoute component={MealPlansRecipesPage} />} />
       <Route path="/recipes" component={() => <RedirectTo to="/meal-plans" />} />

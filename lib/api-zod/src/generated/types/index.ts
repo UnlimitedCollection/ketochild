@@ -43,8 +43,6 @@ export * from "./getKidMealLogsParams";
 export * from "./getKidsDietTypeItem";
 export * from "./getKidsParams";
 export * from "./healthStatus";
-export * from "./highRiskKid";
-export * from "./highRiskKidDietType";
 export * from "./ketoneReading";
 export * from "./ketoneReadingReadingType";
 export * from "./kid";

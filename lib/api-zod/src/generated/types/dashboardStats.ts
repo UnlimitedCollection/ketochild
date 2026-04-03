@@ -6,7 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ClassicDistributionEntry } from "./classicDistributionEntry";
-import type { HighRiskKid } from "./highRiskKid";
 import type { TokenSummary } from "./tokenSummary";
 
 export interface DashboardStats {
@@ -14,7 +13,6 @@ export interface DashboardStats {
   unfilledMealRecords: number;
   last24hUnfilledMealRecords: number;
   classicDistribution: ClassicDistributionEntry[];
-  recentHighRiskKids: HighRiskKid[];
   totalDoctors: number;
   tokenSummary: TokenSummary;
   classicChildren: number;

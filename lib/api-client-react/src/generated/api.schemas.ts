@@ -91,26 +91,6 @@ export interface ClassicDistributionEntry {
   label: string;
 }
 
-export type HighRiskKidDietType =
-  (typeof HighRiskKidDietType)[keyof typeof HighRiskKidDietType];
-
-export const HighRiskKidDietType = {
-  classic: "classic",
-  mad: "mad",
-  mct: "mct",
-  lowgi: "lowgi",
-} as const;
-
-export interface HighRiskKid {
-  id: number;
-  name: string;
-  ageMonths: number;
-  dietType: HighRiskKidDietType;
-  parentContact: string;
-  riskReason: string;
-  mealCompletionRate?: number;
-}
-
 export interface TokenSummary {
   active: number;
   used: number;
@@ -123,7 +103,6 @@ export interface DashboardStats {
   unfilledMealRecords: number;
   last24hUnfilledMealRecords: number;
   classicDistribution: ClassicDistributionEntry[];
-  recentHighRiskKids: HighRiskKid[];
   totalDoctors: number;
   tokenSummary: TokenSummary;
   classicChildren: number;
@@ -171,7 +150,6 @@ export interface Kid {
   dietSubCategory?: KidDietSubCategory;
   parentName: string;
   parentContact: string;
-  isHighRisk: boolean;
   mealCompletionRate: number;
   /** Whether the child's avg carb intake (last 7 days) is within the prescribed daily carb limit */
   inKetoStatus: boolean;
@@ -911,10 +889,6 @@ export type GetKidsParams = {
    * Filter by diet type (supports multiple values)
    */
   dietType?: GetKidsDietTypeItem[];
-  /**
-   * Filter high-risk children only
-   */
-  highRisk?: boolean;
   /**
    * Filter by keto status (true = in keto, false = not in keto)
    */

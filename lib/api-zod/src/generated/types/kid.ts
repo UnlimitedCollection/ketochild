@@ -20,7 +20,6 @@ export interface Kid {
   dietSubCategory?: KidDietSubCategory;
   parentName: string;
   parentContact: string;
-  isHighRisk: boolean;
   mealCompletionRate: number;
   /** Whether the child's avg carb intake (last 7 days) is within the prescribed daily carb limit */
   inKetoStatus: boolean;

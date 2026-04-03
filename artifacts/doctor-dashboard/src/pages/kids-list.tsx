@@ -135,9 +135,6 @@ function KidViewDialog({ kidId, open, onOpenChange }: { kidId: number | null; op
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-xs text-slate-500 font-medium">PHN No.</span><span className="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-600">{kid.kidCode}</span>
                   <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">{DIET_TYPE_LABELS[kid.dietType] || kid.dietType}{kid.dietSubCategory ? ` (${kid.dietSubCategory})` : ""}</Badge>
-                  {kid.isHighRisk && (
-                    <Badge variant="destructive" className="bg-destructive/10 text-destructive border border-destructive/20 text-xs">High Risk</Badge>
-                  )}
                 </div>
               </div>
             </div>

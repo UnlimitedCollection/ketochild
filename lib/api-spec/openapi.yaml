@@ -250,11 +250,6 @@ paths:
               type: string
               enum: [classic, mad, mct, lowgi]
           description: Filter by diet type (supports multiple values)
-        - name: highRisk
-          in: query
-          schema:
-            type: boolean
-          description: Filter high-risk children only
         - name: ketoStatus
           in: query
           schema:
@@ -1982,10 +1977,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ClassicDistributionEntry"
-        recentHighRiskKids:
-          type: array
-          items:
-            $ref: "#/components/schemas/HighRiskKid"
         totalDoctors:
           type: integer
         tokenSummary:
@@ -2003,7 +1994,6 @@ components:
         - unfilledMealRecords
         - last24hUnfilledMealRecords
         - classicDistribution
-        - recentHighRiskKids
         - totalDoctors
         - tokenSummary
         - classicChildren
@@ -2025,32 +2015,6 @@ components:
         - ratio
         - count
         - label
-
-    HighRiskKid:
-      type: object
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-        ageMonths:
-          type: integer
-        dietType:
-          type: string
-          enum: [classic, mad, mct, lowgi]
-        parentContact:
-          type: string
-        riskReason:
-          type: string
-        mealCompletionRate:
-          type: number
-      required:
-        - id
-        - name
-        - ageMonths
-        - dietType
-        - parentContact
-        - riskReason
 
     Kid:
       type: object
@@ -2079,8 +2043,6 @@ components:
           type: string
         parentContact:
           type: string
-        isHighRisk:
-          type: boolean
         mealCompletionRate:
           type: number
         inKetoStatus:
@@ -2106,7 +2068,6 @@ components:
         - dietType
         - parentName
         - parentContact
-        - isHighRisk
         - mealCompletionRate
         - inKetoStatus
         - last24hCompletionRate

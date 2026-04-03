@@ -2,7 +2,6 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { kidsTable, weightRecordsTable, mealDaysTable, mealLogsTable, notesTable, doctorsTable, parentTokensTable } from "@workspace/db";
 import { eq, gte, desc, inArray, count } from "drizzle-orm";
-import { calcAgeMonths } from "../lib/utils";
 
 const router: IRouter = Router();
 
@@ -31,7 +30,6 @@ router.get("/stats", async (req, res) => {
           { ratio: "3.5:1", count: 0, label: "3.5:1" },
           { ratio: "4:1",   count: 0, label: "4:1"   },
         ],
-        recentHighRiskKids: [],
         totalDoctors: Number(totalDoctors),
         tokenSummary: { active: 0, used: 0, expired: 0, total: 0 },
         classicChildren: 0,
@@ -64,27 +62,10 @@ router.get("/stats", async (req, res) => {
     }
 
     let unfilledMealRecords = 0;
-    const recentHighRiskKids: unknown[] = [];
 
     for (const kid of allKids) {
       const stats = kidMealStats.get(kid.id) || { filled: 0, total: 0 };
-      const completionRate = stats.total > 0 ? stats.filled / stats.total : 0;
       unfilledMealRecords += stats.total - stats.filled;
-
-      const isHighRisk = completionRate < 0.6 && stats.total > 0;
-      if (isHighRisk) {
-        if (recentHighRiskKids.length < 5) {
-          recentHighRiskKids.push({
-            id: kid.id,
-            name: kid.name,
-            ageMonths: calcAgeMonths(kid.dateOfBirth),
-            dietType: kid.dietType,
-            parentContact: kid.parentContact,
-            riskReason: "Poor meal completion rate",
-            mealCompletionRate: completionRate,
-          });
-        }
-      }
     }
 
     const classicChildren = allKids.filter((k) => k.dietType === "classic").length;
@@ -132,7 +113,6 @@ router.get("/stats", async (req, res) => {
       unfilledMealRecords,
       last24hUnfilledMealRecords,
       classicDistribution,
-      recentHighRiskKids,
       totalDoctors: Number(totalDoctors),
       tokenSummary,
       classicChildren,

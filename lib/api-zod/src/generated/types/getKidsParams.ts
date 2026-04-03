@@ -17,10 +17,6 @@ export type GetKidsParams = {
    */
   dietType?: GetKidsDietTypeItem[];
   /**
-   * Filter high-risk children only
-   */
-  highRisk?: boolean;
-  /**
    * Filter by keto status (true = in keto, false = not in keto)
    */
   ketoStatus?: boolean;

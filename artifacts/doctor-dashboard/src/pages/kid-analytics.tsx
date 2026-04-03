@@ -233,11 +233,6 @@ export default function KidAnalyticsPage() {
                     <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 text-sm py-1 px-3">
                       {DIET_TYPE_LABELS[kid.dietType] || kid.dietType}{kid.dietSubCategory ? ` (${kid.dietSubCategory})` : ""}
                     </Badge>
-                    {kid.isHighRisk && (
-                      <Badge variant="destructive" className="bg-destructive/10 text-destructive border border-destructive/20 text-xs">
-                        High Risk
-                      </Badge>
-                    )}
                   </div>
                 </div>
               </div>

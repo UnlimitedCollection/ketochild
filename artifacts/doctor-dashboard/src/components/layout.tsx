@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { useGetMe, useDoctorLogout, useGetDashboardStats } from "@workspace/api-client-react";
+import { useGetMe, useDoctorLogout } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -47,13 +47,6 @@ function IconNotes() {
     </svg>
   );
 }
-function IconWarning() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-      <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
-    </svg>
-  );
-}
 function IconSettings() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
@@ -69,13 +62,6 @@ function IconLogout() {
   );
 }
 
-function IconBell() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
-      <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
-    </svg>
-  );
-}
 function IconAccount() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
@@ -227,92 +213,6 @@ function AppSidebar() {
   );
 }
 
-function AlertsBell() {
-  const [, setLocation] = useLocation();
-  const [open, setOpen] = useState(false);
-  const { data: stats, refetch, isFetching } = useGetDashboardStats();
-  const urgentKids = stats?.recentHighRiskKids ?? [];
-  const hasAlerts = urgentKids.length > 0;
-
-  function handleOpenChange(isOpen: boolean) {
-    setOpen(isOpen);
-    if (isOpen) refetch();
-  }
-
-  function navigateToKid(kidId: number) {
-    setOpen(false);
-    setLocation(`/kids/${kidId}`);
-  }
-
-  return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>
-        <button className="p-2 text-slate-500 hover:bg-slate-50 rounded-full transition-colors relative" aria-label="Alerts">
-          <IconBell />
-          {hasAlerts && (
-            <span className="absolute top-2 right-2 w-2 h-2 bg-red-600 rounded-full border-2 border-white" />
-          )}
-        </button>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 p-0 rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-          <p className="text-sm font-bold text-slate-800">Urgent Alerts</p>
-          <div className="flex items-center gap-2">
-            {isFetching && (
-              <svg className="h-3.5 w-3.5 animate-spin text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-              </svg>
-            )}
-            {hasAlerts && (
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
-                {urgentKids.length} patients
-              </span>
-            )}
-          </div>
-        </div>
-        {!hasAlerts ? (
-          <div className="px-4 py-6 text-center text-slate-400 text-sm">
-            No urgent alerts right now.
-          </div>
-        ) : (
-          <ul className="divide-y divide-slate-100 max-h-72 overflow-y-auto">
-            {urgentKids.slice(0, 5).map((kid) => (
-              <li key={kid.id}>
-                <button
-                  className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors flex items-start gap-3"
-                  onClick={() => navigateToKid(kid.id)}
-                >
-                  <span className="w-7 h-7 rounded-full bg-red-100 text-red-700 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
-                    {kid.name.charAt(0)}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-800 truncate">{kid.name}</p>
-                    <p className="text-xs font-semibold text-red-600 mt-0.5 truncate">{kid.riskReason}</p>
-                    {kid.mealCompletionRate != null && (
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        {Math.round(kid.mealCompletionRate * 100)}% meal completion
-                      </p>
-                    )}
-                  </div>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-        <div className="px-4 py-2 border-t border-slate-100 bg-slate-50">
-          <button
-            className="text-xs font-semibold text-blue-600 hover:underline"
-            onClick={() => setLocation("/high-risk")}
-          >
-            View all high-risk patients →
-          </button>
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
 function ProfileDropdown() {
   const [, setLocation] = useLocation();
   const [open, setOpen] = useState(false);
@@ -399,7 +299,6 @@ function AppHeader() {
     <header className="app-shell-header sticky top-0 w-full z-40 bg-white/90 backdrop-blur-md flex items-center gap-4 px-8 py-3 shadow-sm border-b border-slate-200">
       <div className="flex-1" />
       <div className="flex items-center gap-1">
-        <AlertsBell />
         <ProfileDropdown />
       </div>
     </header>

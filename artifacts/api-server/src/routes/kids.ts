@@ -140,7 +140,6 @@ router.get("/", async (req, res) => {
     : undefined;
 
   const search = typeof req.query.search === "string" ? req.query.search : undefined;
-  const highRisk = req.query.highRisk !== undefined ? req.query.highRisk === "true" : undefined;
   const sideEffectsFilter = req.query.hasSideEffects !== undefined ? req.query.hasSideEffects === "true" : undefined;
   const ketoStatus = req.query.ketoStatus !== undefined ? req.query.ketoStatus === "true" : undefined;
 
@@ -172,9 +171,7 @@ router.get("/", async (req, res) => {
           getLast24hCompletionRate(kid.id),
           getKidHasSideEffects(kid.id),
         ]);
-        const isHighRisk = completionRate < 0.6;
 
-        if (highRisk !== undefined && isHighRisk !== highRisk) return null;
         if (sideEffectsFilter !== undefined && hasSideEffects !== sideEffectsFilter) return null;
         if (ketoStatus !== undefined && inKetoStatus !== ketoStatus) return null;
 
@@ -188,7 +185,6 @@ router.get("/", async (req, res) => {
           dietSubCategory: kid.dietSubCategory,
           parentName: kid.parentName,
           parentContact: kid.parentContact,
-          isHighRisk,
           hasSideEffects,
           mealCompletionRate: completionRate,
           inKetoStatus,
@@ -284,7 +280,6 @@ router.post("/", async (req, res) => {
       dietSubCategory: kid.dietSubCategory,
       parentName: kid.parentName,
       parentContact: kid.parentContact,
-      isHighRisk: false,
       hasSideEffects: false,
       mealCompletionRate: 1,
       currentWeight: null,
@@ -379,7 +374,6 @@ router.get("/:kidId", async (req, res) => {
         dietSubCategory: kid.dietSubCategory,
         parentName: kid.parentName,
         parentContact: kid.parentContact,
-        isHighRisk: completionRate < 0.6,
         hasSideEffects,
         mealCompletionRate: completionRate,
         inKetoStatus,
@@ -482,7 +476,6 @@ router.put("/:kidId", async (req, res) => {
       dietSubCategory: kid.dietSubCategory,
       parentName: kid.parentName,
       parentContact: kid.parentContact,
-      isHighRisk: completionRate < 0.6,
       hasSideEffects,
       mealCompletionRate: completionRate,
       inKetoStatus,
