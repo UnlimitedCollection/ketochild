@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict bf87c9mH7QzXKGujFaDeGZaSHoZITyI09QQWplgZImcJLSzew5ZfSPn4VkbOE7t
+\restrict CrNVJvFBHTGALfxs27WlOf7bhF9DeJOE0w9osBfB4JnFlZCoy4tq2iFZbkJBD7U
 
 -- Dumped from database version 16.10
 -- Dumped by pg_dump version 16.10
@@ -136,41 +136,6 @@ CREATE SEQUENCE public.ketone_readings_id_seq
 --
 
 ALTER SEQUENCE public.ketone_readings_id_seq OWNED BY public.ketone_readings.id;
-
-
---
--- Name: kid_food_approvals; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.kid_food_approvals (
-    id integer NOT NULL,
-    kid_id integer NOT NULL,
-    food_id integer NOT NULL,
-    status character varying(20) NOT NULL,
-    created_at timestamp without time zone DEFAULT now() NOT NULL,
-    updated_at timestamp without time zone DEFAULT now() NOT NULL,
-    CONSTRAINT kid_food_approvals_status_chk CHECK (((status)::text = ANY ((ARRAY['approved'::character varying, 'avoid'::character varying])::text[])))
-);
-
-
---
--- Name: kid_food_approvals_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.kid_food_approvals_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: kid_food_approvals_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.kid_food_approvals_id_seq OWNED BY public.kid_food_approvals.id;
 
 
 --
@@ -797,13 +762,6 @@ ALTER TABLE ONLY public.ketone_readings ALTER COLUMN id SET DEFAULT nextval('pub
 
 
 --
--- Name: kid_food_approvals id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.kid_food_approvals ALTER COLUMN id SET DEFAULT nextval('public.kid_food_approvals_id_seq'::regclass);
-
-
---
 -- Name: kids id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -943,11 +901,6 @@ COPY public.foods (id, name, category, carbs, fat, protein, calories, image_url,
 13	Lettuce	Carb	2.4	0.3	1.2	17		Classic salad base	vegi	t	2026-03-31 05:29:49.125199	2026-03-31 05:29:49.125199
 14	Green Beans	Carb	7	0.1	1.8	31		Kid-friendly vegetable	vegi	t	2026-03-31 05:29:49.127648	2026-03-31 05:29:49.127648
 15	Eggplant	Carb	5.9	0.2	1	25		Low-carb Mediterranean vegetable	vegi	t	2026-03-31 05:29:49.130417	2026-03-31 05:29:49.130417
-16	Olive Oil	Calories	0	100	0	884		Primary fat source for keto cooking	vegi	t	2026-03-31 05:29:49.132715	2026-03-31 05:29:49.132715
-17	Coconut Oil	Calories	0	100	0	862		High MCT fat ideal for ketogenic diets	vegi	t	2026-03-31 05:29:49.135892	2026-03-31 05:29:49.135892
-18	Butter	Calories	0.1	81	0.9	717		Saturated fat for keto cooking	vegi	t	2026-03-31 05:29:49.138274	2026-03-31 05:29:49.138274
-19	Avocado Oil	Calories	0	100	0	884		Neutral-flavored keto cooking oil	vegi	t	2026-03-31 05:29:49.140598	2026-03-31 05:29:49.140598
-20	MCT Oil	Calories	0	100	0	862		Medium-chain triglycerides for rapid ketone production	vegi	t	2026-03-31 05:29:49.142927	2026-03-31 05:29:49.142927
 21	Heavy Cream	Fat	3.4	35	2.1	340		High-fat dairy, great for ketogenic ratios	vegi	t	2026-03-31 05:29:49.145788	2026-03-31 05:29:49.145788
 22	Cream Cheese	Fat	4.1	33	5.9	342		Rich keto-friendly spread	vegi	t	2026-03-31 05:29:49.148484	2026-03-31 05:29:49.148484
 23	Cheddar Cheese	Protein	1.3	33	25	403		Popular hard cheese for keto snacks	vegi	t	2026-03-31 05:29:49.151343	2026-03-31 05:29:49.151343
@@ -1416,14 +1369,6 @@ COPY public.ketone_readings (id, kid_id, value, unit, reading_type, date, notes,
 1246	156	1.3	mmol/L	blood	2026-03-11	\N	2026-03-31 06:08:36.945075
 1247	156	1	mmol/L	blood	2026-03-07	\N	2026-03-31 06:08:36.947364
 1248	156	0.9	mmol/L	blood	2026-03-03	\N	2026-03-31 06:08:36.949843
-\.
-
-
---
--- Data for Name: kid_food_approvals; Type: TABLE DATA; Schema: public; Owner: -
---
-
-COPY public.kid_food_approvals (id, kid_id, food_id, status, created_at, updated_at) FROM stdin;
 \.
 
 
@@ -3911,8 +3856,8 @@ COPY public.notes (id, kid_id, doctor_id, doctor_name, content, created_at) FROM
 --
 
 COPY public.parent_tokens (id, kid_id, token, status, expires_at, used_at, created_at, revoked_at) FROM stdin;
-1	129	LTJ-7370	active	2026-07-01 04:12:43.862	\N	2026-04-02 04:12:29.461553	\N
-2	109	RRW-2784	active	2026-07-01 04:13:08.684	\N	2026-04-02 04:13:00.653912	\N
+2	109	PNP-2327	active	2026-07-01 10:53:59.433	\N	2026-04-02 04:13:00.653912	\N
+1	129	GAD-1364	active	2026-07-01 10:54:01.172	\N	2026-04-02 04:12:29.461553	\N
 \.
 
 
@@ -4810,13 +4755,6 @@ SELECT pg_catalog.setval('public.ketone_readings_id_seq', 1248, true);
 
 
 --
--- Name: kid_food_approvals_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
---
-
-SELECT pg_catalog.setval('public.kid_food_approvals_id_seq', 1, false);
-
-
---
 -- Name: kids_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
@@ -4966,22 +4904,6 @@ ALTER TABLE ONLY public.foods
 
 ALTER TABLE ONLY public.ketone_readings
     ADD CONSTRAINT ketone_readings_pkey PRIMARY KEY (id);
-
-
---
--- Name: kid_food_approvals kid_food_approvals_kid_id_food_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.kid_food_approvals
-    ADD CONSTRAINT kid_food_approvals_kid_id_food_id_unique UNIQUE (kid_id, food_id);
-
-
---
--- Name: kid_food_approvals kid_food_approvals_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.kid_food_approvals
-    ADD CONSTRAINT kid_food_approvals_pkey PRIMARY KEY (id);
 
 
 --
@@ -5161,22 +5083,6 @@ ALTER TABLE ONLY public.ketone_readings
 
 
 --
--- Name: kid_food_approvals kid_food_approvals_food_id_foods_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.kid_food_approvals
-    ADD CONSTRAINT kid_food_approvals_food_id_foods_id_fk FOREIGN KEY (food_id) REFERENCES public.foods(id) ON DELETE CASCADE;
-
-
---
--- Name: kid_food_approvals kid_food_approvals_kid_id_kids_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.kid_food_approvals
-    ADD CONSTRAINT kid_food_approvals_kid_id_kids_id_fk FOREIGN KEY (kid_id) REFERENCES public.kids(id) ON DELETE CASCADE;
-
-
---
 -- Name: kids kids_current_meal_plan_id_library_meal_plans_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5340,5 +5246,5 @@ ALTER TABLE ONLY public.weight_records
 -- PostgreSQL database dump complete
 --
 
-\unrestrict bf87c9mH7QzXKGujFaDeGZaSHoZITyI09QQWplgZImcJLSzew5ZfSPn4VkbOE7t
+\unrestrict CrNVJvFBHTGALfxs27WlOf7bhF9DeJOE0w9osBfB4JnFlZCoy4tq2iFZbkJBD7U
 
