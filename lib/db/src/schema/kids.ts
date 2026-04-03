@@ -170,6 +170,20 @@ export const mealPlanAssignmentHistoryTable = pgTable("meal_plan_assignment_hist
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const sideEffectsTable = pgTable("side_effects", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 200 }).notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const kidSideEffectsTable = pgTable("kid_side_effects", {
+  id: serial("id").primaryKey(),
+  kidId: integer("kid_id").notNull().references(() => kidsTable.id, { onDelete: "cascade" }),
+  sideEffectId: integer("side_effect_id").references(() => sideEffectsTable.id, { onDelete: "cascade" }),
+  customName: varchar("custom_name", { length: 200 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertKidSchema = createInsertSchema(kidsTable).omit({ id: true, createdAt: true });
 export type InsertKid = z.infer<typeof insertKidSchema>;
 export type Kid = typeof kidsTable.$inferSelect;
@@ -181,3 +195,6 @@ export type WeightRecord = typeof weightRecordsTable.$inferSelect;
 export const insertNoteSchema = createInsertSchema(notesTable).omit({ id: true, createdAt: true });
 export type InsertNote = z.infer<typeof insertNoteSchema>;
 export type Note = typeof notesTable.$inferSelect;
+
+export type SideEffect = typeof sideEffectsTable.$inferSelect;
+export type KidSideEffect = typeof kidSideEffectsTable.$inferSelect;

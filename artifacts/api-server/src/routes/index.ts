@@ -10,6 +10,7 @@ import storageRouter from "./storage";
 import tokensRouter from "./tokens";
 import recipesRouter from "./recipes";
 import mealTypesRouter from "./meal-types";
+import sideEffectsRouter from "./side-effects";
 import usersRouter from "./users";
 import { requireAuth } from "../middleware/requireAuth";
 import { requireAdmin } from "../middleware/requireAdmin";
@@ -31,6 +32,7 @@ router.use("/meal-plans", mealPlansRouter);
 router.use("/tokens", tokensRouter);
 router.use("/recipes", recipesRouter);
 router.use("/meal-types", mealTypesRouter);
+router.use("/side-effects", sideEffectsRouter);
 router.use(storageRouter);
 
 router.use("/users", requireAdmin, usersRouter);

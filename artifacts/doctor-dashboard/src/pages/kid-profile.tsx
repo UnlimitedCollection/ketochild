@@ -28,7 +28,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { Slider } from "@/components/ui/slider";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useCanWrite } from "@/hooks/useRole";
 import { Activity, User, Scale, Calendar, FileText, Trash2, Settings, Plus, Loader2, BarChart2, TrendingUp, Flame, FlaskConical, AlertTriangle, ClipboardList, CheckCircle2, Circle, ChevronDown, ChevronUp, Coffee, Sun, Moon, LayoutGrid, Camera, ImageIcon, X, Pencil, LineChart as LineChartIcon, UtensilsCrossed } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -219,6 +219,9 @@ export default function KidProfilePage() {
           <TabsTrigger value="compliance" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white py-2.5 px-4 flex items-center gap-2 transition-all">
             <LayoutGrid className="h-4 w-4" /> Compliance
           </TabsTrigger>
+          <TabsTrigger value="side-effects" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white py-2.5 px-4 flex items-center gap-2 transition-all">
+            <AlertTriangle className="h-4 w-4" /> Side Effects
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="focus-visible:outline-none">
@@ -326,6 +329,10 @@ export default function KidProfilePage() {
 
         <TabsContent value="compliance" className="focus-visible:outline-none">
           <ComplianceTab kidId={kidId} />
+        </TabsContent>
+
+        <TabsContent value="side-effects" className="focus-visible:outline-none">
+          <SideEffectsTab kidId={kidId} canWrite={canWrite} />
         </TabsContent>
       </Tabs>
 
@@ -2514,6 +2521,198 @@ function MealPlanPrintSection({ kidId }: { kidId: number }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// ── Side Effects Tab ─────────────────────────────────────────────────────────
+
+type SideEffectItem = {
+  id: number;
+  name: string;
+  createdAt: string;
+};
+
+type KidSideEffectItem = {
+  id: number;
+  kidId: number;
+  sideEffectId: number | null;
+  name: string;
+  isCustom: boolean;
+  createdAt: string;
+};
+
+function SideEffectsTab({ kidId, canWrite }: { kidId: number; canWrite: boolean }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [customInput, setCustomInput] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
+  const [togglingId, setTogglingId] = useState<number | null>(null);
+
+  const { data: allEffects = [], isLoading: loadingAll } = useQuery<SideEffectItem[]>({
+    queryKey: ["/api/side-effects"],
+    queryFn: async () => {
+      const res = await fetch("/api/side-effects", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch side effects");
+      return res.json();
+    },
+  });
+
+  const { data: kidEffects = [], isLoading: loadingKid } = useQuery<KidSideEffectItem[]>({
+    queryKey: ["/api/kids", kidId, "side-effects"],
+    queryFn: async () => {
+      const res = await fetch(`/api/kids/${kidId}/side-effects`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch kid side effects");
+      return res.json();
+    },
+  });
+
+  const selectedIds = new Set(kidEffects.map((e) => e.sideEffectId).filter(Boolean) as number[]);
+
+  async function toggleEffect(sideEffectId: number) {
+    if (!canWrite) return;
+    setTogglingId(sideEffectId);
+    try {
+      const res = await fetch(`/api/kids/${kidId}/side-effects`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sideEffectId }),
+      });
+      if (!res.ok) throw new Error("Toggle failed");
+      queryClient.invalidateQueries({ queryKey: ["/api/kids", kidId, "side-effects"] });
+    } catch {
+      toast({ title: "Failed to update side effect", variant: "destructive" });
+    } finally {
+      setTogglingId(null);
+    }
+  }
+
+  async function addCustomEffect() {
+    const name = customInput.trim();
+    if (!name) return;
+    setIsAdding(true);
+    try {
+      const res = await fetch(`/api/kids/${kidId}/side-effects`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customName: name }),
+      });
+      if (res.status === 409) {
+        toast({ title: "Already selected", description: "This side effect is already added." });
+        setCustomInput("");
+        return;
+      }
+      if (!res.ok) throw new Error("Add failed");
+      setCustomInput("");
+      queryClient.invalidateQueries({ queryKey: ["/api/kids", kidId, "side-effects"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/side-effects"] });
+      toast({ title: "Side effect added" });
+    } catch {
+      toast({ title: "Failed to add side effect", variant: "destructive" });
+    } finally {
+      setIsAdding(false);
+    }
+  }
+
+  const isLoading = loadingAll || loadingKid;
+
+  if (isLoading) {
+    return (
+      <div className="p-8 text-center">
+        <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
+      </div>
+    );
+  }
+
+  const selectedCount = selectedIds.size;
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <div className="rounded-2xl border border-slate-200 shadow-sm p-4 bg-slate-50">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Total Options</p>
+          <p className="text-3xl font-black text-slate-800">{allEffects.length}</p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 shadow-sm p-4 bg-red-50">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Reported Effects</p>
+          <p className="text-3xl font-black text-red-700">{selectedCount}</p>
+        </div>
+      </div>
+
+      <Card className="rounded-2xl shadow-sm border-slate-200">
+        <CardHeader className="border-b border-slate-100 pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-primary" /> Predefined Side Effects
+          </CardTitle>
+          <CardDescription>Select all side effects currently observed for this patient.</CardDescription>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {allEffects.map((effect) => {
+              const checked = selectedIds.has(effect.id);
+              const toggling = togglingId === effect.id;
+              return (
+                <button
+                  key={effect.id}
+                  onClick={() => toggleEffect(effect.id)}
+                  disabled={!canWrite || toggling}
+                  className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all text-sm font-medium
+                    ${checked
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                    }
+                    ${!canWrite ? "cursor-default opacity-70" : "cursor-pointer"}
+                  `}
+                >
+                  {toggling ? (
+                    <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                  ) : checked ? (
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
+                  ) : (
+                    <Circle className="h-4 w-4 shrink-0 text-slate-400" />
+                  )}
+                  <span>{effect.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {canWrite && (
+        <Card className="rounded-2xl shadow-sm border-slate-200">
+          <CardHeader className="border-b border-slate-100 pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Plus className="h-4 w-4 text-primary" /> Add Custom Side Effect
+            </CardTitle>
+            <CardDescription>
+              Add a side effect not listed above. It will be added to the global list and selected for this patient.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <div className="flex gap-3">
+              <Input
+                placeholder="e.g. Rash, Insomnia..."
+                value={customInput}
+                onChange={(e) => setCustomInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") addCustomEffect(); }}
+                className="flex-1 rounded-xl"
+                disabled={isAdding}
+              />
+              <Button
+                onClick={addCustomEffect}
+                disabled={!customInput.trim() || isAdding}
+                className="rounded-xl"
+              >
+                {isAdding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                Add
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

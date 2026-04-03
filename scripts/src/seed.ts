@@ -18,6 +18,7 @@ import {
   mealTypeRecipesTable,
   recipesTable,
   recipeIngredientsTable,
+  sideEffectsTable,
 } from "@workspace/db";
 import { eq, inArray } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -1380,6 +1381,34 @@ async function seed() {
     }
   }
   console.log(`Meal type–recipe links seeded: ${mealTypeRecipeLinks} total`);
+
+  // ── 8. Seed predefined keto side effects ─────────────────────────────────
+  const predefinedSideEffects = [
+    "Constipation",
+    "Vomiting",
+    "Nausea",
+    "Lethargy / Fatigue",
+    "Kidney Stones",
+    "High Cholesterol",
+    "Metabolic Acidosis",
+    "Growth Slowing",
+    "Hypoglycemia (Low Blood Sugar)",
+    "Dehydration",
+    "Electrolyte Imbalance",
+    "Selenium Deficiency",
+    "Carnitine Deficiency",
+    "Bone Health Concerns",
+    "Elevated Liver Enzymes",
+    "Reflux / GERD",
+    "Irritability / Mood Changes",
+    "Increased Bruising",
+    "Poor Appetite",
+    "Hair Loss",
+  ];
+  for (const name of predefinedSideEffects) {
+    await db.insert(sideEffectsTable).values({ name }).onConflictDoNothing();
+  }
+  console.log(`Side effects seeded: ${predefinedSideEffects.length} entries`);
 
   console.log("Seeding complete!");
 }

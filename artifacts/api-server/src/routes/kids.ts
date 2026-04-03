@@ -14,6 +14,8 @@ import {
   libraryMealPlansTable,
   libraryMealPlanItemsTable,
   mealPlanAssignmentHistoryTable,
+  sideEffectsTable,
+  kidSideEffectsTable,
 } from "@workspace/db";
 import { eq, and, desc, asc, gte, sql, inArray } from "drizzle-orm";
 import { calcAgeMonths } from "../lib/utils";
@@ -1427,6 +1429,115 @@ router.put("/:kidId/meal-logs/:logId/image", async (req, res) => {
     res.json(updated);
   } catch (err) {
     req.log.error({ err }, "Update meal log image error");
+    res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
+  }
+});
+
+// ── Side Effects ──────────────────────────────────────────────────────────────
+
+router.get("/:kidId/side-effects", async (req, res) => {
+  const kidId = parseInt(req.params.kidId, 10);
+  try {
+    const kidSideEffects = await db
+      .select({
+        id: kidSideEffectsTable.id,
+        kidId: kidSideEffectsTable.kidId,
+        sideEffectId: kidSideEffectsTable.sideEffectId,
+        customName: kidSideEffectsTable.customName,
+        name: sideEffectsTable.name,
+        createdAt: kidSideEffectsTable.createdAt,
+      })
+      .from(kidSideEffectsTable)
+      .leftJoin(sideEffectsTable, eq(kidSideEffectsTable.sideEffectId, sideEffectsTable.id))
+      .where(eq(kidSideEffectsTable.kidId, kidId))
+      .orderBy(asc(kidSideEffectsTable.createdAt));
+
+    res.json(
+      kidSideEffects.map((r) => ({
+        id: r.id,
+        kidId: r.kidId,
+        sideEffectId: r.sideEffectId,
+        name: r.sideEffectId ? (r.name ?? "") : (r.customName ?? ""),
+        isCustom: r.sideEffectId === null,
+        createdAt: r.createdAt.toISOString(),
+      }))
+    );
+  } catch (err) {
+    req.log.error({ err }, "Get kid side effects error");
+    res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
+  }
+});
+
+router.post("/:kidId/side-effects", async (req, res) => {
+  const kidId = parseInt(req.params.kidId, 10);
+  const { sideEffectId, customName } = req.body as { sideEffectId?: number; customName?: string };
+
+  if (!sideEffectId && !customName) {
+    res.status(400).json({ error: "VALIDATION_ERROR", message: "Either sideEffectId or customName is required" });
+    return;
+  }
+
+  try {
+    if (sideEffectId) {
+      const existing = await db
+        .select()
+        .from(kidSideEffectsTable)
+        .where(and(eq(kidSideEffectsTable.kidId, kidId), eq(kidSideEffectsTable.sideEffectId, sideEffectId)))
+        .limit(1);
+
+      if (existing.length > 0) {
+        await db
+          .delete(kidSideEffectsTable)
+          .where(and(eq(kidSideEffectsTable.kidId, kidId), eq(kidSideEffectsTable.sideEffectId, sideEffectId)));
+        res.json({ toggled: "off", sideEffectId });
+        return;
+      }
+
+      const [record] = await db
+        .insert(kidSideEffectsTable)
+        .values({ kidId, sideEffectId })
+        .returning();
+      res.status(201).json({ toggled: "on", id: record.id, sideEffectId: record.sideEffectId });
+    } else {
+      const trimmed = (customName as string).trim();
+      if (!trimmed) {
+        res.status(400).json({ error: "VALIDATION_ERROR", message: "customName cannot be empty" });
+        return;
+      }
+
+      let globalEffect = await db
+        .select()
+        .from(sideEffectsTable)
+        .where(eq(sideEffectsTable.name, trimmed))
+        .limit(1);
+
+      let effectId: number;
+      if (globalEffect.length === 0) {
+        const [inserted] = await db.insert(sideEffectsTable).values({ name: trimmed }).returning();
+        effectId = inserted.id;
+      } else {
+        effectId = globalEffect[0].id;
+      }
+
+      const alreadySelected = await db
+        .select()
+        .from(kidSideEffectsTable)
+        .where(and(eq(kidSideEffectsTable.kidId, kidId), eq(kidSideEffectsTable.sideEffectId, effectId)))
+        .limit(1);
+
+      if (alreadySelected.length > 0) {
+        res.status(409).json({ error: "CONFLICT", message: "Side effect already selected for this patient" });
+        return;
+      }
+
+      const [record] = await db
+        .insert(kidSideEffectsTable)
+        .values({ kidId, sideEffectId: effectId })
+        .returning();
+      res.status(201).json({ toggled: "on", id: record.id, sideEffectId: effectId, name: trimmed });
+    }
+  } catch (err) {
+    req.log.error({ err }, "Toggle kid side effect error");
     res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
   }
 });
