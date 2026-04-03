@@ -224,10 +224,12 @@ router.post("/", async (req, res) => {
       })
       .returning();
 
+    const effectiveSubCategory = parsed.data.dietType === "classic" ? (parsed.data.dietSubCategory ?? null) : null;
+
     await db.insert(medicalSettingsTable).values({
       kidId: kid.id,
       dietType: parsed.data.dietType,
-      dietSubCategory: parsed.data.dietSubCategory ?? null,
+      dietSubCategory: effectiveSubCategory,
       ketoRatio: 3,
       dailyCalories: 1200,
       dailyCarbs: 20,
@@ -645,7 +647,8 @@ router.put("/:kidId/medical", async (req, res) => {
     }
 
     if (parsed.data.dietType) {
-      await db.update(kidsTable).set({ dietType: parsed.data.dietType, dietSubCategory: parsed.data.dietSubCategory ?? null }).where(eq(kidsTable.id, kidId));
+      const effectiveSubCategory = parsed.data.dietType === "classic" ? (parsed.data.dietSubCategory ?? null) : null;
+      await db.update(kidsTable).set({ dietType: parsed.data.dietType, dietSubCategory: effectiveSubCategory }).where(eq(kidsTable.id, kidId));
     }
 
     res.json(medical);
