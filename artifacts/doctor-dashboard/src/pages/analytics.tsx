@@ -98,7 +98,6 @@ export default function AnalyticsPage() {
   }
 
   const totalKids = data.patientCompliance.length;
-  const highRiskCount = data.patientCompliance.filter((p) => p.risk === "high").length;
   const tracked = data.patientCompliance.filter((p) => p.complianceRate !== null);
   const avgCompliance =
     tracked.length > 0
@@ -115,7 +114,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* KPI row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <KpiCard
           label="Total Patients"
           value={totalKids}
@@ -129,13 +128,6 @@ export default function AnalyticsPage() {
           sub="meal-day fill rate"
           icon={CheckCircle2}
           accent={avgCompliance !== null && avgCompliance >= 80 ? "bg-green-50 text-green-600" : "bg-amber-50 text-amber-600"}
-        />
-        <KpiCard
-          label="High-Risk"
-          value={highRiskCount}
-          sub="compliance < 60%"
-          icon={AlertTriangle}
-          accent={highRiskCount > 0 ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"}
         />
         <KpiCard
           label="Ketone Readings"
