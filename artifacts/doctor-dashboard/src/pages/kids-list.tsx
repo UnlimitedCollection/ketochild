@@ -30,6 +30,11 @@ const RISK_OPTIONS = [
 
 const DIET_TYPE_OPTIONS = [
   { label: "Classic Ketogenic", value: "classic" },
+  { label: "Classic 2:1", value: "classic|2:1" },
+  { label: "Classic 2.5:1", value: "classic|2.5:1" },
+  { label: "Classic 3:1", value: "classic|3:1" },
+  { label: "Classic 3.5:1", value: "classic|3.5:1" },
+  { label: "Classic 4:1", value: "classic|4:1" },
   { label: "Modified Atkins", value: "mad" },
   { label: "MCT Diet", value: "mct" },
   { label: "Low GI Diet", value: "lowgi" },
@@ -37,6 +42,11 @@ const DIET_TYPE_OPTIONS = [
 
 const DIET_TYPE_LABELS: Record<string, string> = {
   classic: "Classic Ketogenic",
+  "classic|2:1": "Classic 2:1",
+  "classic|2.5:1": "Classic 2.5:1",
+  "classic|3:1": "Classic 3:1",
+  "classic|3.5:1": "Classic 3.5:1",
+  "classic|4:1": "Classic 4:1",
   mad: "Modified Atkins",
   mct: "MCT Diet",
   lowgi: "Low GI Diet",
@@ -393,7 +403,10 @@ export default function KidsListPage() {
     const params: GetKidsParams = {};
     if (debouncedSearch) params.search = debouncedSearch;
     if (selectedDietTypes.length > 0) {
-      params.dietType = selectedDietTypes as GetKidsParams["dietType"];
+      const apiDietTypes = [...new Set(
+        selectedDietTypes.map((v) => v.includes("|") ? v.split("|")[0] : v)
+      )];
+      params.dietType = apiDietTypes as GetKidsParams["dietType"];
     }
     if (selectedRisk.length === 1) {
       params.highRisk = selectedRisk[0] === "true";
@@ -401,10 +414,26 @@ export default function KidsListPage() {
     return params;
   }, [debouncedSearch, selectedDietTypes, selectedRisk]);
 
-  const { data: kids, isLoading } = useGetKids(
+  const { data: rawKids, isLoading } = useGetKids(
     apiParams,
     { query: { queryKey: ["/api/kids", debouncedSearch, selectedDietTypes, selectedRisk] } }
   );
+
+  const kids = useMemo(() => {
+    if (!rawKids) return rawKids;
+    const ratioFilters = selectedDietTypes.filter((v) => v.includes("|")).map((v) => v.split("|")[1]);
+    if (ratioFilters.length === 0) return rawKids;
+    const hasBaseClassic = selectedDietTypes.includes("classic");
+    const nonClassicSelections = selectedDietTypes.filter((v) => !v.startsWith("classic"));
+    return rawKids.filter((kid) => {
+      if (nonClassicSelections.includes(kid.dietType)) return true;
+      if (kid.dietType === "classic") {
+        if (hasBaseClassic) return true;
+        return ratioFilters.includes(kid.dietSubCategory ?? "");
+      }
+      return false;
+    });
+  }, [rawKids, selectedDietTypes]);
 
   const pagination = usePagination({
     totalItems: kids?.length ?? 0,
