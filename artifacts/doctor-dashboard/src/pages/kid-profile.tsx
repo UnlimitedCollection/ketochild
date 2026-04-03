@@ -933,9 +933,9 @@ function MedicalSettingsForm({ kidId, initialData, lastWeight }: { kidId: number
     const f = Number(watchedFat) || 0;
     const p = Number(watchedProtein) || 0;
     const c = Number(watchedCarbs) || 0;
-    const denominator = p * 4 + c * 4;
+    const denominator = p + c;
     if (denominator === 0) return null;
-    return ((f * 9) / denominator).toFixed(2);
+    return (f / denominator).toFixed(2);
   }, [watchedFat, watchedProtein, watchedCarbs]);
 
   const mutation = useUpdateKidMedical({
@@ -1113,7 +1113,7 @@ function MedicalSettingsForm({ kidId, initialData, lastWeight }: { kidId: number
                     {calculatedRatio !== null ? `${calculatedRatio}:1` : "—"}
                   </p>
                   <p className="text-[11px] text-blue-500 mt-0.5">
-                    (fat × 9) ÷ (protein × 4 + carbs × 4) based on macros above
+                    fat ÷ (protein + carbs) based on macros above
                   </p>
                 </div>
               </div>
