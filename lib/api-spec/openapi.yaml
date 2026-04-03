@@ -240,16 +240,16 @@ paths:
           schema:
             type: string
           description: Search by name, kid ID, parent name
-        - name: phase
+        - name: dietType
           in: query
           style: form
           explode: true
           schema:
             type: array
             items:
-              type: integer
-              enum: [1, 2, 3, 4]
-          description: Filter by phase (supports multiple values)
+              type: string
+              enum: [classic, mad, mct, lowgi]
+          description: Filter by diet type (supports multiple values)
         - name: highRisk
           in: query
           schema:
@@ -1544,6 +1544,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/SuccessResponse"
 
+  /kids/{kidId}/meal-plan-history:
+    get:
+      operationId: getKidMealPlanHistory
+      tags: [mealplans]
+      summary: Get meal plan assignment history for a kid
+      parameters:
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Meal plan assignment history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MealPlanAssignmentHistory"
+
   /foods:
     get:
       operationId: getFoods
@@ -1961,10 +1982,10 @@ components:
           type: integer
         averageWeightChange:
           type: number
-        phaseDistribution:
+        dietTypeDistribution:
           type: array
           items:
-            $ref: "#/components/schemas/PhaseCount"
+            $ref: "#/components/schemas/DietTypeCount"
         recentHighRiskKids:
           type: array
           items:
@@ -1983,24 +2004,25 @@ components:
         - unfilledMealRecords
         - last24hUnfilledMealRecords
         - averageWeightChange
-        - phaseDistribution
+        - dietTypeDistribution
         - recentHighRiskKids
         - totalDoctors
         - totalFoods
         - totalRecipes
         - tokenSummary
 
-    PhaseCount:
+    DietTypeCount:
       type: object
       properties:
-        phase:
-          type: integer
+        dietType:
+          type: string
+          enum: [classic, mad, mct, lowgi]
         count:
           type: integer
         label:
           type: string
       required:
-        - phase
+        - dietType
         - count
         - label
 
@@ -2013,8 +2035,9 @@ components:
           type: string
         ageMonths:
           type: integer
-        phase:
-          type: integer
+        dietType:
+          type: string
+          enum: [classic, mad, mct, lowgi]
         parentContact:
           type: string
         riskReason:
@@ -2025,7 +2048,7 @@ components:
         - id
         - name
         - ageMonths
-        - phase
+        - dietType
         - parentContact
         - riskReason
 
@@ -2043,8 +2066,13 @@ components:
           format: date
         ageMonths:
           type: integer
-        phase:
-          type: integer
+        dietType:
+          type: string
+          enum: [classic, mad, mct, lowgi]
+        dietSubCategory:
+          type: string
+          enum: ["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]
+          nullable: true
         parentName:
           type: string
         parentContact:
@@ -2073,7 +2101,7 @@ components:
         - kidCode
         - dateOfBirth
         - ageMonths
-        - phase
+        - dietType
         - parentName
         - parentContact
         - isHighRisk
@@ -2122,16 +2150,20 @@ components:
           type: string
         parentContact:
           type: string
-        phase:
-          type: integer
-          enum: [1, 2, 3, 4]
+        dietType:
+          type: string
+          enum: [classic, mad, mct, lowgi]
+        dietSubCategory:
+          type: string
+          enum: ["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]
+          nullable: true
       required:
         - name
         - dateOfBirth
         - gender
         - parentName
         - parentContact
-        - phase
+        - dietType
 
     UpdateKidRequest:
       type: object
@@ -2148,9 +2180,13 @@ components:
           type: string
         parentContact:
           type: string
-        phase:
-          type: integer
-          enum: [1, 2, 3, 4]
+        dietType:
+          type: string
+          enum: [classic, mad, mct, lowgi]
+        dietSubCategory:
+          type: string
+          enum: ["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]
+          nullable: true
 
     WeightRecord:
       type: object
@@ -2193,9 +2229,13 @@ components:
           type: integer
         kidId:
           type: integer
-        phase:
-          type: integer
-          enum: [1, 2, 3, 4]
+        dietType:
+          type: string
+          enum: [classic, mad, mct, lowgi]
+        dietSubCategory:
+          type: string
+          enum: ["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]
+          nullable: true
         ketoRatio:
           type: number
           description: Ratio of fat to protein + carbohydrates
@@ -2214,7 +2254,7 @@ components:
       required:
         - id
         - kidId
-        - phase
+        - dietType
         - ketoRatio
         - dailyCalories
         - dailyCarbs
@@ -2226,9 +2266,13 @@ components:
     MedicalSettingsRequest:
       type: object
       properties:
-        phase:
-          type: integer
-          enum: [1, 2, 3, 4]
+        dietType:
+          type: string
+          enum: [classic, mad, mct, lowgi]
+        dietSubCategory:
+          type: string
+          enum: ["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]
+          nullable: true
         ketoRatio:
           type: number
         dailyCalories:
@@ -2752,6 +2796,42 @@ components:
         - mealType
         - foodName
         - portionGrams
+
+    MealPlanAssignmentHistory:
+      type: object
+      properties:
+        id:
+          type: integer
+        kidId:
+          type: integer
+        planId:
+          type: integer
+          nullable: true
+        planName:
+          type: string
+          nullable: true
+        doctorId:
+          type: integer
+          nullable: true
+        doctorName:
+          type: string
+        action:
+          type: string
+        assignedAt:
+          type: string
+          format: date-time
+        durationDays:
+          type: integer
+        isCurrentPeriod:
+          type: boolean
+      required:
+        - id
+        - kidId
+        - doctorName
+        - action
+        - assignedAt
+        - durationDays
+        - isCurrentPeriod
 
     AssignMealPlanRequest:
       type: object

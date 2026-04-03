@@ -74,17 +74,37 @@ export interface ChangeDoctorPasswordRequest {
   confirmPassword: string;
 }
 
-export interface PhaseCount {
-  phase: number;
+export type DietTypeCountDietType =
+  (typeof DietTypeCountDietType)[keyof typeof DietTypeCountDietType];
+
+export const DietTypeCountDietType = {
+  classic: "classic",
+  mad: "mad",
+  mct: "mct",
+  lowgi: "lowgi",
+} as const;
+
+export interface DietTypeCount {
+  dietType: DietTypeCountDietType;
   count: number;
   label: string;
 }
+
+export type HighRiskKidDietType =
+  (typeof HighRiskKidDietType)[keyof typeof HighRiskKidDietType];
+
+export const HighRiskKidDietType = {
+  classic: "classic",
+  mad: "mad",
+  mct: "mct",
+  lowgi: "lowgi",
+} as const;
 
 export interface HighRiskKid {
   id: number;
   name: string;
   ageMonths: number;
-  phase: number;
+  dietType: HighRiskKidDietType;
   parentContact: string;
   riskReason: string;
   mealCompletionRate?: number;
@@ -103,13 +123,34 @@ export interface DashboardStats {
   unfilledMealRecords: number;
   last24hUnfilledMealRecords: number;
   averageWeightChange: number;
-  phaseDistribution: PhaseCount[];
+  dietTypeDistribution: DietTypeCount[];
   recentHighRiskKids: HighRiskKid[];
   totalDoctors: number;
   totalFoods: number;
   totalRecipes: number;
   tokenSummary: TokenSummary;
 }
+
+export type KidDietType = (typeof KidDietType)[keyof typeof KidDietType];
+
+export const KidDietType = {
+  classic: "classic",
+  mad: "mad",
+  mct: "mct",
+  lowgi: "lowgi",
+} as const;
+
+export type KidDietSubCategory =
+  | (typeof KidDietSubCategory)[keyof typeof KidDietSubCategory]
+  | null;
+
+export const KidDietSubCategory = {
+  "2:1": "2:1",
+  "25:1": "2.5:1",
+  "3:1": "3:1",
+  "35:1": "3.5:1",
+  "4:1": "4:1",
+} as const;
 
 export type KidGender = (typeof KidGender)[keyof typeof KidGender];
 
@@ -124,7 +165,8 @@ export interface Kid {
   kidCode: string;
   dateOfBirth: string;
   ageMonths: number;
-  phase: number;
+  dietType: KidDietType;
+  dietSubCategory?: KidDietSubCategory;
   parentName: string;
   parentContact: string;
   isHighRisk: boolean;
@@ -138,20 +180,33 @@ export interface Kid {
   gender?: KidGender;
 }
 
-export type MedicalSettingsPhase =
-  (typeof MedicalSettingsPhase)[keyof typeof MedicalSettingsPhase];
+export type MedicalSettingsDietType =
+  (typeof MedicalSettingsDietType)[keyof typeof MedicalSettingsDietType];
 
-export const MedicalSettingsPhase = {
-  NUMBER_1: 1,
-  NUMBER_2: 2,
-  NUMBER_3: 3,
-  NUMBER_4: 4,
+export const MedicalSettingsDietType = {
+  classic: "classic",
+  mad: "mad",
+  mct: "mct",
+  lowgi: "lowgi",
+} as const;
+
+export type MedicalSettingsDietSubCategory =
+  | (typeof MedicalSettingsDietSubCategory)[keyof typeof MedicalSettingsDietSubCategory]
+  | null;
+
+export const MedicalSettingsDietSubCategory = {
+  "2:1": "2:1",
+  "25:1": "2.5:1",
+  "3:1": "3:1",
+  "35:1": "3.5:1",
+  "4:1": "4:1",
 } as const;
 
 export interface MedicalSettings {
   id: number;
   kidId: number;
-  phase: MedicalSettingsPhase;
+  dietType: MedicalSettingsDietType;
+  dietSubCategory?: MedicalSettingsDietSubCategory;
   /** Ratio of fat to protein + carbohydrates */
   ketoRatio: number;
   dailyCalories: number;
@@ -207,14 +262,26 @@ export const CreateKidRequestGender = {
   female: "female",
 } as const;
 
-export type CreateKidRequestPhase =
-  (typeof CreateKidRequestPhase)[keyof typeof CreateKidRequestPhase];
+export type CreateKidRequestDietType =
+  (typeof CreateKidRequestDietType)[keyof typeof CreateKidRequestDietType];
 
-export const CreateKidRequestPhase = {
-  NUMBER_1: 1,
-  NUMBER_2: 2,
-  NUMBER_3: 3,
-  NUMBER_4: 4,
+export const CreateKidRequestDietType = {
+  classic: "classic",
+  mad: "mad",
+  mct: "mct",
+  lowgi: "lowgi",
+} as const;
+
+export type CreateKidRequestDietSubCategory =
+  | (typeof CreateKidRequestDietSubCategory)[keyof typeof CreateKidRequestDietSubCategory]
+  | null;
+
+export const CreateKidRequestDietSubCategory = {
+  "2:1": "2:1",
+  "25:1": "2.5:1",
+  "3:1": "3:1",
+  "35:1": "3.5:1",
+  "4:1": "4:1",
 } as const;
 
 export interface CreateKidRequest {
@@ -223,7 +290,8 @@ export interface CreateKidRequest {
   gender: CreateKidRequestGender;
   parentName: string;
   parentContact: string;
-  phase: CreateKidRequestPhase;
+  dietType: CreateKidRequestDietType;
+  dietSubCategory?: CreateKidRequestDietSubCategory;
 }
 
 export type UpdateKidRequestGender =
@@ -234,14 +302,26 @@ export const UpdateKidRequestGender = {
   female: "female",
 } as const;
 
-export type UpdateKidRequestPhase =
-  (typeof UpdateKidRequestPhase)[keyof typeof UpdateKidRequestPhase];
+export type UpdateKidRequestDietType =
+  (typeof UpdateKidRequestDietType)[keyof typeof UpdateKidRequestDietType];
 
-export const UpdateKidRequestPhase = {
-  NUMBER_1: 1,
-  NUMBER_2: 2,
-  NUMBER_3: 3,
-  NUMBER_4: 4,
+export const UpdateKidRequestDietType = {
+  classic: "classic",
+  mad: "mad",
+  mct: "mct",
+  lowgi: "lowgi",
+} as const;
+
+export type UpdateKidRequestDietSubCategory =
+  | (typeof UpdateKidRequestDietSubCategory)[keyof typeof UpdateKidRequestDietSubCategory]
+  | null;
+
+export const UpdateKidRequestDietSubCategory = {
+  "2:1": "2:1",
+  "25:1": "2.5:1",
+  "3:1": "3:1",
+  "35:1": "3.5:1",
+  "4:1": "4:1",
 } as const;
 
 export interface UpdateKidRequest {
@@ -250,7 +330,8 @@ export interface UpdateKidRequest {
   gender?: UpdateKidRequestGender;
   parentName?: string;
   parentContact?: string;
-  phase?: UpdateKidRequestPhase;
+  dietType?: UpdateKidRequestDietType;
+  dietSubCategory?: UpdateKidRequestDietSubCategory;
 }
 
 export interface WeightRecordRequest {
@@ -259,18 +340,31 @@ export interface WeightRecordRequest {
   note?: string;
 }
 
-export type MedicalSettingsRequestPhase =
-  (typeof MedicalSettingsRequestPhase)[keyof typeof MedicalSettingsRequestPhase];
+export type MedicalSettingsRequestDietType =
+  (typeof MedicalSettingsRequestDietType)[keyof typeof MedicalSettingsRequestDietType];
 
-export const MedicalSettingsRequestPhase = {
-  NUMBER_1: 1,
-  NUMBER_2: 2,
-  NUMBER_3: 3,
-  NUMBER_4: 4,
+export const MedicalSettingsRequestDietType = {
+  classic: "classic",
+  mad: "mad",
+  mct: "mct",
+  lowgi: "lowgi",
+} as const;
+
+export type MedicalSettingsRequestDietSubCategory =
+  | (typeof MedicalSettingsRequestDietSubCategory)[keyof typeof MedicalSettingsRequestDietSubCategory]
+  | null;
+
+export const MedicalSettingsRequestDietSubCategory = {
+  "2:1": "2:1",
+  "25:1": "2.5:1",
+  "3:1": "3:1",
+  "35:1": "3.5:1",
+  "4:1": "4:1",
 } as const;
 
 export interface MedicalSettingsRequest {
-  phase?: MedicalSettingsRequestPhase;
+  dietType?: MedicalSettingsRequestDietType;
+  dietSubCategory?: MedicalSettingsRequestDietSubCategory;
   ketoRatio?: number;
   dailyCalories?: number;
   dailyCarbs?: number;
@@ -531,6 +625,19 @@ export interface AddLibraryMealPlanItemRequest {
   notes?: string;
 }
 
+export interface MealPlanAssignmentHistory {
+  id: number;
+  kidId: number;
+  planId?: number | null;
+  planName?: string | null;
+  doctorId?: number | null;
+  doctorName: string;
+  action: string;
+  assignedAt: string;
+  durationDays: number;
+  isCurrentPeriod: boolean;
+}
+
 export interface AssignMealPlanRequest {
   planId: number | null;
 }
@@ -785,9 +892,9 @@ export type GetKidsParams = {
    */
   search?: string;
   /**
-   * Filter by phase (supports multiple values)
+   * Filter by diet type (supports multiple values)
    */
-  phase?: GetKidsPhaseItem[];
+  dietType?: GetKidsDietTypeItem[];
   /**
    * Filter high-risk children only
    */
@@ -798,14 +905,14 @@ export type GetKidsParams = {
   ketoStatus?: boolean;
 };
 
-export type GetKidsPhaseItem =
-  (typeof GetKidsPhaseItem)[keyof typeof GetKidsPhaseItem];
+export type GetKidsDietTypeItem =
+  (typeof GetKidsDietTypeItem)[keyof typeof GetKidsDietTypeItem];
 
-export const GetKidsPhaseItem = {
-  NUMBER_1: 1,
-  NUMBER_2: 2,
-  NUMBER_3: 3,
-  NUMBER_4: 4,
+export const GetKidsDietTypeItem = {
+  classic: "classic",
+  mad: "mad",
+  mct: "mct",
+  lowgi: "lowgi",
 } as const;
 
 export type GetKidMealHistoryParams = {
@@ -829,16 +936,3 @@ export type GetFoodsParams = {
   search?: string;
   category?: string;
 };
-
-export interface MealPlanAssignmentHistory {
-  id: number;
-  kidId: number;
-  planId?: number | null;
-  planName?: string | null;
-  doctorId?: number | null;
-  doctorName: string;
-  action: string;
-  assignedAt: string;
-  durationDays: number;
-  isCurrentPeriod: boolean;
-}

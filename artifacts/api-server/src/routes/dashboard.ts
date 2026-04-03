@@ -28,7 +28,12 @@ router.get("/stats", async (req, res) => {
         unfilledMealRecords: 0,
         last24hUnfilledMealRecords: 0,
         averageWeightChange: 0,
-        phaseDistribution: [1, 2, 3, 4].map((p) => ({ phase: p, count: 0, label: `Phase ${p}` })),
+        dietTypeDistribution: [
+          { dietType: "classic", count: 0, label: "Classic Ketogenic Diet" },
+          { dietType: "mad", count: 0, label: "Modified Atkins Diet" },
+          { dietType: "mct", count: 0, label: "MCT Diet" },
+          { dietType: "lowgi", count: 0, label: "Low GI Diet" },
+        ],
         recentHighRiskKids: [],
         totalDoctors: Number(totalDoctors),
         totalFoods: Number(totalFoods),
@@ -76,7 +81,7 @@ router.get("/stats", async (req, res) => {
             id: kid.id,
             name: kid.name,
             ageMonths: calcAgeMonths(kid.dateOfBirth),
-            phase: kid.phase,
+            dietType: kid.dietType,
             parentContact: kid.parentContact,
             riskReason: "Poor meal completion rate",
             mealCompletionRate: completionRate,
@@ -85,14 +90,20 @@ router.get("/stats", async (req, res) => {
       }
     }
 
-    const phaseCountMap = new Map<number, number>();
+    const dietTypeLabels: Record<string, string> = {
+      classic: "Classic Ketogenic Diet",
+      mad: "Modified Atkins Diet",
+      mct: "MCT Diet",
+      lowgi: "Low GI Diet",
+    };
+    const dietTypeCountMap = new Map<string, number>();
     for (const kid of allKids) {
-      phaseCountMap.set(kid.phase, (phaseCountMap.get(kid.phase) || 0) + 1);
+      dietTypeCountMap.set(kid.dietType, (dietTypeCountMap.get(kid.dietType) || 0) + 1);
     }
-    const phaseDistribution = [1, 2, 3, 4].map((p) => ({
-      phase: p,
-      count: phaseCountMap.get(p) || 0,
-      label: `Phase ${p}`,
+    const dietTypeDistribution = ["classic", "mad", "mct", "lowgi"].map((dt) => ({
+      dietType: dt,
+      count: dietTypeCountMap.get(dt) || 0,
+      label: dietTypeLabels[dt] || dt,
     }));
 
     const allWeights = await db.select().from(weightRecordsTable);
@@ -144,7 +155,7 @@ router.get("/stats", async (req, res) => {
       averageWeightChange: weightChangeCount > 0
         ? Math.round((totalWeightChange / weightChangeCount) * 100) / 100
         : 0,
-      phaseDistribution,
+      dietTypeDistribution,
       recentHighRiskKids,
       totalDoctors: Number(totalDoctors),
       totalFoods: Number(totalFoods),
@@ -164,11 +175,11 @@ router.get("/recent-activity", async (req, res) => {
   try {
     const allKids = isAdmin
       ? await db
-          .select({ id: kidsTable.id, name: kidsTable.name, phase: kidsTable.phase })
+          .select({ id: kidsTable.id, name: kidsTable.name, dietType: kidsTable.dietType })
           .from(kidsTable)
           .where(eq(kidsTable.doctorId, doctorId))
       : await db
-          .select({ id: kidsTable.id, name: kidsTable.name, phase: kidsTable.phase })
+          .select({ id: kidsTable.id, name: kidsTable.name, dietType: kidsTable.dietType })
           .from(kidsTable);
 
     const kidIds = allKids.map((k) => k.id);

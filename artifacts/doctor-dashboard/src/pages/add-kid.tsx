@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCreateKid, type CreateKidRequestPhase } from "@workspace/api-client-react";
+import { useCreateKid, type CreateKidRequestDietType } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { ChevronLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,13 +11,23 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 
+const DIET_TYPE_OPTIONS = [
+  { value: "classic", label: "Classic Ketogenic Diet" },
+  { value: "mad", label: "Modified Atkins Diet" },
+  { value: "mct", label: "MCT Diet" },
+  { value: "lowgi", label: "Low GI Diet" },
+];
+
+const RATIO_OPTIONS = ["2:1", "2.5:1", "3:1", "3.5:1", "4:1"];
+
 const createKidSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   dateOfBirth: z.string().nonempty("Date of birth is required"),
   gender: z.enum(["male", "female"]),
   parentName: z.string().min(2, "Parent name required"),
   parentContact: z.string().regex(/^\d{10}$/, "Mobile number must be exactly 10 digits"),
-  phase: z.coerce.number().min(1).max(4),
+  dietType: z.enum(["classic", "mad", "mct", "lowgi"]),
+  dietSubCategory: z.string().optional(),
 });
 
 export default function AddKidPage() {
@@ -44,9 +54,12 @@ export default function AddKidPage() {
       gender: "male",
       parentName: "",
       parentContact: "",
-      phase: 1,
+      dietType: "classic",
+      dietSubCategory: "4:1",
     }
   });
+
+  const selectedDietType = useWatch({ control: form.control, name: "dietType" });
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -68,7 +81,7 @@ export default function AddKidPage() {
         </CardHeader>
         <CardContent className="pt-6">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit((d) => mutation.mutate({ data: { ...d, phase: d.phase as CreateKidRequestPhase } }))} className="space-y-6">
+            <form onSubmit={form.handleSubmit((d) => mutation.mutate({ data: { ...d, dietType: d.dietType as CreateKidRequestDietType, dietSubCategory: d.dietType === "classic" ? d.dietSubCategory : undefined } }))} className="space-y-6">
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField control={form.control} name="name" render={({ field }) => (
@@ -122,27 +135,44 @@ export default function AddKidPage() {
                   </FormItem>
                 )} />
 
-                <FormField control={form.control} name="phase" render={({ field }) => (
-                  <FormItem className="md:col-span-2">
-                    <FormLabel>Initial Protocol Phase</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value.toString()}>
+                <FormField control={form.control} name="dietType" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Diet Type</FormLabel>
+                    <Select onValueChange={(v) => { field.onChange(v); if (v !== "classic") form.setValue("dietSubCategory", undefined); else form.setValue("dietSubCategory", "4:1"); }} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger className="rounded-xl bg-slate-50 max-w-xs">
-                          <SelectValue placeholder="Select phase" />
+                        <SelectTrigger className="rounded-xl bg-slate-50">
+                          <SelectValue placeholder="Select diet type" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="1">Phase 1</SelectItem>
-                        <SelectItem value="2">Phase 2</SelectItem>
-                        <SelectItem value="3">Phase 3</SelectItem>
-                        <SelectItem value="4">Phase 4</SelectItem>
+                        {DIET_TYPE_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-slate-500 mt-2">You can adjust specific macros later in the Medical Controls tab.</p>
                     <FormMessage />
                   </FormItem>
                 )} />
+
+                {selectedDietType === "classic" && (
+                  <FormField control={form.control} name="dietSubCategory" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Keto Ratio</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value || "4:1"}>
+                        <FormControl>
+                          <SelectTrigger className="rounded-xl bg-slate-50">
+                            <SelectValue placeholder="Select ratio" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {RATIO_OPTIONS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                )}
               </div>
+
+              <p className="text-xs text-slate-500">You can adjust specific macros later in the Medical Controls tab.</p>
 
               <div className="flex justify-end pt-6 border-t border-slate-100">
                 <Button type="submit" disabled={mutation.isPending} className="rounded-xl px-8 shadow-lg shadow-primary/20 h-12 text-base">

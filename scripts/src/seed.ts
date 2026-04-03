@@ -490,58 +490,58 @@ async function seed() {
   }
 
   const kidsData = [
-    { name: "Emma Thompson",      dateOfBirth: "2019-03-15", gender: "female", parentName: "Mary Thompson",      parentContact: "+1-555-0101", phase: 2, baseWeight: 12.4 },
-    { name: "Liam Carter",        dateOfBirth: "2018-07-22", gender: "male",   parentName: "John Carter",        parentContact: "+1-555-0102", phase: 1, baseWeight: 14.8 },
-    { name: "Olivia Martinez",    dateOfBirth: "2020-01-10", gender: "female", parentName: "Rosa Martinez",      parentContact: "+1-555-0103", phase: 3, baseWeight: 11.2 },
-    { name: "Noah Williams",      dateOfBirth: "2017-11-05", gender: "male",   parentName: "James Williams",     parentContact: "+1-555-0104", phase: 4, baseWeight: 18.6 },
-    { name: "Ava Brown",          dateOfBirth: "2019-09-28", gender: "female", parentName: "Lisa Brown",         parentContact: "+1-555-0105", phase: 2, baseWeight: 13.0 },
-    { name: "Ethan Davis",        dateOfBirth: "2018-04-17", gender: "male",   parentName: "Robert Davis",       parentContact: "+44-7700-900106", phase: 1, baseWeight: 15.2 },
-    { name: "Sophia Wilson",      dateOfBirth: "2020-06-03", gender: "female", parentName: "Jennifer Wilson",    parentContact: "+1-555-0107", phase: 2, baseWeight: 10.8 },
-    { name: "Mason Miller",       dateOfBirth: "2016-12-19", gender: "male",   parentName: "David Miller",       parentContact: "+1-555-0108", phase: 3, baseWeight: 20.4 },
-    { name: "Isabella Moore",     dateOfBirth: "2019-05-11", gender: "female", parentName: "Sarah Moore",        parentContact: "+1-555-0109", phase: 1, baseWeight: 13.6 },
-    { name: "Lucas Taylor",       dateOfBirth: "2017-08-30", gender: "male",   parentName: "Mark Taylor",        parentContact: "+44-7700-900110", phase: 4, baseWeight: 19.2 },
-    { name: "Mia Anderson",       dateOfBirth: "2021-02-14", gender: "female", parentName: "Karen Anderson",     parentContact: "+1-555-0111", phase: 1, baseWeight: 9.4 },
-    { name: "Aiden Jackson",      dateOfBirth: "2018-10-07", gender: "male",   parentName: "Paul Jackson",       parentContact: "+1-555-0112", phase: 2, baseWeight: 16.0 },
-    { name: "Charlotte White",    dateOfBirth: "2020-04-22", gender: "female", parentName: "Nancy White",        parentContact: "+1-555-0113", phase: 3, baseWeight: 11.8 },
-    { name: "James Harris",       dateOfBirth: "2017-01-18", gender: "male",   parentName: "Brian Harris",       parentContact: "+61-4-0000-0114", phase: 4, baseWeight: 21.0 },
-    { name: "Amelia Clark",       dateOfBirth: "2019-12-09", gender: "female", parentName: "Susan Clark",        parentContact: "+1-555-0115", phase: 2, baseWeight: 13.8 },
-    { name: "Henry Baker",        dateOfBirth: "2018-02-28", gender: "male",   parentName: "Tom Baker",          parentContact: "+1-555-0116", phase: 1, baseWeight: 15.6 },
-    { name: "Zoe Nguyen",         dateOfBirth: "2020-08-14", gender: "female", parentName: "Linh Nguyen",        parentContact: "+1-555-0117", phase: 3, baseWeight: 10.6 },
-    { name: "Jack Robinson",      dateOfBirth: "2017-06-21", gender: "male",   parentName: "Steve Robinson",     parentContact: "+1-555-0118", phase: 4, baseWeight: 19.8 },
-    { name: "Lily Patel",         dateOfBirth: "2019-11-03", gender: "female", parentName: "Priya Patel",        parentContact: "+44-7700-900119", phase: 2, baseWeight: 12.0 },
-    { name: "Owen Kim",           dateOfBirth: "2021-04-09", gender: "male",   parentName: "Soo-Jin Kim",        parentContact: "+1-555-0120", phase: 1, baseWeight: 9.8 },
-    { name: "Ella Gonzalez",      dateOfBirth: "2018-09-17", gender: "female", parentName: "Maria Gonzalez",     parentContact: "+1-555-0121", phase: 3, baseWeight: 14.4 },
-    { name: "Leo Murphy",         dateOfBirth: "2016-05-30", gender: "male",   parentName: "Sean Murphy",        parentContact: "+353-85-000122", phase: 4, baseWeight: 22.0 },
-    { name: "Grace Chen",         dateOfBirth: "2020-12-01", gender: "female", parentName: "Wei Chen",           parentContact: "+1-555-0123", phase: 1, baseWeight: 10.2 },
-    { name: "Daniel Evans",       dateOfBirth: "2019-07-25", gender: "male",   parentName: "Craig Evans",        parentContact: "+44-7700-900124", phase: 2, baseWeight: 13.4 },
-    { name: "Chloe Rivera",       dateOfBirth: "2017-03-12", gender: "female", parentName: "Ana Rivera",         parentContact: "+1-555-0125", phase: 3, baseWeight: 17.6 },
-    { name: "Ryan Scott",         dateOfBirth: "2018-12-08", gender: "male",   parentName: "Kevin Scott",        parentContact: "+1-555-0126", phase: 1, baseWeight: 14.0 },
-    { name: "Hannah Lewis",       dateOfBirth: "2020-10-19", gender: "female", parentName: "Angela Lewis",       parentContact: "+1-555-0127", phase: 2, baseWeight: 11.4 },
-    { name: "Caleb Walker",       dateOfBirth: "2016-08-06", gender: "male",   parentName: "Mike Walker",        parentContact: "+1-555-0128", phase: 4, baseWeight: 21.6 },
-    { name: "Aria Sanchez",       dateOfBirth: "2021-01-23", gender: "female", parentName: "Carmen Sanchez",     parentContact: "+1-555-0129", phase: 1, baseWeight: 9.0 },
-    { name: "Benjamin Young",     dateOfBirth: "2019-04-02", gender: "male",   parentName: "Peter Young",        parentContact: "+61-4-0000-0130", phase: 3, baseWeight: 13.2 },
-    { name: "Sofia Kowalski",     dateOfBirth: "2025-09-10", gender: "female", parentName: "Anna Kowalski",       parentContact: "+48-600-131-000", phase: 1, baseWeight: 7.2 },
-    { name: "Mateo Herrera",      dateOfBirth: "2021-07-04", gender: "male",   parentName: "Diego Herrera",       parentContact: "+52-55-1234-0132", phase: 1, baseWeight: 10.5 },
-    { name: "Isla MacPherson",    dateOfBirth: "2020-03-19", gender: "female", parentName: "Fiona MacPherson",    parentContact: "+44-7700-900133", phase: 2, baseWeight: 12.8 },
-    { name: "Elijah Okafor",      dateOfBirth: "2017-10-26", gender: "male",   parentName: "Chidi Okafor",        parentContact: "+234-803-000-0134", phase: 4, baseWeight: 20.1 },
-    { name: "Freya Larsson",      dateOfBirth: "2019-01-07", gender: "female", parentName: "Ingrid Larsson",      parentContact: "+46-70-000-0135", phase: 2, baseWeight: 13.5 },
-    { name: "Kai Tanaka",         dateOfBirth: "2018-05-30", gender: "male",   parentName: "Yuki Tanaka",         parentContact: "+81-90-0000-0136", phase: 3, baseWeight: 16.4 },
-    { name: "Nora Fitzgerald",    dateOfBirth: "2020-11-22", gender: "female", parentName: "Sinead Fitzgerald",   parentContact: "+353-85-000137", phase: 1, baseWeight: 10.9 },
-    { name: "Theo Müller",        dateOfBirth: "2016-09-14", gender: "male",   parentName: "Klaus Müller",        parentContact: "+49-170-000-0138", phase: 4, baseWeight: 22.8 },
-    { name: "Aurora Singh",       dateOfBirth: "2021-12-05", gender: "female", parentName: "Gurpreet Singh",      parentContact: "+91-98-0000-0139", phase: 1, baseWeight: 9.1 },
-    { name: "Felix Dubois",       dateOfBirth: "2018-08-11", gender: "male",   parentName: "Pierre Dubois",       parentContact: "+33-6-00-00-0140", phase: 2, baseWeight: 15.7 },
-    { name: "Penelope O'Brien",   dateOfBirth: "2019-06-27", gender: "female", parentName: "Aoife O'Brien",       parentContact: "+353-86-000141", phase: 3, baseWeight: 12.3 },
-    { name: "Ryder Johansson",    dateOfBirth: "2017-02-15", gender: "male",   parentName: "Erik Johansson",      parentContact: "+46-70-000-0142", phase: 4, baseWeight: 19.5 },
-    { name: "Imogen Papadopoulos",dateOfBirth: "2020-07-08", gender: "female", parentName: "Eleni Papadopoulos",  parentContact: "+30-697-000-0143", phase: 2, baseWeight: 11.6 },
-    { name: "Axel Petrov",        dateOfBirth: "2018-03-21", gender: "male",   parentName: "Ivan Petrov",         parentContact: "+7-900-000-0144", phase: 1, baseWeight: 14.3 },
-    { name: "Luna Moreau",        dateOfBirth: "2021-10-13", gender: "female", parentName: "Claire Moreau",       parentContact: "+33-6-00-00-0145", phase: 1, baseWeight: 8.8 },
-    { name: "Jasper de Vries",    dateOfBirth: "2016-12-02", gender: "male",   parentName: "Willem de Vries",     parentContact: "+31-6-0000-0146", phase: 3, baseWeight: 23.1 },
-    { name: "Sienna Russo",       dateOfBirth: "2019-08-18", gender: "female", parentName: "Giulia Russo",        parentContact: "+39-347-000-0147", phase: 2, baseWeight: 13.0 },
-    { name: "Declan Walsh",       dateOfBirth: "2022-02-28", gender: "male",   parentName: "Patrick Walsh",       parentContact: "+353-87-000148", phase: 1, baseWeight: 8.3 },
-    { name: "Valentina Cruz",     dateOfBirth: "2018-01-09", gender: "female", parentName: "Isabel Cruz",         parentContact: "+34-6-0000-0149", phase: 3, baseWeight: 15.1 },
-    { name: "Hamish Stewart",     dateOfBirth: "2017-05-24", gender: "male",   parentName: "Alistair Stewart",    parentContact: "+44-7700-900150", phase: 4, baseWeight: 20.8 },
-    { name: "Margot Lefebvre",    dateOfBirth: "2020-09-30", gender: "female", parentName: "Brigitte Lefebvre",   parentContact: "+32-470-00-0151", phase: 2, baseWeight: 11.9 },
-    { name: "Tobias Andersen",    dateOfBirth: "2025-06-17", gender: "male",   parentName: "Mikkel Andersen",     parentContact: "+45-22-000-152", phase: 1, baseWeight: 6.9 },
+    { name: "Emma Thompson",      dateOfBirth: "2019-03-15", gender: "female", parentName: "Mary Thompson",      parentContact: "+1-555-0101", dietType: "mad", dietSubCategory: null, baseWeight: 12.4 },
+    { name: "Liam Carter",        dateOfBirth: "2018-07-22", gender: "male",   parentName: "John Carter",        parentContact: "+1-555-0102", dietType: "classic", dietSubCategory: "4:1", baseWeight: 14.8 },
+    { name: "Olivia Martinez",    dateOfBirth: "2020-01-10", gender: "female", parentName: "Rosa Martinez",      parentContact: "+1-555-0103", dietType: "mct", dietSubCategory: null, baseWeight: 11.2 },
+    { name: "Noah Williams",      dateOfBirth: "2017-11-05", gender: "male",   parentName: "James Williams",     parentContact: "+1-555-0104", dietType: "lowgi", dietSubCategory: null, baseWeight: 18.6 },
+    { name: "Ava Brown",          dateOfBirth: "2019-09-28", gender: "female", parentName: "Lisa Brown",         parentContact: "+1-555-0105", dietType: "mad", dietSubCategory: null, baseWeight: 13.0 },
+    { name: "Ethan Davis",        dateOfBirth: "2018-04-17", gender: "male",   parentName: "Robert Davis",       parentContact: "+44-7700-900106", dietType: "classic", dietSubCategory: "4:1", baseWeight: 15.2 },
+    { name: "Sophia Wilson",      dateOfBirth: "2020-06-03", gender: "female", parentName: "Jennifer Wilson",    parentContact: "+1-555-0107", dietType: "mad", dietSubCategory: null, baseWeight: 10.8 },
+    { name: "Mason Miller",       dateOfBirth: "2016-12-19", gender: "male",   parentName: "David Miller",       parentContact: "+1-555-0108", dietType: "mct", dietSubCategory: null, baseWeight: 20.4 },
+    { name: "Isabella Moore",     dateOfBirth: "2019-05-11", gender: "female", parentName: "Sarah Moore",        parentContact: "+1-555-0109", dietType: "classic", dietSubCategory: "4:1", baseWeight: 13.6 },
+    { name: "Lucas Taylor",       dateOfBirth: "2017-08-30", gender: "male",   parentName: "Mark Taylor",        parentContact: "+44-7700-900110", dietType: "lowgi", dietSubCategory: null, baseWeight: 19.2 },
+    { name: "Mia Anderson",       dateOfBirth: "2021-02-14", gender: "female", parentName: "Karen Anderson",     parentContact: "+1-555-0111", dietType: "classic", dietSubCategory: "4:1", baseWeight: 9.4 },
+    { name: "Aiden Jackson",      dateOfBirth: "2018-10-07", gender: "male",   parentName: "Paul Jackson",       parentContact: "+1-555-0112", dietType: "mad", dietSubCategory: null, baseWeight: 16.0 },
+    { name: "Charlotte White",    dateOfBirth: "2020-04-22", gender: "female", parentName: "Nancy White",        parentContact: "+1-555-0113", dietType: "mct", dietSubCategory: null, baseWeight: 11.8 },
+    { name: "James Harris",       dateOfBirth: "2017-01-18", gender: "male",   parentName: "Brian Harris",       parentContact: "+61-4-0000-0114", dietType: "lowgi", dietSubCategory: null, baseWeight: 21.0 },
+    { name: "Amelia Clark",       dateOfBirth: "2019-12-09", gender: "female", parentName: "Susan Clark",        parentContact: "+1-555-0115", dietType: "mad", dietSubCategory: null, baseWeight: 13.8 },
+    { name: "Henry Baker",        dateOfBirth: "2018-02-28", gender: "male",   parentName: "Tom Baker",          parentContact: "+1-555-0116", dietType: "classic", dietSubCategory: "4:1", baseWeight: 15.6 },
+    { name: "Zoe Nguyen",         dateOfBirth: "2020-08-14", gender: "female", parentName: "Linh Nguyen",        parentContact: "+1-555-0117", dietType: "mct", dietSubCategory: null, baseWeight: 10.6 },
+    { name: "Jack Robinson",      dateOfBirth: "2017-06-21", gender: "male",   parentName: "Steve Robinson",     parentContact: "+1-555-0118", dietType: "lowgi", dietSubCategory: null, baseWeight: 19.8 },
+    { name: "Lily Patel",         dateOfBirth: "2019-11-03", gender: "female", parentName: "Priya Patel",        parentContact: "+44-7700-900119", dietType: "mad", dietSubCategory: null, baseWeight: 12.0 },
+    { name: "Owen Kim",           dateOfBirth: "2021-04-09", gender: "male",   parentName: "Soo-Jin Kim",        parentContact: "+1-555-0120", dietType: "classic", dietSubCategory: "4:1", baseWeight: 9.8 },
+    { name: "Ella Gonzalez",      dateOfBirth: "2018-09-17", gender: "female", parentName: "Maria Gonzalez",     parentContact: "+1-555-0121", dietType: "mct", dietSubCategory: null, baseWeight: 14.4 },
+    { name: "Leo Murphy",         dateOfBirth: "2016-05-30", gender: "male",   parentName: "Sean Murphy",        parentContact: "+353-85-000122", dietType: "lowgi", dietSubCategory: null, baseWeight: 22.0 },
+    { name: "Grace Chen",         dateOfBirth: "2020-12-01", gender: "female", parentName: "Wei Chen",           parentContact: "+1-555-0123", dietType: "classic", dietSubCategory: "4:1", baseWeight: 10.2 },
+    { name: "Daniel Evans",       dateOfBirth: "2019-07-25", gender: "male",   parentName: "Craig Evans",        parentContact: "+44-7700-900124", dietType: "mad", dietSubCategory: null, baseWeight: 13.4 },
+    { name: "Chloe Rivera",       dateOfBirth: "2017-03-12", gender: "female", parentName: "Ana Rivera",         parentContact: "+1-555-0125", dietType: "mct", dietSubCategory: null, baseWeight: 17.6 },
+    { name: "Ryan Scott",         dateOfBirth: "2018-12-08", gender: "male",   parentName: "Kevin Scott",        parentContact: "+1-555-0126", dietType: "classic", dietSubCategory: "4:1", baseWeight: 14.0 },
+    { name: "Hannah Lewis",       dateOfBirth: "2020-10-19", gender: "female", parentName: "Angela Lewis",       parentContact: "+1-555-0127", dietType: "mad", dietSubCategory: null, baseWeight: 11.4 },
+    { name: "Caleb Walker",       dateOfBirth: "2016-08-06", gender: "male",   parentName: "Mike Walker",        parentContact: "+1-555-0128", dietType: "lowgi", dietSubCategory: null, baseWeight: 21.6 },
+    { name: "Aria Sanchez",       dateOfBirth: "2021-01-23", gender: "female", parentName: "Carmen Sanchez",     parentContact: "+1-555-0129", dietType: "classic", dietSubCategory: "4:1", baseWeight: 9.0 },
+    { name: "Benjamin Young",     dateOfBirth: "2019-04-02", gender: "male",   parentName: "Peter Young",        parentContact: "+61-4-0000-0130", dietType: "mct", dietSubCategory: null, baseWeight: 13.2 },
+    { name: "Sofia Kowalski",     dateOfBirth: "2025-09-10", gender: "female", parentName: "Anna Kowalski",       parentContact: "+48-600-131-000", dietType: "classic", dietSubCategory: "4:1", baseWeight: 7.2 },
+    { name: "Mateo Herrera",      dateOfBirth: "2021-07-04", gender: "male",   parentName: "Diego Herrera",       parentContact: "+52-55-1234-0132", dietType: "classic", dietSubCategory: "4:1", baseWeight: 10.5 },
+    { name: "Isla MacPherson",    dateOfBirth: "2020-03-19", gender: "female", parentName: "Fiona MacPherson",    parentContact: "+44-7700-900133", dietType: "mad", dietSubCategory: null, baseWeight: 12.8 },
+    { name: "Elijah Okafor",      dateOfBirth: "2017-10-26", gender: "male",   parentName: "Chidi Okafor",        parentContact: "+234-803-000-0134", dietType: "lowgi", dietSubCategory: null, baseWeight: 20.1 },
+    { name: "Freya Larsson",      dateOfBirth: "2019-01-07", gender: "female", parentName: "Ingrid Larsson",      parentContact: "+46-70-000-0135", dietType: "mad", dietSubCategory: null, baseWeight: 13.5 },
+    { name: "Kai Tanaka",         dateOfBirth: "2018-05-30", gender: "male",   parentName: "Yuki Tanaka",         parentContact: "+81-90-0000-0136", dietType: "mct", dietSubCategory: null, baseWeight: 16.4 },
+    { name: "Nora Fitzgerald",    dateOfBirth: "2020-11-22", gender: "female", parentName: "Sinead Fitzgerald",   parentContact: "+353-85-000137", dietType: "classic", dietSubCategory: "4:1", baseWeight: 10.9 },
+    { name: "Theo Müller",        dateOfBirth: "2016-09-14", gender: "male",   parentName: "Klaus Müller",        parentContact: "+49-170-000-0138", dietType: "lowgi", dietSubCategory: null, baseWeight: 22.8 },
+    { name: "Aurora Singh",       dateOfBirth: "2021-12-05", gender: "female", parentName: "Gurpreet Singh",      parentContact: "+91-98-0000-0139", dietType: "classic", dietSubCategory: "4:1", baseWeight: 9.1 },
+    { name: "Felix Dubois",       dateOfBirth: "2018-08-11", gender: "male",   parentName: "Pierre Dubois",       parentContact: "+33-6-00-00-0140", dietType: "mad", dietSubCategory: null, baseWeight: 15.7 },
+    { name: "Penelope O'Brien",   dateOfBirth: "2019-06-27", gender: "female", parentName: "Aoife O'Brien",       parentContact: "+353-86-000141", dietType: "mct", dietSubCategory: null, baseWeight: 12.3 },
+    { name: "Ryder Johansson",    dateOfBirth: "2017-02-15", gender: "male",   parentName: "Erik Johansson",      parentContact: "+46-70-000-0142", dietType: "lowgi", dietSubCategory: null, baseWeight: 19.5 },
+    { name: "Imogen Papadopoulos",dateOfBirth: "2020-07-08", gender: "female", parentName: "Eleni Papadopoulos",  parentContact: "+30-697-000-0143", dietType: "mad", dietSubCategory: null, baseWeight: 11.6 },
+    { name: "Axel Petrov",        dateOfBirth: "2018-03-21", gender: "male",   parentName: "Ivan Petrov",         parentContact: "+7-900-000-0144", dietType: "classic", dietSubCategory: "4:1", baseWeight: 14.3 },
+    { name: "Luna Moreau",        dateOfBirth: "2021-10-13", gender: "female", parentName: "Claire Moreau",       parentContact: "+33-6-00-00-0145", dietType: "classic", dietSubCategory: "4:1", baseWeight: 8.8 },
+    { name: "Jasper de Vries",    dateOfBirth: "2016-12-02", gender: "male",   parentName: "Willem de Vries",     parentContact: "+31-6-0000-0146", dietType: "mct", dietSubCategory: null, baseWeight: 23.1 },
+    { name: "Sienna Russo",       dateOfBirth: "2019-08-18", gender: "female", parentName: "Giulia Russo",        parentContact: "+39-347-000-0147", dietType: "mad", dietSubCategory: null, baseWeight: 13.0 },
+    { name: "Declan Walsh",       dateOfBirth: "2022-02-28", gender: "male",   parentName: "Patrick Walsh",       parentContact: "+353-87-000148", dietType: "classic", dietSubCategory: "4:1", baseWeight: 8.3 },
+    { name: "Valentina Cruz",     dateOfBirth: "2018-01-09", gender: "female", parentName: "Isabel Cruz",         parentContact: "+34-6-0000-0149", dietType: "mct", dietSubCategory: null, baseWeight: 15.1 },
+    { name: "Hamish Stewart",     dateOfBirth: "2017-05-24", gender: "male",   parentName: "Alistair Stewart",    parentContact: "+44-7700-900150", dietType: "lowgi", dietSubCategory: null, baseWeight: 20.8 },
+    { name: "Margot Lefebvre",    dateOfBirth: "2020-09-30", gender: "female", parentName: "Brigitte Lefebvre",   parentContact: "+32-470-00-0151", dietType: "mad", dietSubCategory: null, baseWeight: 11.9 },
+    { name: "Tobias Andersen",    dateOfBirth: "2025-06-17", gender: "male",   parentName: "Mikkel Andersen",     parentContact: "+45-22-000-152", dietType: "classic", dietSubCategory: "4:1", baseWeight: 6.9 },
   ];
 
   const completionRates = [
@@ -554,14 +554,14 @@ async function seed() {
     0.91, 0.29,
   ];
 
-  const phaseSettings: Record<number, { ketoRatio: number; dailyCalories: number; dailyCarbs: number; dailyFat: number; dailyProtein: number }> = {
-    1: { ketoRatio: 2, dailyCalories: 1000, dailyCarbs: 25, dailyFat: 85,  dailyProtein: 35 },
-    2: { ketoRatio: 3, dailyCalories: 1200, dailyCarbs: 20, dailyFat: 100, dailyProtein: 40 },
-    3: { ketoRatio: 4, dailyCalories: 1400, dailyCarbs: 15, dailyFat: 120, dailyProtein: 45 },
-    4: { ketoRatio: 4, dailyCalories: 1600, dailyCarbs: 20, dailyFat: 135, dailyProtein: 50 },
+  const dietTypeSettings: Record<string, { ketoRatio: number; dailyCalories: number; dailyCarbs: number; dailyFat: number; dailyProtein: number }> = {
+    classic: { ketoRatio: 4, dailyCalories: 1200, dailyCarbs: 15, dailyFat: 100, dailyProtein: 40 },
+    mad:     { ketoRatio: 2, dailyCalories: 1400, dailyCarbs: 20, dailyFat: 100, dailyProtein: 50 },
+    mct:     { ketoRatio: 3, dailyCalories: 1400, dailyCarbs: 20, dailyFat: 120, dailyProtein: 45 },
+    lowgi:   { ketoRatio: 2, dailyCalories: 1600, dailyCarbs: 40, dailyFat: 80,  dailyProtein: 50 },
   };
 
-  const createdKids: { id: number; phase: number; name: string }[] = [];
+  const createdKids: { id: number; dietType: string; dietSubCategory: string | null; name: string }[] = [];
 
   for (const kid of kidsData) {
     const { baseWeight, ...kidFields } = kid;
@@ -578,12 +578,13 @@ async function seed() {
 
   for (let i = 0; i < createdKids.length; i++) {
     const kid = createdKids[i];
-    const med = phaseSettings[kid.phase] ?? phaseSettings[2];
+    const med = dietTypeSettings[kid.dietType] ?? dietTypeSettings["classic"];
     const baseWeight = kidsData[i].baseWeight;
 
     await db.insert(medicalSettingsTable).values({
       kidId: kid.id,
-      phase: kid.phase,
+      dietType: kid.dietType,
+      dietSubCategory: kid.dietSubCategory,
       ...med,
       showAllFoods: true,
       showAllRecipes: true,
@@ -603,7 +604,7 @@ async function seed() {
     }
 
     // Ketone readings — 8 readings over the last 4 weeks
-    const ketoneBase = kid.phase >= 3 ? 3.2 : kid.phase === 2 ? 2.0 : 1.2;
+    const ketoneBase = kid.dietType === "mct" || kid.dietType === "lowgi" ? 3.2 : kid.dietType === "mad" ? 2.0 : 1.2;
     for (let k = 0; k < 8; k++) {
       const date = new Date();
       date.setDate(date.getDate() - k * 4);

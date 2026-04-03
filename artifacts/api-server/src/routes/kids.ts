@@ -126,9 +126,9 @@ router.get("/", async (req, res) => {
   const doctorId = req.session.doctorId!;
   const isPrivileged = req.session.doctorRole === "moderator" || req.session.doctorRole === "admin";
 
-  const rawPhase = req.query.phase;
-  const phaseArray = rawPhase
-    ? (Array.isArray(rawPhase) ? rawPhase : [rawPhase]).map(Number).filter((n) => [1, 2, 3, 4].includes(n)) as (1 | 2 | 3 | 4)[]
+  const rawDietType = req.query.dietType;
+  const dietTypeArray = rawDietType
+    ? (Array.isArray(rawDietType) ? rawDietType : [rawDietType]).filter((v) => ["classic", "mad", "mct", "lowgi"].includes(String(v))) as string[]
     : undefined;
 
   const search = typeof req.query.search === "string" ? req.query.search : undefined;
@@ -139,8 +139,8 @@ router.get("/", async (req, res) => {
     let kidsQuery = db.select().from(kidsTable).$dynamic();
 
     const conditions = isPrivileged ? [] : [eq(kidsTable.doctorId, doctorId)];
-    if (phaseArray && phaseArray.length > 0) {
-      conditions.push(inArray(kidsTable.phase, phaseArray));
+    if (dietTypeArray && dietTypeArray.length > 0) {
+      conditions.push(inArray(kidsTable.dietType, dietTypeArray));
     }
     if (conditions.length > 0) {
       kidsQuery = kidsQuery.where(and(...conditions));
@@ -173,7 +173,8 @@ router.get("/", async (req, res) => {
           kidCode: kid.kidCode,
           dateOfBirth: kid.dateOfBirth,
           ageMonths: calcAgeMonths(kid.dateOfBirth),
-          phase: kid.phase,
+          dietType: kid.dietType,
+          dietSubCategory: kid.dietSubCategory,
           parentName: kid.parentName,
           parentContact: kid.parentContact,
           isHighRisk,
@@ -225,7 +226,8 @@ router.post("/", async (req, res) => {
 
     await db.insert(medicalSettingsTable).values({
       kidId: kid.id,
-      phase: parsed.data.phase,
+      dietType: parsed.data.dietType,
+      dietSubCategory: parsed.data.dietSubCategory ?? null,
       ketoRatio: 3,
       dailyCalories: 1200,
       dailyCarbs: 20,
@@ -241,7 +243,8 @@ router.post("/", async (req, res) => {
       kidCode: kid.kidCode,
       dateOfBirth: kid.dateOfBirth,
       ageMonths: calcAgeMonths(kid.dateOfBirth),
-      phase: kid.phase,
+      dietType: kid.dietType,
+      dietSubCategory: kid.dietSubCategory,
       parentName: kid.parentName,
       parentContact: kid.parentContact,
       isHighRisk: false,
@@ -315,7 +318,8 @@ router.get("/:kidId", async (req, res) => {
     const medicalData = medical || {
       id: 0,
       kidId,
-      phase: kid.phase,
+      dietType: kid.dietType,
+      dietSubCategory: kid.dietSubCategory,
       ketoRatio: 3,
       dailyCalories: 1200,
       dailyCarbs: 20,
@@ -332,7 +336,8 @@ router.get("/:kidId", async (req, res) => {
         kidCode: kid.kidCode,
         dateOfBirth: kid.dateOfBirth,
         ageMonths: calcAgeMonths(kid.dateOfBirth),
-        phase: kid.phase,
+        dietType: kid.dietType,
+        dietSubCategory: kid.dietSubCategory,
         parentName: kid.parentName,
         parentContact: kid.parentContact,
         isHighRisk: completionRate < 0.6,
@@ -432,7 +437,8 @@ router.put("/:kidId", async (req, res) => {
       kidCode: kid.kidCode,
       dateOfBirth: kid.dateOfBirth,
       ageMonths: calcAgeMonths(kid.dateOfBirth),
-      phase: kid.phase,
+      dietType: kid.dietType,
+      dietSubCategory: kid.dietSubCategory,
       parentName: kid.parentName,
       parentContact: kid.parentContact,
       isHighRisk: completionRate < 0.6,
@@ -638,8 +644,8 @@ router.put("/:kidId/medical", async (req, res) => {
         .returning();
     }
 
-    if (parsed.data.phase) {
-      await db.update(kidsTable).set({ phase: parsed.data.phase }).where(eq(kidsTable.id, kidId));
+    if (parsed.data.dietType) {
+      await db.update(kidsTable).set({ dietType: parsed.data.dietType, dietSubCategory: parsed.data.dietSubCategory ?? null }).where(eq(kidsTable.id, kidId));
     }
 
     res.json(medical);

@@ -5,10 +5,12 @@
  * Keto Diet Doctor Dashboard API
  * OpenAPI spec version: 0.1.0
  */
-import type { MedicalSettingsRequestPhase } from "./medicalSettingsRequestPhase";
+import type { MedicalSettingsRequestDietSubCategory } from "./medicalSettingsRequestDietSubCategory";
+import type { MedicalSettingsRequestDietType } from "./medicalSettingsRequestDietType";
 
 export interface MedicalSettingsRequest {
-  phase?: MedicalSettingsRequestPhase;
+  dietType?: MedicalSettingsRequestDietType;
+  dietSubCategory?: MedicalSettingsRequestDietSubCategory;
   ketoRatio?: number;
   dailyCalories?: number;
   dailyCarbs?: number;

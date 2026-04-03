@@ -5,8 +5,9 @@
  * Keto Diet Doctor Dashboard API
  * OpenAPI spec version: 0.1.0
  */
+import type { UpdateKidRequestDietSubCategory } from "./updateKidRequestDietSubCategory";
+import type { UpdateKidRequestDietType } from "./updateKidRequestDietType";
 import type { UpdateKidRequestGender } from "./updateKidRequestGender";
-import type { UpdateKidRequestPhase } from "./updateKidRequestPhase";
 
 export interface UpdateKidRequest {
   name?: string;
@@ -14,5 +15,6 @@ export interface UpdateKidRequest {
   gender?: UpdateKidRequestGender;
   parentName?: string;
   parentContact?: string;
-  phase?: UpdateKidRequestPhase;
+  dietType?: UpdateKidRequestDietType;
+  dietSubCategory?: UpdateKidRequestDietSubCategory;
 }

@@ -20,7 +20,7 @@ router.get("/population", async (req, res) => {
     if (kidIds.length === 0) {
       res.json({
         weeklyCompliance: [],
-        phaseDistribution: [],
+        dietTypeDistribution: [],
         patientCompliance: [],
         ketoneDistribution: { low: 0, optimal: 0, high: 0, total: 0 },
         weightTrend: [],
@@ -66,15 +66,21 @@ router.get("/population", async (req, res) => {
         total,
       }));
 
-    // ─── Phase distribution ─────────────────────────────────────────────────
-    const phaseCounts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0 };
+    // ─── Diet type distribution ──────────────────────────────────────────────
+    const dietTypeLabels: Record<string, string> = {
+      classic: "Classic Ketogenic Diet",
+      mad: "Modified Atkins Diet",
+      mct: "MCT Diet",
+      lowgi: "Low GI Diet",
+    };
+    const dietTypeCounts: Record<string, number> = { classic: 0, mad: 0, mct: 0, lowgi: 0 };
     for (const kid of allKids) {
-      phaseCounts[kid.phase] = (phaseCounts[kid.phase] ?? 0) + 1;
+      dietTypeCounts[kid.dietType] = (dietTypeCounts[kid.dietType] ?? 0) + 1;
     }
-    const phaseDistribution = [1, 2, 3, 4].map((p) => ({
-      phase: p,
-      label: `Phase ${p}`,
-      count: phaseCounts[p] ?? 0,
+    const dietTypeDistribution = ["classic", "mad", "mct", "lowgi"].map((dt) => ({
+      dietType: dt,
+      label: dietTypeLabels[dt] || dt,
+      count: dietTypeCounts[dt] ?? 0,
     }));
 
     // ─── Gender distribution ────────────────────────────────────────────────
@@ -104,7 +110,7 @@ router.get("/population", async (req, res) => {
         return {
           id: kid.id,
           name: kid.name,
-          phase: kid.phase,
+          dietType: kid.dietType,
           gender: kid.gender,
           complianceRate: rate,
           filledDays: stats.filled,
@@ -162,7 +168,7 @@ router.get("/population", async (req, res) => {
 
     res.json({
       weeklyCompliance,
-      phaseDistribution,
+      dietTypeDistribution,
       patientCompliance,
       ketoneDistribution: ketoneDist,
       weightTrend,

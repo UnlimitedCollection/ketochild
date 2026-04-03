@@ -55,6 +55,7 @@ import type {
   MealLog,
   MealLogDetail,
   MealPlan,
+  MealPlanAssignmentHistory,
   MealPlanDetail,
   MealPlanItem,
   MealTypeItem,
@@ -82,7 +83,6 @@ import type {
   VisibilityRequest,
   WeightRecord,
   WeightRecordRequest,
-  MealPlanAssignmentHistory,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -818,7 +818,7 @@ export const getGetKidsUrl = (params?: GetKidsParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
-    const explodeParameters = ["phase"];
+    const explodeParameters = ["dietType"];
 
     if (Array.isArray(value) && explodeParameters.includes(key)) {
       value.forEach((v) => {
@@ -5443,6 +5443,98 @@ export const useAssignKidMealPlan = <
 };
 
 /**
+ * @summary Get meal plan assignment history for a kid
+ */
+export const getGetKidMealPlanHistoryUrl = (kidId: number) => {
+  return `/api/kids/${kidId}/meal-plan-history`;
+};
+
+export const getKidMealPlanHistory = async (
+  kidId: number,
+  options?: RequestInit,
+): Promise<MealPlanAssignmentHistory[]> => {
+  return customFetch<MealPlanAssignmentHistory[]>(
+    getGetKidMealPlanHistoryUrl(kidId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetKidMealPlanHistoryQueryKey = (kidId: number) => {
+  return [`/api/kids/${kidId}/meal-plan-history`] as const;
+};
+
+export const getGetKidMealPlanHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getKidMealPlanHistory>>,
+  TError = ErrorType<unknown>,
+>(
+  kidId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getKidMealPlanHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetKidMealPlanHistoryQueryKey(kidId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getKidMealPlanHistory>>
+  > = ({ signal }) =>
+    getKidMealPlanHistory(kidId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!kidId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getKidMealPlanHistory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetKidMealPlanHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getKidMealPlanHistory>>
+>;
+export type GetKidMealPlanHistoryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get meal plan assignment history for a kid
+ */
+
+export function useGetKidMealPlanHistory<
+  TData = Awaited<ReturnType<typeof getKidMealPlanHistory>>,
+  TError = ErrorType<unknown>,
+>(
+  kidId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getKidMealPlanHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetKidMealPlanHistoryQueryOptions(kidId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
  * @summary Get all foods
  */
 export const getGetFoodsUrl = (params?: GetFoodsParams) => {
@@ -6488,88 +6580,3 @@ export const useDeleteFood = <
 > => {
   return useMutation(getDeleteFoodMutationOptions(options));
 };
-
-/**
- * @summary Get meal plan assignment history for a kid
- */
-export const getGetKidMealPlanHistoryUrl = (kidId: number) => {
-  return `/api/kids/${kidId}/meal-plan-history`;
-};
-
-export const getKidMealPlanHistory = async (
-  kidId: number,
-  options?: RequestInit,
-): Promise<MealPlanAssignmentHistory[]> => {
-  return customFetch<MealPlanAssignmentHistory[]>(getGetKidMealPlanHistoryUrl(kidId), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getGetKidMealPlanHistoryQueryKey = (kidId: number) => {
-  return [`/api/kids/${kidId}/meal-plan-history`] as const;
-};
-
-export const getGetKidMealPlanHistoryQueryOptions = <
-  TData = Awaited<ReturnType<typeof getKidMealPlanHistory>>,
-  TError = ErrorType<unknown>,
->(
-  kidId: number,
-  options?: {
-    query?: UseQueryOptions<
-      Awaited<ReturnType<typeof getKidMealPlanHistory>>,
-      TError,
-      TData
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getGetKidMealPlanHistoryQueryKey(kidId);
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getKidMealPlanHistory>>> = ({ signal }) =>
-    getKidMealPlanHistory(kidId, { signal, ...requestOptions });
-
-  return {
-    queryKey,
-    queryFn,
-    enabled: !!kidId,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof getKidMealPlanHistory>>,
-    TError,
-    TData
-  > & { queryKey: QueryKey };
-};
-
-export type GetKidMealPlanHistoryQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getKidMealPlanHistory>>
->;
-export type GetKidMealPlanHistoryQueryError = ErrorType<unknown>;
-
-/**
- * @summary Get meal plan assignment history for a kid
- */
-export function useGetKidMealPlanHistory<
-  TData = Awaited<ReturnType<typeof getKidMealPlanHistory>>,
-  TError = ErrorType<unknown>,
->(
-  kidId: number,
-  options?: {
-    query?: UseQueryOptions<
-      Awaited<ReturnType<typeof getKidMealPlanHistory>>,
-      TError,
-      TData
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetKidMealPlanHistoryQueryOptions(kidId, options);
-
-  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
-    queryKey: QueryKey;
-  };
-
-  return { ...query, queryKey: queryOptions.queryKey };
-}

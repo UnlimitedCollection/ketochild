@@ -31,6 +31,13 @@ function getComplianceColor(rate: number | undefined): string {
   return "bg-green-500";
 }
 
+const DIET_TYPE_LABELS: Record<string, string> = {
+  classic: "Classic Ketogenic",
+  mad: "Modified Atkins",
+  mct: "MCT Diet",
+  lowgi: "Low GI Diet",
+};
+
 function ComplianceCalendarMonth({
   month,
   completionMap,
@@ -224,7 +231,7 @@ export default function KidAnalyticsPage() {
                   </Button>
                   <div className="flex flex-col items-end gap-2 ml-2">
                     <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 text-sm py-1 px-3">
-                      Phase {kid.phase}
+                      {DIET_TYPE_LABELS[kid.dietType] || kid.dietType}{kid.dietSubCategory ? ` (${kid.dietSubCategory})` : ""}
                     </Badge>
                     {kid.isHighRisk && (
                       <Badge variant="destructive" className="bg-destructive/10 text-destructive border border-destructive/20 text-xs">

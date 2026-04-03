@@ -5,12 +5,13 @@
  * Keto Diet Doctor Dashboard API
  * OpenAPI spec version: 0.1.0
  */
+import type { HighRiskKidDietType } from "./highRiskKidDietType";
 
 export interface HighRiskKid {
   id: number;
   name: string;
   ageMonths: number;
-  phase: number;
+  dietType: HighRiskKidDietType;
   parentContact: string;
   riskReason: string;
   mealCompletionRate?: number;

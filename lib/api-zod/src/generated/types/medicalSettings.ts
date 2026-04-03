@@ -5,12 +5,14 @@
  * Keto Diet Doctor Dashboard API
  * OpenAPI spec version: 0.1.0
  */
-import type { MedicalSettingsPhase } from "./medicalSettingsPhase";
+import type { MedicalSettingsDietSubCategory } from "./medicalSettingsDietSubCategory";
+import type { MedicalSettingsDietType } from "./medicalSettingsDietType";
 
 export interface MedicalSettings {
   id: number;
   kidId: number;
-  phase: MedicalSettingsPhase;
+  dietType: MedicalSettingsDietType;
+  dietSubCategory?: MedicalSettingsDietSubCategory;
   /** Ratio of fat to protein + carbohydrates */
   ketoRatio: number;
   dailyCalories: number;

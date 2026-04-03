@@ -33,12 +33,19 @@ const RISK_OPTIONS = [
   { label: "Normal", value: "false" },
 ];
 
-const PHASE_OPTIONS = [
-  { label: "Phase 1", value: "1" },
-  { label: "Phase 2", value: "2" },
-  { label: "Phase 3", value: "3" },
-  { label: "Phase 4", value: "4" },
+const DIET_TYPE_OPTIONS = [
+  { label: "Classic Ketogenic", value: "classic" },
+  { label: "Modified Atkins", value: "mad" },
+  { label: "MCT Diet", value: "mct" },
+  { label: "Low GI Diet", value: "lowgi" },
 ];
+
+const DIET_TYPE_LABELS: Record<string, string> = {
+  classic: "Classic Ketogenic",
+  mad: "Modified Atkins",
+  mct: "MCT Diet",
+  lowgi: "Low GI Diet",
+};
 
 function KidViewDialog({ kidId, open, onOpenChange }: { kidId: number | null; open: boolean; onOpenChange: (v: boolean) => void }) {
   const enabled = open && kidId !== null;
@@ -78,7 +85,7 @@ function KidViewDialog({ kidId, open, onOpenChange }: { kidId: number | null; op
     return Math.round(filled.reduce((s, m) => s + (m.totalCalories ?? 0), 0) / filled.length);
   }, [recentMeals]);
 
-  const daysInPhase = useMemo(() => {
+  const daysOnDiet = useMemo(() => {
     if (!kid) return null;
     if (recentWeights.length > 0) {
       return differenceInDays(new Date(), parseISO(recentWeights[0].date));
@@ -122,7 +129,7 @@ function KidViewDialog({ kidId, open, onOpenChange }: { kidId: number | null; op
                 <h2 className="text-xl font-bold text-slate-900">{kid.name}</h2>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-600">{kid.kidCode}</span>
-                  <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">Phase {kid.phase}</Badge>
+                  <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">{DIET_TYPE_LABELS[kid.dietType] || kid.dietType}{kid.dietSubCategory ? ` (${kid.dietSubCategory})` : ""}</Badge>
                   {kid.isHighRisk && (
                     <Badge variant="destructive" className="bg-destructive/10 text-destructive border border-destructive/20 text-xs">High Risk</Badge>
                   )}
@@ -243,8 +250,8 @@ function KidViewDialog({ kidId, open, onOpenChange }: { kidId: number | null; op
                 <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 flex items-center gap-3">
                   <Calendar className="h-4 w-4 text-slate-500" />
                   <div className="text-sm">
-                    <span className="text-slate-500">Days in Current Phase: </span>
-                    <span className="font-bold text-slate-800">{daysInPhase !== null ? daysInPhase : '—'}</span>
+                    <span className="text-slate-500">Days on Current Diet: </span>
+                    <span className="font-bold text-slate-800">{daysOnDiet !== null ? daysOnDiet : '—'}</span>
                   </div>
                 </div>
               </div>
@@ -387,14 +394,14 @@ export default function KidsListPage() {
   }, [searchQuery]);
 
   const canWrite = useCanWrite();
-  const [selectedPhases, setSelectedPhases] = useState<string[]>([]);
+  const [selectedDietTypes, setSelectedDietTypes] = useState<string[]>([]);
   const [selectedKetoStatus, setSelectedKetoStatus] = useState<string[]>([]);
   const [selectedRisk, setSelectedRisk] = useState<string[]>([]);
 
-  const hasActiveFilters = selectedPhases.length > 0 || selectedKetoStatus.length > 0 || selectedRisk.length > 0;
+  const hasActiveFilters = selectedDietTypes.length > 0 || selectedKetoStatus.length > 0 || selectedRisk.length > 0;
 
   const clearAllFilters = () => {
-    setSelectedPhases([]);
+    setSelectedDietTypes([]);
     setSelectedKetoStatus([]);
     setSelectedRisk([]);
   };
@@ -402,8 +409,8 @@ export default function KidsListPage() {
   const apiParams = useMemo((): GetKidsParams => {
     const params: GetKidsParams = {};
     if (debouncedSearch) params.search = debouncedSearch;
-    if (selectedPhases.length > 0) {
-      params.phase = selectedPhases.map(Number) as GetKidsParams["phase"];
+    if (selectedDietTypes.length > 0) {
+      params.dietType = selectedDietTypes as GetKidsParams["dietType"];
     }
     if (selectedRisk.length === 1) {
       params.highRisk = selectedRisk[0] === "true";
@@ -412,17 +419,17 @@ export default function KidsListPage() {
       params.ketoStatus = selectedKetoStatus[0] === "true";
     }
     return params;
-  }, [debouncedSearch, selectedPhases, selectedRisk, selectedKetoStatus]);
+  }, [debouncedSearch, selectedDietTypes, selectedRisk, selectedKetoStatus]);
 
   const { data: kids, isLoading } = useGetKids(
     apiParams,
-    { query: { queryKey: ["/api/kids", debouncedSearch, selectedPhases, selectedRisk, selectedKetoStatus] } }
+    { query: { queryKey: ["/api/kids", debouncedSearch, selectedDietTypes, selectedRisk, selectedKetoStatus] } }
   );
 
   const pagination = usePagination({
     totalItems: kids?.length ?? 0,
     pageSize: 25,
-    resetDeps: [debouncedSearch, selectedPhases, selectedRisk, selectedKetoStatus],
+    resetDeps: [debouncedSearch, selectedDietTypes, selectedRisk, selectedKetoStatus],
   });
 
   const paginatedKids = useMemo(
@@ -444,7 +451,7 @@ export default function KidsListPage() {
 
   const allKids = useGetKids({}, { query: { queryKey: ["/api/kids", "all-for-print"] } });
   const kidEntities = useMemo(
-    () => (allKids.data ?? []).map((k) => ({ id: String(k.id), label: k.name, sublabel: `Phase ${k.phase ?? "?"}` })),
+    () => (allKids.data ?? []).map((k) => ({ id: String(k.id), label: k.name, sublabel: DIET_TYPE_LABELS[k.dietType] || k.dietType })),
     [allKids.data]
   );
 
@@ -562,10 +569,10 @@ export default function KidsListPage() {
               onSelectionChange={setSelectedRisk}
             />
             <MultiSelectDropdown
-              label="Phase"
-              options={PHASE_OPTIONS}
-              selected={selectedPhases}
-              onSelectionChange={setSelectedPhases}
+              label="Diet Type"
+              options={DIET_TYPE_OPTIONS}
+              selected={selectedDietTypes}
+              onSelectionChange={setSelectedDietTypes}
             />
             {hasActiveFilters && (
               <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-slate-500 shrink-0">
@@ -602,7 +609,7 @@ export default function KidsListPage() {
                 <TableRow className="border-b-slate-200">
                   <TableHead className="font-semibold text-slate-600">Patient</TableHead>
                   <TableHead className="font-semibold text-slate-600">ID / Code</TableHead>
-                  <TableHead className="font-semibold text-slate-600">Phase</TableHead>
+                  <TableHead className="font-semibold text-slate-600">Diet Type</TableHead>
                   <TableHead className="font-semibold text-slate-600">Parent Info</TableHead>
                   <TableHead className="font-semibold text-slate-600">Meal Completion</TableHead>
                   <TableHead className="font-semibold text-slate-600">Keto Status</TableHead>
@@ -620,7 +627,7 @@ export default function KidsListPage() {
                     <TableCell className="font-mono text-sm text-slate-600">{kid.kidCode}</TableCell>
                     <TableCell>
                       <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100">
-                        Phase {kid.phase}
+                        {DIET_TYPE_LABELS[kid.dietType] || kid.dietType}{kid.dietSubCategory ? ` (${kid.dietSubCategory})` : ""}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -770,7 +777,7 @@ export default function KidsListPage() {
                   <tr className="bg-slate-100">
                     <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Patient</th>
                     <th className="text-left py-1.5 px-2 font-semibold text-slate-600">ID / Code</th>
-                    <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Phase</th>
+                    <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Diet Type</th>
                     <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Parent</th>
                     <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Contact</th>
                     <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Risk</th>
@@ -783,7 +790,7 @@ export default function KidsListPage() {
                         {kid.name} <span className="text-slate-400">({kid.ageMonths}m, {kid.gender === 'male' ? 'M' : 'F'})</span>
                       </td>
                       <td className="py-1.5 px-2 text-slate-600 font-mono">{kid.kidCode}</td>
-                      <td className="py-1.5 px-2 text-slate-600">Phase {kid.phase}</td>
+                      <td className="py-1.5 px-2 text-slate-600">{DIET_TYPE_LABELS[kid.dietType] || kid.dietType}</td>
                       <td className="py-1.5 px-2 text-slate-600">{kid.parentName}</td>
                       <td className="py-1.5 px-2 text-slate-600">{kid.parentContact}</td>
                       <td className="py-1.5 px-2 text-slate-600">{kid.isHighRisk ? "High Risk" : "Stable"}</td>
@@ -855,7 +862,7 @@ export default function KidsListPage() {
                 <thead>
                   <tr className="bg-slate-100">
                     <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Patient</th>
-                    <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Phase</th>
+                    <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Diet Type</th>
                     <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Risk Status</th>
                     <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Last Weight</th>
                     <th className="text-left py-1.5 px-2 font-semibold text-slate-600">Weight (kg)</th>
@@ -865,7 +872,7 @@ export default function KidsListPage() {
                   {printedKids.map((kid) => (
                     <tr key={kid.id} className="border-b border-slate-100">
                       <td className="py-1.5 px-2 text-slate-800 font-medium">{kid.name}</td>
-                      <td className="py-1.5 px-2 text-slate-600">Phase {kid.phase ?? "—"}</td>
+                      <td className="py-1.5 px-2 text-slate-600">{DIET_TYPE_LABELS[kid.dietType] || kid.dietType}</td>
                       <td className="py-1.5 px-2 text-slate-600">{kid.isHighRisk ? "High Risk" : "Stable"}</td>
                       <td className="py-1.5 px-2 text-slate-600">{kid.lastWeightDate ?? "—"}</td>
                       <td className="py-1.5 px-2 text-slate-600">{kid.currentWeight ?? "—"}</td>

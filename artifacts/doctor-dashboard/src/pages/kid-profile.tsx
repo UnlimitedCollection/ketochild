@@ -143,7 +143,7 @@ export default function KidProfilePage() {
                     <span>{kid.ageMonths} months old</span>
                     <span className="capitalize">{kid.gender}</span>
                     <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 text-sm py-1 px-3">
-                      Phase {kid.phase}
+                      {kid.dietType === "classic" ? "Classic Ketogenic" : kid.dietType === "mad" ? "Modified Atkins" : kid.dietType === "mct" ? "MCT Diet" : "Low GI Diet"}{kid.dietSubCategory ? ` (${kid.dietSubCategory})` : ""}
                     </Badge>
                   </div>
                 </div>
@@ -417,7 +417,7 @@ export default function KidProfilePage() {
  */
 function MedicalSummaryPrint({ data }: { data: MedicalSettings }) {
   const rows: { label: string; value: string }[] = [
-    { label: "Phase", value: `Phase ${data.phase}` },
+    { label: "Diet Type", value: data.dietType === "classic" ? `Classic Ketogenic${data.dietSubCategory ? ` (${data.dietSubCategory})` : ""}` : data.dietType === "mad" ? "Modified Atkins" : data.dietType === "mct" ? "MCT Diet" : "Low GI Diet" },
     { label: "Keto Ratio", value: `${data.ketoRatio}:1` },
     { label: "Daily Calories", value: `${data.dailyCalories} kcal` },
     { label: "Daily Carbs", value: `${data.dailyCarbs} g` },
@@ -481,8 +481,18 @@ type KidData = {
   gender?: string;
   parentName: string;
   parentContact: string;
-  phase: number;
+  dietType: string;
+  dietSubCategory?: string | null;
 };
+
+const DIET_TYPE_OPTIONS = [
+  { value: "classic", label: "Classic Ketogenic Diet" },
+  { value: "mad", label: "Modified Atkins Diet" },
+  { value: "mct", label: "MCT Diet" },
+  { value: "lowgi", label: "Low GI Diet" },
+];
+
+const RATIO_OPTIONS = ["2:1", "2.5:1", "3:1", "3.5:1", "4:1"];
 
 const editKidSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -490,7 +500,8 @@ const editKidSchema = z.object({
   gender: z.enum(["male", "female"]),
   parentName: z.string().min(1, "Parent name is required"),
   parentContact: z.string().min(1, "Contact is required"),
-  phase: z.coerce.number().min(1).max(4),
+  dietType: z.enum(["classic", "mad", "mct", "lowgi"]),
+  dietSubCategory: z.string().optional(),
 });
 
 function EditKidDialog({ kidId, kid, open, onOpenChange }: { kidId: number; kid: KidData; open: boolean; onOpenChange: (v: boolean) => void }) {
@@ -505,9 +516,12 @@ function EditKidDialog({ kidId, kid, open, onOpenChange }: { kidId: number; kid:
       gender: (kid.gender ?? "male") as "male" | "female",
       parentName: kid.parentName,
       parentContact: kid.parentContact,
-      phase: kid.phase,
+      dietType: (kid.dietType ?? "classic") as "classic" | "mad" | "mct" | "lowgi",
+      dietSubCategory: kid.dietSubCategory ?? undefined,
     },
   });
+
+  const selectedDietType = useWatch({ control: form.control, name: "dietType" });
 
   useEffect(() => {
     if (open) {
@@ -517,7 +531,8 @@ function EditKidDialog({ kidId, kid, open, onOpenChange }: { kidId: number; kid:
         gender: (kid.gender ?? "male") as "male" | "female",
         parentName: kid.parentName,
         parentContact: kid.parentContact,
-        phase: kid.phase,
+        dietType: (kid.dietType ?? "classic") as "classic" | "mad" | "mct" | "lowgi",
+        dietSubCategory: kid.dietSubCategory ?? undefined,
       });
     }
   }, [open, kid]);
@@ -572,20 +587,36 @@ function EditKidDialog({ kidId, kid, open, onOpenChange }: { kidId: number; kid:
                   <FormMessage />
                 </FormItem>
               )} />
-              <FormField control={form.control} name="phase" render={({ field }) => (
+              <FormField control={form.control} name="dietType" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phase</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value.toString()}>
+                  <FormLabel>Diet Type</FormLabel>
+                  <Select onValueChange={(v) => { field.onChange(v); if (v !== "classic") form.setValue("dietSubCategory", undefined); }} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {[1, 2, 3, 4].map(p => <SelectItem key={p} value={p.toString()}>Phase {p}</SelectItem>)}
+                      {DIET_TYPE_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                     </SelectContent>
                   </Select>
                   <FormMessage />
                 </FormItem>
               )} />
+              {selectedDietType === "classic" && (
+                <FormField control={form.control} name="dietSubCategory" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Keto Ratio</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value || "4:1"}>
+                      <FormControl>
+                        <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {RATIO_OPTIONS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              )}
               <FormField control={form.control} name="parentName" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Parent/Guardian Name</FormLabel>
@@ -766,7 +797,8 @@ function WeightReadingsList({ kidId, weights, canWrite }: { kidId: number; weigh
 }
 
 const medicalSchema = z.object({
-  phase: z.coerce.number().min(1).max(4),
+  dietType: z.enum(["classic", "mad", "mct", "lowgi"]),
+  dietSubCategory: z.string().optional(),
   ketoRatio: z.coerce.number().positive(),
   dailyCalories: z.coerce.number().min(0).max(3000),
   dailyCarbs: z.coerce.number().min(0),
@@ -777,7 +809,8 @@ const medicalSchema = z.object({
 });
 
 type MedicalSettings = {
-  phase: number;
+  dietType: string;
+  dietSubCategory?: string | null;
   ketoRatio: number;
   dailyCalories: number;
   dailyCarbs: number;
@@ -795,7 +828,8 @@ function MedicalSettingsForm({ kidId, initialData }: { kidId: number, initialDat
   const form = useForm<z.infer<typeof medicalSchema>>({
     resolver: zodResolver(medicalSchema),
     defaultValues: {
-      phase: initialData.phase,
+      dietType: (initialData.dietType ?? "classic") as "classic" | "mad" | "mct" | "lowgi",
+      dietSubCategory: initialData.dietSubCategory ?? undefined,
       ketoRatio: initialData.ketoRatio,
       dailyCalories: initialData.dailyCalories,
       dailyCarbs: initialData.dailyCarbs,
@@ -843,22 +877,41 @@ function MedicalSettingsForm({ kidId, initialData }: { kidId: number, initialDat
               <div className="space-y-5">
                 <h3 className="font-semibold text-slate-900 border-b pb-2">Macros & Targets</h3>
                 
-                <FormField control={form.control} name="phase" render={({ field }) => (
+                <FormField control={form.control} name="dietType" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Protocol Phase (1-4)</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value.toString()}>
+                    <FormLabel>Diet Type</FormLabel>
+                    <Select onValueChange={(v) => { field.onChange(v); if (v !== "classic") form.setValue("dietSubCategory", undefined); }} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger className="rounded-xl">
-                          <SelectValue placeholder="Select phase" />
+                          <SelectValue placeholder="Select diet type" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {[1, 2, 3, 4].map(p => <SelectItem key={p} value={p.toString()}>Phase {p}</SelectItem>)}
+                        {DIET_TYPE_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                       </SelectContent>
                     </Select>
                     <FormMessage />
                   </FormItem>
                 )} />
+
+                {form.watch("dietType") === "classic" && (
+                  <FormField control={form.control} name="dietSubCategory" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Keto Ratio Sub-Category</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value || "4:1"}>
+                        <FormControl>
+                          <SelectTrigger className="rounded-xl">
+                            <SelectValue placeholder="Select ratio" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {RATIO_OPTIONS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                )}
 
                 <FormField control={form.control} name="ketoRatio" render={({ field }) => (
                   <FormItem>
@@ -976,7 +1029,7 @@ function MedicalSettingsForm({ kidId, initialData }: { kidId: number, initialDat
                   <FormItem className="flex flex-row items-center justify-between rounded-xl border border-slate-200 p-4 bg-slate-50 shadow-sm">
                     <div className="space-y-0.5">
                       <FormLabel className="text-base font-semibold text-slate-800">Show All Foods</FormLabel>
-                      <CardDescription>Allow parent to see foods outside prescribed phase.</CardDescription>
+                      <CardDescription>Allow parent to see foods outside prescribed diet.</CardDescription>
                     </div>
                     <FormControl>
                       <Switch checked={field.value} onCheckedChange={field.onChange} />
@@ -988,7 +1041,7 @@ function MedicalSettingsForm({ kidId, initialData }: { kidId: number, initialDat
                   <FormItem className="flex flex-row items-center justify-between rounded-xl border border-slate-200 p-4 bg-slate-50 shadow-sm">
                     <div className="space-y-0.5">
                       <FormLabel className="text-base font-semibold text-slate-800">Show All Recipes</FormLabel>
-                      <CardDescription>Allow parent to see recipes outside prescribed phase.</CardDescription>
+                      <CardDescription>Allow parent to see recipes outside prescribed diet.</CardDescription>
                     </div>
                     <FormControl>
                       <Switch checked={field.value} onCheckedChange={field.onChange} />

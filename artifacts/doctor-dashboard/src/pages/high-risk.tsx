@@ -46,7 +46,7 @@ export default function HighRiskPage() {
                     <p className="text-sm font-mono text-slate-500 mt-0.5">{kid.kidCode} • {kid.ageMonths} months</p>
                   </div>
                   <Badge variant="secondary" className="bg-destructive/10 text-destructive border-none">
-                    Phase {kid.phase}
+                    {kid.dietType === "classic" ? "Classic Ketogenic" : kid.dietType === "mad" ? "Modified Atkins" : kid.dietType === "mct" ? "MCT Diet" : "Low GI Diet"}
                   </Badge>
                 </div>
                 

@@ -5,9 +5,10 @@
  * Keto Diet Doctor Dashboard API
  * OpenAPI spec version: 0.1.0
  */
+import type { DietTypeCountDietType } from "./dietTypeCountDietType";
 
-export interface PhaseCount {
-  phase: number;
+export interface DietTypeCount {
+  dietType: DietTypeCountDietType;
   count: number;
   label: string;
 }

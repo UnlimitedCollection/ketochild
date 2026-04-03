@@ -39013,9 +39013,9 @@ var GetDashboardStatsResponse = objectType({
   unfilledMealRecords: numberType(),
   last24hUnfilledMealRecords: numberType(),
   averageWeightChange: numberType(),
-  phaseDistribution: arrayType(
+  dietTypeDistribution: arrayType(
     objectType({
-      phase: numberType(),
+      dietType: enumType(["classic", "mad", "mct", "lowgi"]),
       count: numberType(),
       label: stringType()
     })
@@ -39025,7 +39025,7 @@ var GetDashboardStatsResponse = objectType({
       id: numberType(),
       name: stringType(),
       ageMonths: numberType(),
-      phase: numberType(),
+      dietType: enumType(["classic", "mad", "mct", "lowgi"]),
       parentContact: stringType(),
       riskReason: stringType(),
       mealCompletionRate: numberType().optional()
@@ -39054,14 +39054,7 @@ var GetDashboardRecentActivityResponse = arrayType(
 );
 var GetKidsQueryParams = objectType({
   search: coerce.string().optional().describe("Search by name, kid ID, parent name"),
-  phase: arrayType(
-    unionType([
-      literalType(1),
-      literalType(2),
-      literalType(3),
-      literalType(4)
-    ])
-  ).optional().describe("Filter by phase (supports multiple values)"),
+  dietType: arrayType(enumType(["classic", "mad", "mct", "lowgi"])).optional().describe("Filter by diet type (supports multiple values)"),
   highRisk: coerce.boolean().optional().describe("Filter high-risk children only"),
   ketoStatus: coerce.boolean().optional().describe("Filter by keto status (true = in keto, false = not in keto)")
 });
@@ -39071,7 +39064,8 @@ var GetKidsResponseItem = objectType({
   kidCode: stringType(),
   dateOfBirth: dateType(),
   ageMonths: numberType(),
-  phase: numberType(),
+  dietType: enumType(["classic", "mad", "mct", "lowgi"]),
+  dietSubCategory: enumType(["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]).nullish(),
   parentName: stringType(),
   parentContact: stringType(),
   isHighRisk: booleanType(),
@@ -39091,12 +39085,8 @@ var CreateKidBody = objectType({
   gender: enumType(["male", "female"]),
   parentName: stringType(),
   parentContact: stringType(),
-  phase: unionType([
-    literalType(1),
-    literalType(2),
-    literalType(3),
-    literalType(4)
-  ])
+  dietType: enumType(["classic", "mad", "mct", "lowgi"]),
+  dietSubCategory: enumType(["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]).nullish()
 });
 var GetKidParams = objectType({
   kidId: coerce.number()
@@ -39108,7 +39098,8 @@ var GetKidResponse = objectType({
     kidCode: stringType(),
     dateOfBirth: dateType(),
     ageMonths: numberType(),
-    phase: numberType(),
+    dietType: enumType(["classic", "mad", "mct", "lowgi"]),
+    dietSubCategory: enumType(["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]).nullish(),
     parentName: stringType(),
     parentContact: stringType(),
     isHighRisk: booleanType(),
@@ -39124,12 +39115,8 @@ var GetKidResponse = objectType({
   medical: objectType({
     id: numberType(),
     kidId: numberType(),
-    phase: unionType([
-      literalType(1),
-      literalType(2),
-      literalType(3),
-      literalType(4)
-    ]),
+    dietType: enumType(["classic", "mad", "mct", "lowgi"]),
+    dietSubCategory: enumType(["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]).nullish(),
     ketoRatio: numberType().describe("Ratio of fat to protein + carbohydrates"),
     dailyCalories: numberType(),
     dailyCarbs: numberType(),
@@ -39180,7 +39167,8 @@ var UpdateKidBody = objectType({
   gender: enumType(["male", "female"]).optional(),
   parentName: stringType().optional(),
   parentContact: stringType().optional(),
-  phase: unionType([literalType(1), literalType(2), literalType(3), literalType(4)]).optional()
+  dietType: enumType(["classic", "mad", "mct", "lowgi"]).optional(),
+  dietSubCategory: enumType(["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]).nullish()
 });
 var UpdateKidResponse = objectType({
   id: numberType(),
@@ -39188,7 +39176,8 @@ var UpdateKidResponse = objectType({
   kidCode: stringType(),
   dateOfBirth: dateType(),
   ageMonths: numberType(),
-  phase: numberType(),
+  dietType: enumType(["classic", "mad", "mct", "lowgi"]),
+  dietSubCategory: enumType(["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]).nullish(),
   parentName: stringType(),
   parentContact: stringType(),
   isHighRisk: booleanType(),
@@ -39237,12 +39226,8 @@ var GetKidMedicalParams = objectType({
 var GetKidMedicalResponse = objectType({
   id: numberType(),
   kidId: numberType(),
-  phase: unionType([
-    literalType(1),
-    literalType(2),
-    literalType(3),
-    literalType(4)
-  ]),
+  dietType: enumType(["classic", "mad", "mct", "lowgi"]),
+  dietSubCategory: enumType(["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]).nullish(),
   ketoRatio: numberType().describe("Ratio of fat to protein + carbohydrates"),
   dailyCalories: numberType(),
   dailyCarbs: numberType(),
@@ -39255,7 +39240,8 @@ var UpdateKidMedicalParams = objectType({
   kidId: coerce.number()
 });
 var UpdateKidMedicalBody = objectType({
-  phase: unionType([literalType(1), literalType(2), literalType(3), literalType(4)]).optional(),
+  dietType: enumType(["classic", "mad", "mct", "lowgi"]).optional(),
+  dietSubCategory: enumType(["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]).nullish(),
   ketoRatio: numberType().optional(),
   dailyCalories: numberType().optional(),
   dailyCarbs: numberType().optional(),
@@ -39267,12 +39253,8 @@ var UpdateKidMedicalBody = objectType({
 var UpdateKidMedicalResponse = objectType({
   id: numberType(),
   kidId: numberType(),
-  phase: unionType([
-    literalType(1),
-    literalType(2),
-    literalType(3),
-    literalType(4)
-  ]),
+  dietType: enumType(["classic", "mad", "mct", "lowgi"]),
+  dietSubCategory: enumType(["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]).nullish(),
   ketoRatio: numberType().describe("Ratio of fat to protein + carbohydrates"),
   dailyCalories: numberType(),
   dailyCarbs: numberType(),
@@ -39899,6 +39881,24 @@ var AssignKidMealPlanResponse = objectType({
   success: booleanType(),
   message: stringType().optional()
 });
+var GetKidMealPlanHistoryParams = objectType({
+  kidId: coerce.number()
+});
+var GetKidMealPlanHistoryResponseItem = objectType({
+  id: numberType(),
+  kidId: numberType(),
+  planId: numberType().nullish(),
+  planName: stringType().nullish(),
+  doctorId: numberType().nullish(),
+  doctorName: stringType(),
+  action: stringType(),
+  assignedAt: dateType(),
+  durationDays: numberType(),
+  isCurrentPeriod: booleanType()
+});
+var GetKidMealPlanHistoryResponse = arrayType(
+  GetKidMealPlanHistoryResponseItem
+);
 var GetFoodsQueryParams = objectType({
   search: coerce.string().optional(),
   category: coerce.string().optional()
@@ -58509,7 +58509,8 @@ var kidsTable = pgTable("kids", {
   gender: varchar("gender", { length: 10 }).notNull(),
   parentName: varchar("parent_name", { length: 200 }).notNull(),
   parentContact: varchar("parent_contact", { length: 100 }).notNull(),
-  phase: integer("phase").notNull().default(1),
+  dietType: varchar("diet_type", { length: 30 }).notNull().default("classic"),
+  dietSubCategory: varchar("diet_sub_category", { length: 20 }),
   doctorId: integer("doctor_id").references(() => doctorsTable.id),
   currentMealPlanId: integer("current_meal_plan_id").references(() => libraryMealPlansTable.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow().notNull()
@@ -58517,7 +58518,8 @@ var kidsTable = pgTable("kids", {
 var medicalSettingsTable = pgTable("medical_settings", {
   id: serial("id").primaryKey(),
   kidId: integer("kid_id").notNull().references(() => kidsTable.id),
-  phase: integer("phase").notNull().default(1),
+  dietType: varchar("diet_type", { length: 30 }).notNull().default("classic"),
+  dietSubCategory: varchar("diet_sub_category", { length: 20 }),
   ketoRatio: real("keto_ratio").notNull().default(3),
   dailyCalories: real("daily_calories").notNull().default(1200),
   dailyCarbs: real("daily_carbs").notNull().default(20),
@@ -60696,7 +60698,12 @@ router3.get("/stats", async (req, res) => {
         unfilledMealRecords: 0,
         last24hUnfilledMealRecords: 0,
         averageWeightChange: 0,
-        phaseDistribution: [1, 2, 3, 4].map((p) => ({ phase: p, count: 0, label: `Phase ${p}` })),
+        dietTypeDistribution: [
+          { dietType: "classic", count: 0, label: "Classic Ketogenic Diet" },
+          { dietType: "mad", count: 0, label: "Modified Atkins Diet" },
+          { dietType: "mct", count: 0, label: "MCT Diet" },
+          { dietType: "lowgi", count: 0, label: "Low GI Diet" }
+        ],
         recentHighRiskKids: [],
         totalDoctors: Number(totalDoctors2),
         totalFoods: Number(totalFoods2),
@@ -60732,7 +60739,7 @@ router3.get("/stats", async (req, res) => {
             id: kid.id,
             name: kid.name,
             ageMonths: calcAgeMonths(kid.dateOfBirth),
-            phase: kid.phase,
+            dietType: kid.dietType,
             parentContact: kid.parentContact,
             riskReason: "Poor meal completion rate",
             mealCompletionRate: completionRate
@@ -60740,14 +60747,20 @@ router3.get("/stats", async (req, res) => {
         }
       }
     }
-    const phaseCountMap = /* @__PURE__ */ new Map();
+    const dietTypeLabels = {
+      classic: "Classic Ketogenic Diet",
+      mad: "Modified Atkins Diet",
+      mct: "MCT Diet",
+      lowgi: "Low GI Diet"
+    };
+    const dietTypeCountMap = /* @__PURE__ */ new Map();
     for (const kid of allKids) {
-      phaseCountMap.set(kid.phase, (phaseCountMap.get(kid.phase) || 0) + 1);
+      dietTypeCountMap.set(kid.dietType, (dietTypeCountMap.get(kid.dietType) || 0) + 1);
     }
-    const phaseDistribution = [1, 2, 3, 4].map((p) => ({
-      phase: p,
-      count: phaseCountMap.get(p) || 0,
-      label: `Phase ${p}`
+    const dietTypeDistribution = ["classic", "mad", "mct", "lowgi"].map((dt) => ({
+      dietType: dt,
+      count: dietTypeCountMap.get(dt) || 0,
+      label: dietTypeLabels[dt] || dt
     }));
     const allWeights = await db.select().from(weightRecordsTable);
     const ownedWeights = allWeights.filter((w) => kidIds.includes(w.kidId));
@@ -60789,7 +60802,7 @@ router3.get("/stats", async (req, res) => {
       unfilledMealRecords,
       last24hUnfilledMealRecords,
       averageWeightChange: weightChangeCount > 0 ? Math.round(totalWeightChange / weightChangeCount * 100) / 100 : 0,
-      phaseDistribution,
+      dietTypeDistribution,
       recentHighRiskKids,
       totalDoctors: Number(totalDoctors),
       totalFoods: Number(totalFoods),
@@ -60805,7 +60818,7 @@ router3.get("/recent-activity", async (req, res) => {
   const doctorId = req.session.doctorId;
   const isAdmin = req.session.doctorRole === "admin";
   try {
-    const allKids = isAdmin ? await db.select({ id: kidsTable.id, name: kidsTable.name, phase: kidsTable.phase }).from(kidsTable).where(eq(kidsTable.doctorId, doctorId)) : await db.select({ id: kidsTable.id, name: kidsTable.name, phase: kidsTable.phase }).from(kidsTable);
+    const allKids = isAdmin ? await db.select({ id: kidsTable.id, name: kidsTable.name, dietType: kidsTable.dietType }).from(kidsTable).where(eq(kidsTable.doctorId, doctorId)) : await db.select({ id: kidsTable.id, name: kidsTable.name, dietType: kidsTable.dietType }).from(kidsTable);
     const kidIds = allKids.map((k) => k.id);
     const kidMap = new Map(allKids.map((k) => [k.id, k]));
     if (kidIds.length === 0) {
@@ -60859,7 +60872,7 @@ router4.get("/population", async (req, res) => {
     if (kidIds.length === 0) {
       res.json({
         weeklyCompliance: [],
-        phaseDistribution: [],
+        dietTypeDistribution: [],
         patientCompliance: [],
         ketoneDistribution: { low: 0, optimal: 0, high: 0, total: 0 },
         weightTrend: [],
@@ -60893,14 +60906,20 @@ router4.get("/population", async (req, res) => {
       filled,
       total
     }));
-    const phaseCounts = { 1: 0, 2: 0, 3: 0, 4: 0 };
+    const dietTypeLabels = {
+      classic: "Classic Ketogenic Diet",
+      mad: "Modified Atkins Diet",
+      mct: "MCT Diet",
+      lowgi: "Low GI Diet"
+    };
+    const dietTypeCounts = { classic: 0, mad: 0, mct: 0, lowgi: 0 };
     for (const kid of allKids) {
-      phaseCounts[kid.phase] = (phaseCounts[kid.phase] ?? 0) + 1;
+      dietTypeCounts[kid.dietType] = (dietTypeCounts[kid.dietType] ?? 0) + 1;
     }
-    const phaseDistribution = [1, 2, 3, 4].map((p) => ({
-      phase: p,
-      label: `Phase ${p}`,
-      count: phaseCounts[p] ?? 0
+    const dietTypeDistribution = ["classic", "mad", "mct", "lowgi"].map((dt) => ({
+      dietType: dt,
+      label: dietTypeLabels[dt] || dt,
+      count: dietTypeCounts[dt] ?? 0
     }));
     const genderCounts = {};
     for (const kid of allKids) {
@@ -60924,7 +60943,7 @@ router4.get("/population", async (req, res) => {
       return {
         id: kid.id,
         name: kid.name,
-        phase: kid.phase,
+        dietType: kid.dietType,
         gender: kid.gender,
         complianceRate: rate,
         filledDays: stats.filled,
@@ -60962,7 +60981,7 @@ router4.get("/population", async (req, res) => {
     });
     res.json({
       weeklyCompliance,
-      phaseDistribution,
+      dietTypeDistribution,
       patientCompliance,
       ketoneDistribution: ketoneDist,
       weightTrend,
@@ -61029,16 +61048,16 @@ router5.param("kidId", async (req, res, next, kidIdStr) => {
 router5.get("/", async (req, res) => {
   const doctorId = req.session.doctorId;
   const isPrivileged = req.session.doctorRole === "moderator" || req.session.doctorRole === "admin";
-  const rawPhase = req.query.phase;
-  const phaseArray = rawPhase ? (Array.isArray(rawPhase) ? rawPhase : [rawPhase]).map(Number).filter((n) => [1, 2, 3, 4].includes(n)) : void 0;
+  const rawDietType = req.query.dietType;
+  const dietTypeArray = rawDietType ? (Array.isArray(rawDietType) ? rawDietType : [rawDietType]).filter((v) => ["classic", "mad", "mct", "lowgi"].includes(String(v))) : void 0;
   const search = typeof req.query.search === "string" ? req.query.search : void 0;
   const highRisk = req.query.highRisk !== void 0 ? req.query.highRisk === "true" : void 0;
   const ketoStatus = req.query.ketoStatus !== void 0 ? req.query.ketoStatus === "true" : void 0;
   try {
     let kidsQuery = db.select().from(kidsTable).$dynamic();
     const conditions = isPrivileged ? [] : [eq(kidsTable.doctorId, doctorId)];
-    if (phaseArray && phaseArray.length > 0) {
-      conditions.push(inArray(kidsTable.phase, phaseArray));
+    if (dietTypeArray && dietTypeArray.length > 0) {
+      conditions.push(inArray(kidsTable.dietType, dietTypeArray));
     }
     if (conditions.length > 0) {
       kidsQuery = kidsQuery.where(and(...conditions));
@@ -61066,7 +61085,8 @@ router5.get("/", async (req, res) => {
           kidCode: kid.kidCode,
           dateOfBirth: kid.dateOfBirth,
           ageMonths: calcAgeMonths(kid.dateOfBirth),
-          phase: kid.phase,
+          dietType: kid.dietType,
+          dietSubCategory: kid.dietSubCategory,
           parentName: kid.parentName,
           parentContact: kid.parentContact,
           isHighRisk,
@@ -61107,7 +61127,8 @@ router5.post("/", async (req, res) => {
     }).returning();
     await db.insert(medicalSettingsTable).values({
       kidId: kid.id,
-      phase: parsed.data.phase,
+      dietType: parsed.data.dietType,
+      dietSubCategory: parsed.data.dietSubCategory ?? null,
       ketoRatio: 3,
       dailyCalories: 1200,
       dailyCarbs: 20,
@@ -61122,7 +61143,8 @@ router5.post("/", async (req, res) => {
       kidCode: kid.kidCode,
       dateOfBirth: kid.dateOfBirth,
       ageMonths: calcAgeMonths(kid.dateOfBirth),
-      phase: kid.phase,
+      dietType: kid.dietType,
+      dietSubCategory: kid.dietSubCategory,
       parentName: kid.parentName,
       parentContact: kid.parentContact,
       isHighRisk: false,
@@ -61164,7 +61186,8 @@ router5.get("/:kidId", async (req, res) => {
     const medicalData = medical || {
       id: 0,
       kidId,
-      phase: kid.phase,
+      dietType: kid.dietType,
+      dietSubCategory: kid.dietSubCategory,
       ketoRatio: 3,
       dailyCalories: 1200,
       dailyCarbs: 20,
@@ -61180,7 +61203,8 @@ router5.get("/:kidId", async (req, res) => {
         kidCode: kid.kidCode,
         dateOfBirth: kid.dateOfBirth,
         ageMonths: calcAgeMonths(kid.dateOfBirth),
-        phase: kid.phase,
+        dietType: kid.dietType,
+        dietSubCategory: kid.dietSubCategory,
         parentName: kid.parentName,
         parentContact: kid.parentContact,
         isHighRisk: completionRate < 0.6,
@@ -61263,7 +61287,8 @@ router5.put("/:kidId", async (req, res) => {
       kidCode: kid.kidCode,
       dateOfBirth: kid.dateOfBirth,
       ageMonths: calcAgeMonths(kid.dateOfBirth),
-      phase: kid.phase,
+      dietType: kid.dietType,
+      dietSubCategory: kid.dietSubCategory,
       parentName: kid.parentName,
       parentContact: kid.parentContact,
       isHighRisk: completionRate < 0.6,
@@ -61417,8 +61442,8 @@ router5.put("/:kidId/medical", async (req, res) => {
     } else {
       [medical] = await db.update(medicalSettingsTable).set({ ...parsed.data, updatedAt: /* @__PURE__ */ new Date() }).where(eq(medicalSettingsTable.kidId, kidId)).returning();
     }
-    if (parsed.data.phase) {
-      await db.update(kidsTable).set({ phase: parsed.data.phase }).where(eq(kidsTable.id, kidId));
+    if (parsed.data.dietType) {
+      await db.update(kidsTable).set({ dietType: parsed.data.dietType, dietSubCategory: parsed.data.dietSubCategory ?? null }).where(eq(kidsTable.id, kidId));
     }
     res.json(medical);
   } catch (err) {

@@ -124,9 +124,9 @@ export const GetDashboardStatsResponse = zod.object({
   unfilledMealRecords: zod.number(),
   last24hUnfilledMealRecords: zod.number(),
   averageWeightChange: zod.number(),
-  phaseDistribution: zod.array(
+  dietTypeDistribution: zod.array(
     zod.object({
-      phase: zod.number(),
+      dietType: zod.enum(["classic", "mad", "mct", "lowgi"]),
       count: zod.number(),
       label: zod.string(),
     }),
@@ -136,7 +136,7 @@ export const GetDashboardStatsResponse = zod.object({
       id: zod.number(),
       name: zod.string(),
       ageMonths: zod.number(),
-      phase: zod.number(),
+      dietType: zod.enum(["classic", "mad", "mct", "lowgi"]),
       parentContact: zod.string(),
       riskReason: zod.string(),
       mealCompletionRate: zod.number().optional(),
@@ -176,17 +176,10 @@ export const GetKidsQueryParams = zod.object({
     .string()
     .optional()
     .describe("Search by name, kid ID, parent name"),
-  phase: zod
-    .array(
-      zod.union([
-        zod.literal(1),
-        zod.literal(2),
-        zod.literal(3),
-        zod.literal(4),
-      ]),
-    )
+  dietType: zod
+    .array(zod.enum(["classic", "mad", "mct", "lowgi"]))
     .optional()
-    .describe("Filter by phase (supports multiple values)"),
+    .describe("Filter by diet type (supports multiple values)"),
   highRisk: zod.coerce
     .boolean()
     .optional()
@@ -203,7 +196,8 @@ export const GetKidsResponseItem = zod.object({
   kidCode: zod.string(),
   dateOfBirth: zod.date(),
   ageMonths: zod.number(),
-  phase: zod.number(),
+  dietType: zod.enum(["classic", "mad", "mct", "lowgi"]),
+  dietSubCategory: zod.enum(["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]).nullish(),
   parentName: zod.string(),
   parentContact: zod.string(),
   isHighRisk: zod.boolean(),
@@ -231,12 +225,8 @@ export const CreateKidBody = zod.object({
   gender: zod.enum(["male", "female"]),
   parentName: zod.string(),
   parentContact: zod.string(),
-  phase: zod.union([
-    zod.literal(1),
-    zod.literal(2),
-    zod.literal(3),
-    zod.literal(4),
-  ]),
+  dietType: zod.enum(["classic", "mad", "mct", "lowgi"]),
+  dietSubCategory: zod.enum(["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]).nullish(),
 });
 
 /**
@@ -253,7 +243,10 @@ export const GetKidResponse = zod.object({
     kidCode: zod.string(),
     dateOfBirth: zod.date(),
     ageMonths: zod.number(),
-    phase: zod.number(),
+    dietType: zod.enum(["classic", "mad", "mct", "lowgi"]),
+    dietSubCategory: zod
+      .enum(["2:1", "2.5:1", "3:1", "3.5:1", "4:1"])
+      .nullish(),
     parentName: zod.string(),
     parentContact: zod.string(),
     isHighRisk: zod.boolean(),
@@ -273,12 +266,10 @@ export const GetKidResponse = zod.object({
   medical: zod.object({
     id: zod.number(),
     kidId: zod.number(),
-    phase: zod.union([
-      zod.literal(1),
-      zod.literal(2),
-      zod.literal(3),
-      zod.literal(4),
-    ]),
+    dietType: zod.enum(["classic", "mad", "mct", "lowgi"]),
+    dietSubCategory: zod
+      .enum(["2:1", "2.5:1", "3:1", "3.5:1", "4:1"])
+      .nullish(),
     ketoRatio: zod.number().describe("Ratio of fat to protein + carbohydrates"),
     dailyCalories: zod.number(),
     dailyCarbs: zod.number(),
@@ -334,9 +325,8 @@ export const UpdateKidBody = zod.object({
   gender: zod.enum(["male", "female"]).optional(),
   parentName: zod.string().optional(),
   parentContact: zod.string().optional(),
-  phase: zod
-    .union([zod.literal(1), zod.literal(2), zod.literal(3), zod.literal(4)])
-    .optional(),
+  dietType: zod.enum(["classic", "mad", "mct", "lowgi"]).optional(),
+  dietSubCategory: zod.enum(["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]).nullish(),
 });
 
 export const UpdateKidResponse = zod.object({
@@ -345,7 +335,8 @@ export const UpdateKidResponse = zod.object({
   kidCode: zod.string(),
   dateOfBirth: zod.date(),
   ageMonths: zod.number(),
-  phase: zod.number(),
+  dietType: zod.enum(["classic", "mad", "mct", "lowgi"]),
+  dietSubCategory: zod.enum(["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]).nullish(),
   parentName: zod.string(),
   parentContact: zod.string(),
   isHighRisk: zod.boolean(),
@@ -422,12 +413,8 @@ export const GetKidMedicalParams = zod.object({
 export const GetKidMedicalResponse = zod.object({
   id: zod.number(),
   kidId: zod.number(),
-  phase: zod.union([
-    zod.literal(1),
-    zod.literal(2),
-    zod.literal(3),
-    zod.literal(4),
-  ]),
+  dietType: zod.enum(["classic", "mad", "mct", "lowgi"]),
+  dietSubCategory: zod.enum(["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]).nullish(),
   ketoRatio: zod.number().describe("Ratio of fat to protein + carbohydrates"),
   dailyCalories: zod.number(),
   dailyCarbs: zod.number(),
@@ -445,9 +432,8 @@ export const UpdateKidMedicalParams = zod.object({
 });
 
 export const UpdateKidMedicalBody = zod.object({
-  phase: zod
-    .union([zod.literal(1), zod.literal(2), zod.literal(3), zod.literal(4)])
-    .optional(),
+  dietType: zod.enum(["classic", "mad", "mct", "lowgi"]).optional(),
+  dietSubCategory: zod.enum(["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]).nullish(),
   ketoRatio: zod.number().optional(),
   dailyCalories: zod.number().optional(),
   dailyCarbs: zod.number().optional(),
@@ -460,12 +446,8 @@ export const UpdateKidMedicalBody = zod.object({
 export const UpdateKidMedicalResponse = zod.object({
   id: zod.number(),
   kidId: zod.number(),
-  phase: zod.union([
-    zod.literal(1),
-    zod.literal(2),
-    zod.literal(3),
-    zod.literal(4),
-  ]),
+  dietType: zod.enum(["classic", "mad", "mct", "lowgi"]),
+  dietSubCategory: zod.enum(["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]).nullish(),
   ketoRatio: zod.number().describe("Ratio of fat to protein + carbohydrates"),
   dailyCalories: zod.number(),
   dailyCarbs: zod.number(),
@@ -1360,6 +1342,29 @@ export const AssignKidMealPlanResponse = zod.object({
   success: zod.boolean(),
   message: zod.string().optional(),
 });
+
+/**
+ * @summary Get meal plan assignment history for a kid
+ */
+export const GetKidMealPlanHistoryParams = zod.object({
+  kidId: zod.coerce.number(),
+});
+
+export const GetKidMealPlanHistoryResponseItem = zod.object({
+  id: zod.number(),
+  kidId: zod.number(),
+  planId: zod.number().nullish(),
+  planName: zod.string().nullish(),
+  doctorId: zod.number().nullish(),
+  doctorName: zod.string(),
+  action: zod.string(),
+  assignedAt: zod.date(),
+  durationDays: zod.number(),
+  isCurrentPeriod: zod.boolean(),
+});
+export const GetKidMealPlanHistoryResponse = zod.array(
+  GetKidMealPlanHistoryResponseItem,
+);
 
 /**
  * @summary Get all foods

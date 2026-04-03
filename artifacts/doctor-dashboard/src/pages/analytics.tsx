@@ -6,7 +6,12 @@ import {
 } from "recharts";
 import { Link } from "wouter";
 
-const PHASE_COLORS = ["#004ac6", "#2563eb", "#0a7c42", "#b45309"];
+const DIET_TYPE_COLORS: Record<string, string> = {
+  classic: "#004ac6",
+  mad: "#2563eb",
+  mct: "#0a7c42",
+  lowgi: "#b45309",
+};
 const RISK_COLORS: Record<string, string> = {
   high: "#ae0010",
   moderate: "#b45309",
@@ -15,11 +20,11 @@ const RISK_COLORS: Record<string, string> = {
 
 type AnalyticsData = {
   weeklyCompliance: { week: string; compliance: number | null; filled: number; total: number }[];
-  phaseDistribution: { phase: number; label: string; count: number }[];
+  dietTypeDistribution: { dietType: string; label: string; count: number }[];
   patientCompliance: {
     id: number;
     name: string;
-    phase: number;
+    dietType: string;
     gender: string;
     complianceRate: number | null;
     filledDays: number;
@@ -140,7 +145,7 @@ export default function AnalyticsPage() {
         />
       </div>
 
-      {/* Compliance trend + Phase pie */}
+      {/* Compliance trend + Diet Type pie */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
           <h2 className="font-bold text-slate-800 mb-1">Weekly Meal Compliance</h2>
@@ -179,16 +184,16 @@ export default function AnalyticsPage() {
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-          <h2 className="font-bold text-slate-800 mb-1">Phase Distribution</h2>
-          <p className="text-xs text-slate-400 mb-4">Patients per protocol phase</p>
-          {data.phaseDistribution.every((p) => p.count === 0) ? (
+          <h2 className="font-bold text-slate-800 mb-1">Diet Type Distribution</h2>
+          <p className="text-xs text-slate-400 mb-4">Patients per diet type</p>
+          {data.dietTypeDistribution.every((p) => p.count === 0) ? (
             <div className="h-48 flex items-center justify-center text-slate-400 text-sm">No patients enrolled</div>
           ) : (
             <>
               <ResponsiveContainer width="100%" height={160}>
                 <PieChart>
                   <Pie
-                    data={data.phaseDistribution}
+                    data={data.dietTypeDistribution}
                     cx="50%"
                     cy="50%"
                     innerRadius={45}
@@ -197,8 +202,8 @@ export default function AnalyticsPage() {
                     nameKey="label"
                     paddingAngle={3}
                   >
-                    {data.phaseDistribution.map((_, i) => (
-                      <Cell key={i} fill={PHASE_COLORS[i % PHASE_COLORS.length]} />
+                    {data.dietTypeDistribution.map((d) => (
+                      <Cell key={d.dietType} fill={DIET_TYPE_COLORS[d.dietType] || "#999"} />
                     ))}
                   </Pie>
                   <Tooltip
@@ -208,9 +213,9 @@ export default function AnalyticsPage() {
                 </PieChart>
               </ResponsiveContainer>
               <div className="grid grid-cols-2 gap-1 mt-2">
-                {data.phaseDistribution.map((p, i) => (
-                  <div key={p.phase} className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: PHASE_COLORS[i % PHASE_COLORS.length] }} />
+                {data.dietTypeDistribution.map((p) => (
+                  <div key={p.dietType} className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: DIET_TYPE_COLORS[p.dietType] || "#999" }} />
                     <span className="text-xs text-slate-600">{p.label}: <strong>{p.count}</strong></span>
                   </div>
                 ))}
@@ -297,7 +302,7 @@ export default function AnalyticsPage() {
             <thead>
               <tr className="border-b border-slate-100">
                 <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Patient</th>
-                <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Phase</th>
+                <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Diet Type</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Days Tracked</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Compliance</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Risk</th>
@@ -309,7 +314,7 @@ export default function AnalyticsPage() {
                 <tr key={p.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-3 font-medium text-slate-800">{p.name}</td>
                   <td className="px-4 py-3 text-center">
-                    <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Ph {p.phase}</span>
+                    <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{p.dietType === "classic" ? "Classic" : p.dietType === "mad" ? "MAD" : p.dietType === "mct" ? "MCT" : "Low GI"}</span>
                   </td>
                   <td className="px-4 py-3 text-center text-slate-500">
                     {p.filledDays}/{p.totalDays}
