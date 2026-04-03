@@ -1,44 +1,30 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   useGetLibraryMealPlans,
   useCreateLibraryMealPlan,
-  useUpdateLibraryMealPlan,
-  useDeleteLibraryMealPlan,
   useGetLibraryMealPlan,
   useAddLibraryMealPlanItem,
   useDeleteLibraryMealPlanItem,
-  getGetLibraryMealPlansQueryKey,
   getGetLibraryMealPlanQueryKey,
+  getGetLibraryMealPlansQueryKey,
   useGetFoods,
 } from "@workspace/api-client-react";
-import type { LibraryMealPlan, LibraryMealPlanItem, Food } from "@workspace/api-client-react";
+import type { LibraryMealPlanItem, Food } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useCanWrite } from "@/hooks/useRole";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import {
-  Loader2, Plus, Search, ClipboardList, Pencil, Trash2,
-  Coffee, Sun, Moon, X, Utensils, ChevronDown,
+  Loader2, Plus, Search, Coffee, Sun, Moon, X, Utensils,
 } from "lucide-react";
 
 const DEFAULT_MEAL_SECTIONS = ["Breakfast", "Lunch", "Dinner"];
 
 const SECTION_STYLES: Record<string, { icon: React.ElementType; color: string; headerBg: string }> = {
-  Breakfast: { icon: Coffee, color: "text-amber-600 border-amber-200 bg-amber-50", headerBg: "bg-amber-50/60" },
-  Lunch:     { icon: Sun,    color: "text-sky-600 border-sky-200 bg-sky-50",       headerBg: "bg-sky-50/60" },
+  Breakfast: { icon: Coffee, color: "text-amber-600 border-amber-200 bg-amber-50",   headerBg: "bg-amber-50/60" },
+  Lunch:     { icon: Sun,    color: "text-sky-600 border-sky-200 bg-sky-50",         headerBg: "bg-sky-50/60" },
   Dinner:    { icon: Moon,   color: "text-indigo-600 border-indigo-200 bg-indigo-50", headerBg: "bg-indigo-50/60" },
 };
 
@@ -57,77 +43,42 @@ function getSectionStyle(name: string, idx: number) {
 // ── Main Page ──────────────────────────────────────────────────────────────────
 
 export default function MealPlansPage() {
-  const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [editPlan, setEditPlan] = useState<LibraryMealPlan | null>(null);
-  const [deletePlanId, setDeletePlanId] = useState<number | null>(null);
-
-  const { data: plans, isLoading } = useGetLibraryMealPlans();
+  const { data: plans, isLoading: plansLoading } = useGetLibraryMealPlans();
+  const createPlan = useCreateLibraryMealPlan();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const canWrite = useCanWrite();
 
-  const createPlan = useCreateLibraryMealPlan();
-  const updatePlan = useUpdateLibraryMealPlan();
-  const deletePlan = useDeleteLibraryMealPlan();
+  const [planId, setPlanId] = useState<number | null>(null);
+  const [creating, setCreating] = useState(false);
 
-  const activePlan = useMemo(() => {
-    if (!plans || plans.length === 0) return null;
-    return plans.find((p) => p.id === selectedPlanId) ?? plans[0];
-  }, [plans, selectedPlanId]);
-
+  // Pick the first plan, or create one silently if none exist
   useEffect(() => {
-    if (activePlan && selectedPlanId !== activePlan.id) {
-      setSelectedPlanId(activePlan.id);
+    if (plansLoading) return;
+    if (plans && plans.length > 0) {
+      setPlanId(plans[0].id);
+      return;
     }
-  }, [activePlan, selectedPlanId]);
+    if (!creating && !planId) {
+      setCreating(true);
+      createPlan.mutate(
+        { data: { name: "Daily Meals", description: "" } },
+        {
+          onSuccess: (plan) => {
+            queryClient.invalidateQueries({ queryKey: getGetLibraryMealPlansQueryKey() });
+            setPlanId(plan.id);
+            setCreating(false);
+          },
+          onError: () => {
+            setCreating(false);
+            toast({ title: "Could not initialise meals", variant: "destructive" });
+          },
+        }
+      );
+    }
+  }, [plansLoading, plans]);
 
-  function handleCreate(name: string, description: string) {
-    createPlan.mutate(
-      { data: { name, description } },
-      {
-        onSuccess: (plan) => {
-          queryClient.invalidateQueries({ queryKey: getGetLibraryMealPlansQueryKey() });
-          setCreateOpen(false);
-          setSelectedPlanId(plan.id);
-          toast({ title: "Meal plan created" });
-        },
-        onError: () => toast({ title: "Failed to create plan", variant: "destructive" }),
-      }
-    );
-  }
-
-  function handleUpdate(planId: number, name: string, description: string) {
-    updatePlan.mutate(
-      { planId, data: { name, description } },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getGetLibraryMealPlansQueryKey() });
-          queryClient.invalidateQueries({ queryKey: getGetLibraryMealPlanQueryKey(planId) });
-          setEditPlan(null);
-          toast({ title: "Plan updated" });
-        },
-        onError: () => toast({ title: "Failed to update plan", variant: "destructive" }),
-      }
-    );
-  }
-
-  function handleDelete(planId: number) {
-    deletePlan.mutate(
-      { planId },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getGetLibraryMealPlansQueryKey() });
-          if (selectedPlanId === planId) setSelectedPlanId(null);
-          setDeletePlanId(null);
-          toast({ title: "Plan deleted" });
-        },
-        onError: () => toast({ title: "Failed to delete plan", variant: "destructive" }),
-      }
-    );
-  }
-
-  if (isLoading) {
+  if (plansLoading || creating || !planId) {
     return (
       <div className="flex justify-center py-24">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -137,132 +88,19 @@ export default function MealPlansPage() {
 
   return (
     <div className="space-y-5">
-      {/* Header row */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Meal Plans</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Manage meal sections and foods</p>
-        </div>
-        {canWrite && (
-          <Button onClick={() => setCreateOpen(true)} className="gap-2 shadow-sm shrink-0">
-            <Plus className="h-4 w-4" />
-            New Plan
-          </Button>
-        )}
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900">Meals</h1>
+        <p className="text-sm text-slate-500 mt-0.5">Manage daily meal sections and foods</p>
       </div>
 
-      {/* Plan selector */}
-      {plans && plans.length > 0 && (
-        <div className="flex items-center gap-3">
-          <div className="flex-1 max-w-xs">
-            <Select
-              value={String(activePlan?.id ?? "")}
-              onValueChange={(v) => setSelectedPlanId(Number(v))}
-            >
-              <SelectTrigger className="h-9 text-sm font-medium bg-white shadow-sm">
-                <SelectValue placeholder="Select a plan" />
-              </SelectTrigger>
-              <SelectContent>
-                {plans.map((p) => (
-                  <SelectItem key={p.id} value={String(p.id)}>
-                    {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {activePlan && canWrite && (
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-slate-400 hover:text-primary"
-                onClick={() => setEditPlan(activePlan)}
-                title="Rename plan"
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-slate-400 hover:text-destructive"
-                onClick={() => setDeletePlanId(activePlan.id)}
-                title="Delete plan"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-          {activePlan?.description && (
-            <p className="text-xs text-slate-500 italic truncate max-w-sm hidden sm:block">
-              {activePlan.description}
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Plan editor */}
-      {!plans || plans.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 py-20 text-slate-400">
-          <ClipboardList className="h-10 w-10 opacity-30" />
-          <p className="text-sm font-medium">No meal plans yet</p>
-          {canWrite && (
-            <Button variant="outline" size="sm" onClick={() => setCreateOpen(true)}>
-              <Plus className="h-4 w-4 mr-1" /> Create First Plan
-            </Button>
-          )}
-        </div>
-      ) : activePlan ? (
-        <PlanEditor planId={activePlan.id} canWrite={canWrite} />
-      ) : null}
-
-      {/* Dialogs */}
-      <PlanFormDialog
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        onSubmit={handleCreate}
-        isPending={createPlan.isPending}
-        title="Create Meal Plan"
-      />
-
-      {editPlan && (
-        <PlanFormDialog
-          open={!!editPlan}
-          onClose={() => setEditPlan(null)}
-          onSubmit={(name, desc) => handleUpdate(editPlan.id, name, desc)}
-          isPending={updatePlan.isPending}
-          title="Rename Plan"
-          initialValues={{ name: editPlan.name, description: editPlan.description ?? "" }}
-        />
-      )}
-
-      <AlertDialog open={deletePlanId !== null} onOpenChange={() => setDeletePlanId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Meal Plan?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the plan and all its food items.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => deletePlanId && handleDelete(deletePlanId)}
-            >
-              {deletePlan.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <MealEditor planId={planId} canWrite={canWrite} />
     </div>
   );
 }
 
-// ── Plan Editor (always-expanded sections) ─────────────────────────────────────
+// ── Meal Editor ────────────────────────────────────────────────────────────────
 
-function PlanEditor({ planId, canWrite }: { planId: number; canWrite: boolean }) {
+function MealEditor({ planId, canWrite }: { planId: number; canWrite: boolean }) {
   const { data: planDetail, isLoading } = useGetLibraryMealPlan(planId, {
     query: { queryKey: getGetLibraryMealPlanQueryKey(planId) },
   });
@@ -275,9 +113,6 @@ function PlanEditor({ planId, canWrite }: { planId: number; canWrite: boolean })
   const [extraSections, setExtraSections] = useState<string[]>([]);
   const [addMealOpen, setAddMealOpen] = useState(false);
   const [newMealName, setNewMealName] = useState("");
-
-  // Reset extra sections when plan changes
-  useEffect(() => { setExtraSections([]); }, [planId]);
 
   const allSections = useMemo(() => {
     const fromItems = (planDetail?.items ?? []).map((i) => i.mealType);
@@ -298,11 +133,11 @@ function PlanEditor({ planId, canWrite }: { planId: number; canWrite: boolean })
 
   function handleAddItem(
     mealType: string,
-    formData: { foodName: string; portionGrams: number; unit: string; calories: number; carbs: number; fat: number; protein: number; notes: string },
+    data: { foodName: string; portionGrams: number; unit: string; calories: number; carbs: number; fat: number; protein: number; notes: string },
     callbacks?: { onSuccess?: () => void; onError?: () => void }
   ) {
     addItem.mutate(
-      { planId, data: { mealType, ...formData } },
+      { planId, data: { mealType, ...data } },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetLibraryMealPlanQueryKey(planId) });
@@ -310,7 +145,7 @@ function PlanEditor({ planId, canWrite }: { planId: number; canWrite: boolean })
           callbacks?.onSuccess?.();
         },
         onError: () => {
-          toast({ title: "Failed to add item", variant: "destructive" });
+          toast({ title: "Failed to add food", variant: "destructive" });
           callbacks?.onError?.();
         },
       }
@@ -387,7 +222,6 @@ function PlanEditor({ planId, canWrite }: { planId: number; canWrite: boolean })
         );
       })}
 
-      {/* Add meal section */}
       {canWrite && (
         <div className="pt-1">
           {addMealOpen ? (
@@ -403,20 +237,15 @@ function PlanEditor({ planId, canWrite }: { planId: number; canWrite: boolean })
                 className="h-9 text-sm flex-1"
                 autoFocus
               />
-              <Button size="sm" className="h-9 px-4" onClick={handleAddMealSection}>
-                Add
-              </Button>
-              <Button
-                variant="outline" size="sm" className="h-9 px-4"
-                onClick={() => { setAddMealOpen(false); setNewMealName(""); }}
-              >
+              <Button size="sm" className="h-9 px-4" onClick={handleAddMealSection}>Add</Button>
+              <Button variant="outline" size="sm" className="h-9 px-4"
+                onClick={() => { setAddMealOpen(false); setNewMealName(""); }}>
                 Cancel
               </Button>
             </div>
           ) : (
             <Button
-              variant="outline"
-              size="sm"
+              variant="outline" size="sm"
               className="h-9 text-sm gap-2 text-slate-500 border-dashed w-full hover:border-primary hover:text-primary"
               onClick={() => setAddMealOpen(true)}
             >
@@ -433,16 +262,8 @@ function PlanEditor({ planId, canWrite }: { planId: number; canWrite: boolean })
 // ── Meal Section ──────────────────────────────────────────────────────────────
 
 function MealSection({
-  mealType,
-  icon: Icon,
-  colorClass,
-  headerBg,
-  items,
-  canWrite,
-  onAddItem,
-  onDeleteItem,
-  isAddPending,
-  onRemoveSection,
+  mealType, icon: Icon, colorClass, headerBg, items, canWrite,
+  onAddItem, onDeleteItem, isAddPending, onRemoveSection,
 }: {
   mealType: string;
   icon: React.ElementType;
@@ -462,7 +283,6 @@ function MealSection({
 
   return (
     <div className="rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-      {/* Section header */}
       <div className={`flex items-center justify-between px-4 py-3 border-b border-slate-200 ${headerBg}`}>
         <div className="flex items-center gap-2.5">
           <div className={`flex h-8 w-8 items-center justify-center rounded-lg border ${colorClass}`}>
@@ -476,8 +296,7 @@ function MealSection({
         <div className="flex items-center gap-1.5">
           {canWrite && (
             <Button
-              variant="outline"
-              size="sm"
+              variant="outline" size="sm"
               className="h-7 text-xs gap-1 bg-white/80 hover:bg-white"
               onClick={() => setAddOpen((v) => !v)}
             >
@@ -487,8 +306,7 @@ function MealSection({
           )}
           {onRemoveSection && (
             <Button
-              variant="ghost"
-              size="icon"
+              variant="ghost" size="icon"
               className="h-7 w-7 text-slate-400 hover:text-destructive hover:bg-red-50"
               onClick={onRemoveSection}
               title="Remove this meal section"
@@ -499,7 +317,6 @@ function MealSection({
         </div>
       </div>
 
-      {/* Food add form */}
       {addOpen && (
         <div className="border-b border-slate-100 bg-slate-50/50 p-3">
           <FoodPicker
@@ -511,7 +328,6 @@ function MealSection({
         </div>
       )}
 
-      {/* Food list */}
       <div className="bg-white">
         {items.length === 0 && !addOpen ? (
           <p className="text-xs text-slate-400 text-center py-5">No foods added yet</p>
@@ -528,8 +344,7 @@ function MealSection({
                 </div>
                 {canWrite && (
                   <Button
-                    variant="ghost"
-                    size="icon"
+                    variant="ghost" size="icon"
                     className="h-7 w-7 text-slate-300 hover:text-destructive shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={() => onDeleteItem(item.id)}
                     title="Remove food"
@@ -549,10 +364,7 @@ function MealSection({
 // ── Food Picker ───────────────────────────────────────────────────────────────
 
 function FoodPicker({
-  mealType,
-  onSubmit,
-  onCancel,
-  isPending,
+  mealType, onSubmit, onCancel, isPending,
 }: {
   mealType: string;
   onSubmit: (data: { foodName: string; portionGrams: number; unit: string; calories: number; carbs: number; fat: number; protein: number; notes: string }) => void;
@@ -582,12 +394,6 @@ function FoodPicker({
       protein: parseFloat((selectedFood.protein * scale).toFixed(1)),
     };
   }, [selectedFood, portionGrams]);
-
-  function handleSelect(food: Food) {
-    setSelectedFood(food);
-    setFoodSearch("");
-    setPortionGrams(100);
-  }
 
   function handleSubmit() {
     if (!selectedFood || !scaled) return;
@@ -629,7 +435,7 @@ function FoodPicker({
                 <button
                   key={food.id}
                   className="w-full text-left px-3 py-2 hover:bg-blue-50 transition-colors"
-                  onClick={() => handleSelect(food)}
+                  onClick={() => { setSelectedFood(food); setFoodSearch(""); setPortionGrams(100); }}
                 >
                   <p className="text-sm font-medium text-slate-800">{food.name}</p>
                   <p className="text-xs text-slate-400">
@@ -644,11 +450,7 @@ function FoodPicker({
         <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2.5 space-y-2">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-blue-800">{selectedFood.name}</p>
-            <button
-              className="text-slate-400 hover:text-slate-600"
-              onClick={() => setSelectedFood(null)}
-              title="Change food"
-            >
+            <button className="text-slate-400 hover:text-slate-600" onClick={() => setSelectedFood(null)}>
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
@@ -656,9 +458,7 @@ function FoodPicker({
             <div className="flex items-center gap-2">
               <Label className="text-xs text-slate-600 whitespace-nowrap">Portion (g)</Label>
               <Input
-                type="number"
-                min={1}
-                value={portionGrams}
+                type="number" min={1} value={portionGrams}
                 onChange={(e) => setPortionGrams(Math.max(1, Number(e.target.value)))}
                 className="h-7 text-sm w-20"
               />
@@ -673,87 +473,12 @@ function FoodPicker({
       )}
 
       <div className="flex justify-end gap-2 pt-1">
-        <Button variant="outline" size="sm" onClick={onCancel} className="h-7 text-xs">
-          Cancel
-        </Button>
-        <Button
-          size="sm"
-          className="h-7 text-xs"
-          onClick={handleSubmit}
-          disabled={!selectedFood || isPending}
-        >
+        <Button variant="outline" size="sm" onClick={onCancel} className="h-7 text-xs">Cancel</Button>
+        <Button size="sm" className="h-7 text-xs" onClick={handleSubmit} disabled={!selectedFood || isPending}>
           {isPending && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
           Add
         </Button>
       </div>
     </div>
-  );
-}
-
-// ── Plan Form Dialog ──────────────────────────────────────────────────────────
-
-function PlanFormDialog({
-  open, onClose, onSubmit, isPending, title, initialValues,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onSubmit: (name: string, description: string) => void;
-  isPending: boolean;
-  title: string;
-  initialValues?: { name: string; description: string };
-}) {
-  const [name, setName] = useState(initialValues?.name ?? "");
-  const [description, setDescription] = useState(initialValues?.description ?? "");
-
-  useEffect(() => {
-    if (open) {
-      setName(initialValues?.name ?? "");
-      setDescription(initialValues?.description ?? "");
-    }
-  }, [open, initialValues?.name, initialValues?.description]);
-
-  return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md rounded-2xl">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4 py-2">
-          <div className="space-y-1.5">
-            <Label>Plan Name *</Label>
-            <Input
-              placeholder="e.g. Classic Keto Starter"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="rounded-xl"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Description</Label>
-            <Textarea
-              placeholder="Optional notes about this plan..."
-              value={description}
-              maxLength={1000}
-              onChange={(e) => setDescription(e.target.value)}
-              className="resize-none rounded-xl"
-              rows={3}
-            />
-          </div>
-        </div>
-        <div className="flex justify-end gap-2 pt-2">
-          <Button variant="outline" onClick={onClose} className="rounded-xl">
-            Cancel
-          </Button>
-          <Button
-            onClick={() => onSubmit(name.trim(), description.trim())}
-            disabled={!name.trim() || isPending}
-            className="rounded-xl"
-          >
-            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
   );
 }
