@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   useGetLibraryMealPlans,
   useCreateLibraryMealPlan,
@@ -31,14 +31,29 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Loader2, Plus, Search, ClipboardList, Pencil, Trash2,
-  Coffee, Sun, Moon, ChevronDown, ChevronUp, X,
+  Coffee, Sun, Moon, ChevronDown, ChevronUp, X, Utensils,
 } from "lucide-react";
 
-const MEAL_SECTIONS = [
-  { key: "Breakfast", icon: Coffee, color: "bg-amber-50 text-amber-600 border-amber-200" },
-  { key: "Lunch",     icon: Sun,    color: "bg-sky-50 text-sky-600 border-sky-200" },
-  { key: "Dinner",    icon: Moon,   color: "bg-indigo-50 text-indigo-600 border-indigo-200" },
-] as const;
+const DEFAULT_MEAL_SECTIONS = ["Breakfast", "Lunch", "Dinner"];
+
+const SECTION_STYLES: Record<string, { icon: React.ElementType; color: string }> = {
+  Breakfast: { icon: Coffee, color: "bg-amber-50 text-amber-600 border-amber-200" },
+  Lunch:     { icon: Sun,    color: "bg-sky-50 text-sky-600 border-sky-200" },
+  Dinner:    { icon: Moon,   color: "bg-indigo-50 text-indigo-600 border-indigo-200" },
+};
+
+const CUSTOM_SECTION_COLORS = [
+  "bg-purple-50 text-purple-600 border-purple-200",
+  "bg-green-50 text-green-600 border-green-200",
+  "bg-rose-50 text-rose-600 border-rose-200",
+  "bg-teal-50 text-teal-600 border-teal-200",
+  "bg-orange-50 text-orange-600 border-orange-200",
+];
+
+function getSectionStyle(mealType: string, index: number): { icon: React.ElementType; color: string } {
+  if (SECTION_STYLES[mealType]) return SECTION_STYLES[mealType];
+  return { icon: Utensils, color: CUSTOM_SECTION_COLORS[index % CUSTOM_SECTION_COLORS.length] };
+}
 
 export default function MealPlansPage() {
   const [createOpen, setCreateOpen] = useState(false);
@@ -219,6 +234,25 @@ function PlanCard({
   const addItem = useAddLibraryMealPlanItem();
   const deleteItem = useDeleteLibraryMealPlanItem();
 
+  const [extraSections, setExtraSections] = useState<string[]>([]);
+  const [addMealOpen, setAddMealOpen] = useState(false);
+  const [newMealName, setNewMealName] = useState("");
+  const newMealInputRef = useRef<HTMLInputElement>(null);
+
+  const allSections = useMemo(() => {
+    const fromItems = (planDetail?.items ?? []).map((i) => i.mealType);
+    const seen = new Set<string>();
+    const result: string[] = [];
+    for (const name of [...DEFAULT_MEAL_SECTIONS, ...fromItems, ...extraSections]) {
+      const key = name.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        result.push(name);
+      }
+    }
+    return result;
+  }, [planDetail?.items, extraSections]);
+
   function handleAddItem(mealType: string, formData: {
     foodName: string; portionGrams: number; unit: string;
     calories: number; carbs: number; fat: number; protein: number; notes: string;
@@ -252,11 +286,45 @@ function PlanCard({
     );
   }
 
+  function handleRemoveSection(mealType: string) {
+    const items = getMealItems(mealType);
+    if (items.length > 0) {
+      items.forEach((item) => {
+        deleteItem.mutate(
+          { planId: plan.id, itemId: item.id },
+          {
+            onSuccess: () => {
+              queryClient.invalidateQueries({ queryKey: getGetLibraryMealPlanQueryKey(plan.id) });
+            },
+          }
+        );
+      });
+      toast({ title: `Removed all items from ${mealType}` });
+    }
+    setExtraSections((prev) => prev.filter((s) => s.toLowerCase() !== mealType.toLowerCase()));
+  }
+
+  function handleAddMealSection() {
+    const name = newMealName.trim();
+    if (!name) return;
+    const exists = allSections.some((s) => s.toLowerCase() === name.toLowerCase());
+    if (exists) {
+      toast({ title: "Meal section already exists", variant: "destructive" });
+      return;
+    }
+    setExtraSections((prev) => [...prev, name]);
+    setNewMealName("");
+    setAddMealOpen(false);
+  }
+
   function getMealItems(mealType: string): LibraryMealPlanItem[] {
     return planDetail?.items?.filter(
       (i) => i.mealType.toLowerCase() === mealType.toLowerCase()
     ) ?? [];
   }
+
+  const isDefault = (name: string) =>
+    DEFAULT_MEAL_SECTIONS.some((d) => d.toLowerCase() === name.toLowerCase());
 
   return (
     <Card className="border border-slate-200 shadow-sm">
@@ -312,19 +380,65 @@ function PlanCard({
             </div>
           ) : (
             <div className="space-y-3 pt-3">
-              {MEAL_SECTIONS.map(({ key, icon: Icon, color }) => (
-                <MealSection
-                  key={key}
-                  mealType={key}
-                  icon={Icon}
-                  colorClass={color}
-                  items={getMealItems(key)}
-                  canWrite={canWrite}
-                  onAddItem={(data, callbacks) => handleAddItem(key, data, callbacks)}
-                  onDeleteItem={handleDeleteItem}
-                  isAddPending={addItem.isPending}
-                />
-              ))}
+              {allSections.map((sectionName, idx) => {
+                const { icon: Icon, color } = getSectionStyle(sectionName, idx);
+                const items = getMealItems(sectionName);
+                const removable = canWrite && (!isDefault(sectionName) || items.length === 0);
+                return (
+                  <MealSection
+                    key={sectionName}
+                    mealType={sectionName}
+                    icon={Icon}
+                    colorClass={color}
+                    items={items}
+                    canWrite={canWrite}
+                    onAddItem={(data, callbacks) => handleAddItem(sectionName, data, callbacks)}
+                    onDeleteItem={handleDeleteItem}
+                    isAddPending={addItem.isPending}
+                    onRemoveSection={removable ? () => handleRemoveSection(sectionName) : undefined}
+                  />
+                );
+              })}
+
+              {canWrite && (
+                <div className="pt-1">
+                  {addMealOpen ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        ref={newMealInputRef}
+                        placeholder="e.g. Morning Snack, Supper..."
+                        value={newMealName}
+                        onChange={(e) => setNewMealName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleAddMealSection();
+                          if (e.key === "Escape") { setAddMealOpen(false); setNewMealName(""); }
+                        }}
+                        className="h-8 text-sm flex-1"
+                        autoFocus
+                      />
+                      <Button size="sm" className="h-8 text-xs px-3" onClick={handleAddMealSection}>
+                        Add
+                      </Button>
+                      <Button
+                        variant="outline" size="sm" className="h-8 text-xs px-3"
+                        onClick={() => { setAddMealOpen(false); setNewMealName(""); }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs gap-1.5 text-slate-500 border-dashed w-full"
+                      onClick={() => setAddMealOpen(true)}
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      Add Meal (e.g. Snack, Supper)
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </CardContent>
@@ -344,6 +458,7 @@ function MealSection({
   onAddItem,
   onDeleteItem,
   isAddPending,
+  onRemoveSection,
 }: {
   mealType: string;
   icon: React.ElementType;
@@ -356,6 +471,7 @@ function MealSection({
   }, callbacks?: { onSuccess?: () => void; onError?: () => void }) => void;
   onDeleteItem: (itemId: number) => void;
   isAddPending: boolean;
+  onRemoveSection?: () => void;
 }) {
   const [addOpen, setAddOpen] = useState(false);
 
@@ -378,17 +494,30 @@ function MealSection({
           <span className="text-sm font-semibold text-slate-800">{mealType}</span>
           <span className="text-xs text-slate-500">({items.length} item{items.length !== 1 ? "s" : ""})</span>
         </div>
-        {canWrite && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 text-xs gap-1 bg-white"
-            onClick={() => setAddOpen(!addOpen)}
-          >
-            <Plus className="h-3 w-3" />
-            Add Food
-          </Button>
-        )}
+        <div className="flex items-center gap-1.5">
+          {canWrite && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1 bg-white"
+              onClick={() => setAddOpen(!addOpen)}
+            >
+              <Plus className="h-3 w-3" />
+              Add Food
+            </Button>
+          )}
+          {onRemoveSection && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-slate-400 hover:text-destructive hover:bg-red-50"
+              onClick={onRemoveSection}
+              title="Remove this meal section"
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="bg-white">
