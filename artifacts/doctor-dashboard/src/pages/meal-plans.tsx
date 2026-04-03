@@ -15,9 +15,6 @@ import type { LibraryMealPlan, LibraryMealPlanItem, Food } from "@workspace/api-
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useCanWrite } from "@/hooks/useRole";
-import {
-  Card, CardContent, CardHeader,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,36 +27,40 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
   Loader2, Plus, Search, ClipboardList, Pencil, Trash2,
-  Coffee, Sun, Moon, ChevronDown, ChevronUp, X, Utensils,
+  Coffee, Sun, Moon, X, Utensils, ChevronDown,
 } from "lucide-react";
 
 const DEFAULT_MEAL_SECTIONS = ["Breakfast", "Lunch", "Dinner"];
 
-const SECTION_STYLES: Record<string, { icon: React.ElementType; color: string }> = {
-  Breakfast: { icon: Coffee, color: "bg-amber-50 text-amber-600 border-amber-200" },
-  Lunch:     { icon: Sun,    color: "bg-sky-50 text-sky-600 border-sky-200" },
-  Dinner:    { icon: Moon,   color: "bg-indigo-50 text-indigo-600 border-indigo-200" },
+const SECTION_STYLES: Record<string, { icon: React.ElementType; color: string; headerBg: string }> = {
+  Breakfast: { icon: Coffee, color: "text-amber-600 border-amber-200 bg-amber-50", headerBg: "bg-amber-50/60" },
+  Lunch:     { icon: Sun,    color: "text-sky-600 border-sky-200 bg-sky-50",       headerBg: "bg-sky-50/60" },
+  Dinner:    { icon: Moon,   color: "text-indigo-600 border-indigo-200 bg-indigo-50", headerBg: "bg-indigo-50/60" },
 };
 
-const CUSTOM_SECTION_COLORS = [
-  "bg-purple-50 text-purple-600 border-purple-200",
-  "bg-green-50 text-green-600 border-green-200",
-  "bg-rose-50 text-rose-600 border-rose-200",
-  "bg-teal-50 text-teal-600 border-teal-200",
-  "bg-orange-50 text-orange-600 border-orange-200",
+const CUSTOM_COLORS = [
+  { color: "text-purple-600 border-purple-200 bg-purple-50", headerBg: "bg-purple-50/60" },
+  { color: "text-green-600 border-green-200 bg-green-50",    headerBg: "bg-green-50/60" },
+  { color: "text-rose-600 border-rose-200 bg-rose-50",       headerBg: "bg-rose-50/60" },
+  { color: "text-teal-600 border-teal-200 bg-teal-50",       headerBg: "bg-teal-50/60" },
+  { color: "text-orange-600 border-orange-200 bg-orange-50", headerBg: "bg-orange-50/60" },
 ];
 
-function getSectionStyle(mealType: string, index: number): { icon: React.ElementType; color: string } {
-  if (SECTION_STYLES[mealType]) return SECTION_STYLES[mealType];
-  return { icon: Utensils, color: CUSTOM_SECTION_COLORS[index % CUSTOM_SECTION_COLORS.length] };
+function getSectionStyle(name: string, idx: number) {
+  return SECTION_STYLES[name] ?? { icon: Utensils, ...CUSTOM_COLORS[idx % CUSTOM_COLORS.length] };
 }
 
+// ── Main Page ──────────────────────────────────────────────────────────────────
+
 export default function MealPlansPage() {
+  const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [editPlan, setEditPlan] = useState<LibraryMealPlan | null>(null);
   const [deletePlanId, setDeletePlanId] = useState<number | null>(null);
-  const [expandedPlanId, setExpandedPlanId] = useState<number | null>(null);
 
   const { data: plans, isLoading } = useGetLibraryMealPlans();
   const queryClient = useQueryClient();
@@ -70,6 +71,17 @@ export default function MealPlansPage() {
   const updatePlan = useUpdateLibraryMealPlan();
   const deletePlan = useDeleteLibraryMealPlan();
 
+  const activePlan = useMemo(() => {
+    if (!plans || plans.length === 0) return null;
+    return plans.find((p) => p.id === selectedPlanId) ?? plans[0];
+  }, [plans, selectedPlanId]);
+
+  useEffect(() => {
+    if (activePlan && selectedPlanId !== activePlan.id) {
+      setSelectedPlanId(activePlan.id);
+    }
+  }, [activePlan, selectedPlanId]);
+
   function handleCreate(name: string, description: string) {
     createPlan.mutate(
       { data: { name, description } },
@@ -77,7 +89,7 @@ export default function MealPlansPage() {
         onSuccess: (plan) => {
           queryClient.invalidateQueries({ queryKey: getGetLibraryMealPlansQueryKey() });
           setCreateOpen(false);
-          setExpandedPlanId(plan.id);
+          setSelectedPlanId(plan.id);
           toast({ title: "Meal plan created" });
         },
         onError: () => toast({ title: "Failed to create plan", variant: "destructive" }),
@@ -106,7 +118,7 @@ export default function MealPlansPage() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetLibraryMealPlansQueryKey() });
-          if (expandedPlanId === planId) setExpandedPlanId(null);
+          if (selectedPlanId === planId) setSelectedPlanId(null);
           setDeletePlanId(null);
           toast({ title: "Plan deleted" });
         },
@@ -115,53 +127,96 @@ export default function MealPlansPage() {
     );
   }
 
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-24">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5">
+      {/* Header row */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Meal Plans</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Create and manage reusable meal plans</p>
+          <p className="text-sm text-slate-500 mt-0.5">Manage meal sections and foods</p>
         </div>
         {canWrite && (
-          <Button onClick={() => setCreateOpen(true)} className="gap-2 shadow-sm">
+          <Button onClick={() => setCreateOpen(true)} className="gap-2 shadow-sm shrink-0">
             <Plus className="h-4 w-4" />
             New Plan
           </Button>
         )}
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      ) : !plans || plans.length === 0 ? (
-        <Card className="border-dashed border-2 border-slate-200">
-          <CardContent className="py-16 flex flex-col items-center gap-3 text-slate-400">
-            <ClipboardList className="h-10 w-10 opacity-30" />
-            <p className="text-sm font-medium">No meal plans yet</p>
-            {canWrite && (
-              <Button variant="outline" size="sm" onClick={() => setCreateOpen(true)}>
-                <Plus className="h-4 w-4 mr-1" /> Create First Plan
+      {/* Plan selector */}
+      {plans && plans.length > 0 && (
+        <div className="flex items-center gap-3">
+          <div className="flex-1 max-w-xs">
+            <Select
+              value={String(activePlan?.id ?? "")}
+              onValueChange={(v) => setSelectedPlanId(Number(v))}
+            >
+              <SelectTrigger className="h-9 text-sm font-medium bg-white shadow-sm">
+                <SelectValue placeholder="Select a plan" />
+              </SelectTrigger>
+              <SelectContent>
+                {plans.map((p) => (
+                  <SelectItem key={p.id} value={String(p.id)}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {activePlan && canWrite && (
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-slate-400 hover:text-primary"
+                onClick={() => setEditPlan(activePlan)}
+                title="Rename plan"
+              >
+                <Pencil className="h-4 w-4" />
               </Button>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {plans.map((plan) => (
-            <PlanCard
-              key={plan.id}
-              plan={plan}
-              isExpanded={expandedPlanId === plan.id}
-              onToggle={() => setExpandedPlanId(expandedPlanId === plan.id ? null : plan.id)}
-              onEdit={() => setEditPlan(plan)}
-              onDelete={() => setDeletePlanId(plan.id)}
-              canWrite={canWrite}
-            />
-          ))}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-slate-400 hover:text-destructive"
+                onClick={() => setDeletePlanId(activePlan.id)}
+                title="Delete plan"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+          {activePlan?.description && (
+            <p className="text-xs text-slate-500 italic truncate max-w-sm hidden sm:block">
+              {activePlan.description}
+            </p>
+          )}
         </div>
       )}
 
+      {/* Plan editor */}
+      {!plans || plans.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 py-20 text-slate-400">
+          <ClipboardList className="h-10 w-10 opacity-30" />
+          <p className="text-sm font-medium">No meal plans yet</p>
+          {canWrite && (
+            <Button variant="outline" size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" /> Create First Plan
+            </Button>
+          )}
+        </div>
+      ) : activePlan ? (
+        <PlanEditor planId={activePlan.id} canWrite={canWrite} />
+      ) : null}
+
+      {/* Dialogs */}
       <PlanFormDialog
         open={createOpen}
         onClose={() => setCreateOpen(false)}
@@ -176,7 +231,7 @@ export default function MealPlansPage() {
           onClose={() => setEditPlan(null)}
           onSubmit={(name, desc) => handleUpdate(editPlan.id, name, desc)}
           isPending={updatePlan.isPending}
-          title="Edit Meal Plan"
+          title="Rename Plan"
           initialValues={{ name: editPlan.name, description: editPlan.description ?? "" }}
         />
       )}
@@ -205,28 +260,11 @@ export default function MealPlansPage() {
   );
 }
 
-// ── Plan Card ─────────────────────────────────────────────────────────────────
+// ── Plan Editor (always-expanded sections) ─────────────────────────────────────
 
-function PlanCard({
-  plan,
-  isExpanded,
-  onToggle,
-  onEdit,
-  onDelete,
-  canWrite,
-}: {
-  plan: LibraryMealPlan;
-  isExpanded: boolean;
-  onToggle: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-  canWrite: boolean;
-}) {
-  const { data: planDetail, isLoading: detailLoading } = useGetLibraryMealPlan(plan.id, {
-    query: {
-      queryKey: getGetLibraryMealPlanQueryKey(plan.id),
-      enabled: isExpanded,
-    },
+function PlanEditor({ planId, canWrite }: { planId: number; canWrite: boolean }) {
+  const { data: planDetail, isLoading } = useGetLibraryMealPlan(planId, {
+    query: { queryKey: getGetLibraryMealPlanQueryKey(planId) },
   });
 
   const queryClient = useQueryClient();
@@ -237,7 +275,9 @@ function PlanCard({
   const [extraSections, setExtraSections] = useState<string[]>([]);
   const [addMealOpen, setAddMealOpen] = useState(false);
   const [newMealName, setNewMealName] = useState("");
-  const newMealInputRef = useRef<HTMLInputElement>(null);
+
+  // Reset extra sections when plan changes
+  useEffect(() => { setExtraSections([]); }, [planId]);
 
   const allSections = useMemo(() => {
     const fromItems = (planDetail?.items ?? []).map((i) => i.mealType);
@@ -245,23 +285,27 @@ function PlanCard({
     const result: string[] = [];
     for (const name of [...DEFAULT_MEAL_SECTIONS, ...fromItems, ...extraSections]) {
       const key = name.toLowerCase();
-      if (!seen.has(key)) {
-        seen.add(key);
-        result.push(name);
-      }
+      if (!seen.has(key)) { seen.add(key); result.push(name); }
     }
     return result;
   }, [planDetail?.items, extraSections]);
 
-  function handleAddItem(mealType: string, formData: {
-    foodName: string; portionGrams: number; unit: string;
-    calories: number; carbs: number; fat: number; protein: number; notes: string;
-  }, callbacks?: { onSuccess?: () => void; onError?: () => void }) {
+  function getMealItems(mealType: string): LibraryMealPlanItem[] {
+    return planDetail?.items?.filter(
+      (i) => i.mealType.toLowerCase() === mealType.toLowerCase()
+    ) ?? [];
+  }
+
+  function handleAddItem(
+    mealType: string,
+    formData: { foodName: string; portionGrams: number; unit: string; calories: number; carbs: number; fat: number; protein: number; notes: string },
+    callbacks?: { onSuccess?: () => void; onError?: () => void }
+  ) {
     addItem.mutate(
-      { planId: plan.id, data: { mealType, ...formData } },
+      { planId, data: { mealType, ...formData } },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getGetLibraryMealPlanQueryKey(plan.id) });
+          queryClient.invalidateQueries({ queryKey: getGetLibraryMealPlanQueryKey(planId) });
           toast({ title: `Added to ${mealType}` });
           callbacks?.onSuccess?.();
         },
@@ -275,40 +319,32 @@ function PlanCard({
 
   function handleDeleteItem(itemId: number) {
     deleteItem.mutate(
-      { planId: plan.id, itemId },
+      { planId, itemId },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getGetLibraryMealPlanQueryKey(plan.id) });
-          toast({ title: "Item removed" });
+          queryClient.invalidateQueries({ queryKey: getGetLibraryMealPlanQueryKey(planId) });
+          toast({ title: "Food removed" });
         },
-        onError: () => toast({ title: "Failed to remove item", variant: "destructive" }),
+        onError: () => toast({ title: "Failed to remove food", variant: "destructive" }),
       }
     );
   }
 
   function handleRemoveSection(mealType: string) {
-    const items = getMealItems(mealType);
-    if (items.length > 0) {
-      items.forEach((item) => {
-        deleteItem.mutate(
-          { planId: plan.id, itemId: item.id },
-          {
-            onSuccess: () => {
-              queryClient.invalidateQueries({ queryKey: getGetLibraryMealPlanQueryKey(plan.id) });
-            },
-          }
-        );
-      });
-      toast({ title: `Removed all items from ${mealType}` });
-    }
+    getMealItems(mealType).forEach((item) => {
+      deleteItem.mutate(
+        { planId, itemId: item.id },
+        { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetLibraryMealPlanQueryKey(planId) }) }
+      );
+    });
     setExtraSections((prev) => prev.filter((s) => s.toLowerCase() !== mealType.toLowerCase()));
+    toast({ title: `Removed ${mealType}` });
   }
 
   function handleAddMealSection() {
     const name = newMealName.trim();
     if (!name) return;
-    const exists = allSections.some((s) => s.toLowerCase() === name.toLowerCase());
-    if (exists) {
+    if (allSections.some((s) => s.toLowerCase() === name.toLowerCase())) {
       toast({ title: "Meal section already exists", variant: "destructive" });
       return;
     }
@@ -317,133 +353,80 @@ function PlanCard({
     setAddMealOpen(false);
   }
 
-  function getMealItems(mealType: string): LibraryMealPlanItem[] {
-    return planDetail?.items?.filter(
-      (i) => i.mealType.toLowerCase() === mealType.toLowerCase()
-    ) ?? [];
-  }
-
   const isDefault = (name: string) =>
     DEFAULT_MEAL_SECTIONS.some((d) => d.toLowerCase() === name.toLowerCase());
 
-  return (
-    <Card className="border border-slate-200 shadow-sm">
-      <CardHeader className="py-3 px-4">
-        <div className="flex items-center justify-between gap-3">
-          <button
-            className="flex items-center gap-3 flex-1 text-left min-w-0"
-            onClick={onToggle}
-          >
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-slate-900 truncate">{plan.name}</p>
-              {plan.description && (
-                <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{plan.description}</p>
-              )}
-            </div>
-            {isExpanded
-              ? <ChevronUp className="h-4 w-4 text-slate-400 shrink-0" />
-              : <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" />
-            }
-          </button>
-          <div className="flex items-center gap-1 shrink-0">
-            {canWrite && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-slate-400 hover:text-primary"
-                onClick={(e) => { e.stopPropagation(); onEdit(); }}
-                title="Edit plan"
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-            )}
-            {canWrite && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-slate-400 hover:text-destructive"
-                onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                title="Delete plan"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        </div>
-      </CardHeader>
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-16">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
 
-      {isExpanded && (
-        <CardContent className="px-4 pb-4 pt-0 border-t border-slate-100">
-          {detailLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+  return (
+    <div className="space-y-3">
+      {allSections.map((sectionName, idx) => {
+        const { icon: Icon, color, headerBg } = getSectionStyle(sectionName, idx);
+        const items = getMealItems(sectionName);
+        const removable = canWrite && (!isDefault(sectionName) || items.length === 0);
+        return (
+          <MealSection
+            key={sectionName}
+            mealType={sectionName}
+            icon={Icon}
+            colorClass={color}
+            headerBg={headerBg}
+            items={items}
+            canWrite={canWrite}
+            onAddItem={(data, cbs) => handleAddItem(sectionName, data, cbs)}
+            onDeleteItem={handleDeleteItem}
+            isAddPending={addItem.isPending}
+            onRemoveSection={removable ? () => handleRemoveSection(sectionName) : undefined}
+          />
+        );
+      })}
+
+      {/* Add meal section */}
+      {canWrite && (
+        <div className="pt-1">
+          {addMealOpen ? (
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="e.g. Morning Snack, Supper, Evening Snack..."
+                value={newMealName}
+                onChange={(e) => setNewMealName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleAddMealSection();
+                  if (e.key === "Escape") { setAddMealOpen(false); setNewMealName(""); }
+                }}
+                className="h-9 text-sm flex-1"
+                autoFocus
+              />
+              <Button size="sm" className="h-9 px-4" onClick={handleAddMealSection}>
+                Add
+              </Button>
+              <Button
+                variant="outline" size="sm" className="h-9 px-4"
+                onClick={() => { setAddMealOpen(false); setNewMealName(""); }}
+              >
+                Cancel
+              </Button>
             </div>
           ) : (
-            <div className="space-y-3 pt-3">
-              {allSections.map((sectionName, idx) => {
-                const { icon: Icon, color } = getSectionStyle(sectionName, idx);
-                const items = getMealItems(sectionName);
-                const removable = canWrite && (!isDefault(sectionName) || items.length === 0);
-                return (
-                  <MealSection
-                    key={sectionName}
-                    mealType={sectionName}
-                    icon={Icon}
-                    colorClass={color}
-                    items={items}
-                    canWrite={canWrite}
-                    onAddItem={(data, callbacks) => handleAddItem(sectionName, data, callbacks)}
-                    onDeleteItem={handleDeleteItem}
-                    isAddPending={addItem.isPending}
-                    onRemoveSection={removable ? () => handleRemoveSection(sectionName) : undefined}
-                  />
-                );
-              })}
-
-              {canWrite && (
-                <div className="pt-1">
-                  {addMealOpen ? (
-                    <div className="flex items-center gap-2">
-                      <Input
-                        ref={newMealInputRef}
-                        placeholder="e.g. Morning Snack, Supper..."
-                        value={newMealName}
-                        onChange={(e) => setNewMealName(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") handleAddMealSection();
-                          if (e.key === "Escape") { setAddMealOpen(false); setNewMealName(""); }
-                        }}
-                        className="h-8 text-sm flex-1"
-                        autoFocus
-                      />
-                      <Button size="sm" className="h-8 text-xs px-3" onClick={handleAddMealSection}>
-                        Add
-                      </Button>
-                      <Button
-                        variant="outline" size="sm" className="h-8 text-xs px-3"
-                        onClick={() => { setAddMealOpen(false); setNewMealName(""); }}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 text-xs gap-1.5 text-slate-500 border-dashed w-full"
-                      onClick={() => setAddMealOpen(true)}
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                      Add Meal (e.g. Snack, Supper)
-                    </Button>
-                  )}
-                </div>
-              )}
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 text-sm gap-2 text-slate-500 border-dashed w-full hover:border-primary hover:text-primary"
+              onClick={() => setAddMealOpen(true)}
+            >
+              <Plus className="h-4 w-4" />
+              Add Meal (e.g. Snack, Supper)
+            </Button>
           )}
-        </CardContent>
+        </div>
       )}
-    </Card>
+    </div>
   );
 }
 
@@ -453,6 +436,7 @@ function MealSection({
   mealType,
   icon: Icon,
   colorClass,
+  headerBg,
   items,
   canWrite,
   onAddItem,
@@ -463,44 +447,39 @@ function MealSection({
   mealType: string;
   icon: React.ElementType;
   colorClass: string;
+  headerBg: string;
   items: LibraryMealPlanItem[];
   canWrite: boolean;
-  onAddItem: (data: {
-    foodName: string; portionGrams: number; unit: string;
-    calories: number; carbs: number; fat: number; protein: number; notes: string;
-  }, callbacks?: { onSuccess?: () => void; onError?: () => void }) => void;
+  onAddItem: (
+    data: { foodName: string; portionGrams: number; unit: string; calories: number; carbs: number; fat: number; protein: number; notes: string },
+    callbacks?: { onSuccess?: () => void; onError?: () => void }
+  ) => void;
   onDeleteItem: (itemId: number) => void;
   isAddPending: boolean;
   onRemoveSection?: () => void;
 }) {
   const [addOpen, setAddOpen] = useState(false);
 
-  function handleSubmit(data: {
-    foodName: string; portionGrams: number; unit: string;
-    calories: number; carbs: number; fat: number; protein: number; notes: string;
-  }) {
-    onAddItem(data, {
-      onSuccess: () => setAddOpen(false),
-    });
-  }
-
   return (
-    <div className="rounded-xl border border-slate-200 overflow-hidden">
-      <div className="flex items-center justify-between px-3 py-2.5 bg-slate-50 border-b border-slate-200">
-        <div className="flex items-center gap-2">
-          <div className={`flex h-7 w-7 items-center justify-center rounded-lg border ${colorClass}`}>
-            <Icon className="h-3.5 w-3.5" />
+    <div className="rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+      {/* Section header */}
+      <div className={`flex items-center justify-between px-4 py-3 border-b border-slate-200 ${headerBg}`}>
+        <div className="flex items-center gap-2.5">
+          <div className={`flex h-8 w-8 items-center justify-center rounded-lg border ${colorClass}`}>
+            <Icon className="h-4 w-4" />
           </div>
-          <span className="text-sm font-semibold text-slate-800">{mealType}</span>
-          <span className="text-xs text-slate-500">({items.length} item{items.length !== 1 ? "s" : ""})</span>
+          <span className="font-semibold text-slate-800">{mealType}</span>
+          <span className="text-xs text-slate-500 font-normal">
+            {items.length} {items.length === 1 ? "item" : "items"}
+          </span>
         </div>
         <div className="flex items-center gap-1.5">
           {canWrite && (
             <Button
               variant="outline"
               size="sm"
-              className="h-7 text-xs gap-1 bg-white"
-              onClick={() => setAddOpen(!addOpen)}
+              className="h-7 text-xs gap-1 bg-white/80 hover:bg-white"
+              onClick={() => setAddOpen((v) => !v)}
             >
               <Plus className="h-3 w-3" />
               Add Food
@@ -520,38 +499,40 @@ function MealSection({
         </div>
       </div>
 
-      <div className="bg-white">
-        {addOpen && (
-          <div className="border-b border-slate-100 p-3">
-            <FoodPicker
-              mealType={mealType}
-              onSubmit={handleSubmit}
-              onCancel={() => setAddOpen(false)}
-              isPending={isAddPending}
-            />
-          </div>
-        )}
+      {/* Food add form */}
+      {addOpen && (
+        <div className="border-b border-slate-100 bg-slate-50/50 p-3">
+          <FoodPicker
+            mealType={mealType}
+            onSubmit={(data) => onAddItem(data, { onSuccess: () => setAddOpen(false) })}
+            onCancel={() => setAddOpen(false)}
+            isPending={isAddPending}
+          />
+        </div>
+      )}
 
+      {/* Food list */}
+      <div className="bg-white">
         {items.length === 0 && !addOpen ? (
-          <p className="text-xs text-slate-400 text-center py-4">No foods added yet</p>
+          <p className="text-xs text-slate-400 text-center py-5">No foods added yet</p>
         ) : (
           <div className="divide-y divide-slate-50">
             {items.map((item) => (
-              <div key={item.id} className="flex items-center justify-between px-3 py-2.5">
+              <div key={item.id} className="flex items-center justify-between px-4 py-2.5 group">
                 <div>
                   <p className="text-sm font-medium text-slate-800">{item.foodName}</p>
-                  <p className="text-xs text-slate-400">
-                    {item.portionGrams}{item.unit} · {Math.round(item.calories ?? 0)} kcal
-                    {" · "}C:{(item.carbs ?? 0).toFixed(1)}g · F:{(item.fat ?? 0).toFixed(1)}g · P:{(item.protein ?? 0).toFixed(1)}g
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    {item.portionGrams}{item.unit} &middot; {Math.round(item.calories ?? 0)} kcal
+                    {" \u00b7 "}C:{(item.carbs ?? 0).toFixed(1)}g &middot; F:{(item.fat ?? 0).toFixed(1)}g &middot; P:{(item.protein ?? 0).toFixed(1)}g
                   </p>
                 </div>
                 {canWrite && (
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 text-slate-400 hover:text-destructive shrink-0"
+                    className="h-7 w-7 text-slate-300 hover:text-destructive shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={() => onDeleteItem(item.id)}
-                    title="Remove"
+                    title="Remove food"
                   >
                     <X className="h-3.5 w-3.5" />
                   </Button>
@@ -574,10 +555,7 @@ function FoodPicker({
   isPending,
 }: {
   mealType: string;
-  onSubmit: (data: {
-    foodName: string; portionGrams: number; unit: string;
-    calories: number; carbs: number; fat: number; protein: number; notes: string;
-  }) => void;
+  onSubmit: (data: { foodName: string; portionGrams: number; unit: string; calories: number; carbs: number; fat: number; protein: number; notes: string }) => void;
   onCancel: () => void;
   isPending: boolean;
 }) {
@@ -627,7 +605,9 @@ function FoodPicker({
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Add food to {mealType}</p>
+      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+        Add food to {mealType}
+      </p>
 
       {!selectedFood ? (
         <>
@@ -653,7 +633,7 @@ function FoodPicker({
                 >
                   <p className="text-sm font-medium text-slate-800">{food.name}</p>
                   <p className="text-xs text-slate-400">
-                    {food.calories} kcal/100g · C:{food.carbs}g · F:{food.fat}g · P:{food.protein}g
+                    {food.calories} kcal/100g &middot; C:{food.carbs}g · F:{food.fat}g · P:{food.protein}g
                   </p>
                 </button>
               ))
@@ -672,7 +652,7 @@ function FoodPicker({
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-2">
               <Label className="text-xs text-slate-600 whitespace-nowrap">Portion (g)</Label>
               <Input
@@ -756,19 +736,21 @@ function PlanFormDialog({
               maxLength={1000}
               onChange={(e) => setDescription(e.target.value)}
               className="resize-none rounded-xl"
-              rows={4}
+              rows={3}
             />
-            <p className="text-xs text-slate-400 text-right">{description.length} / 1000</p>
           </div>
         </div>
         <div className="flex justify-end gap-2 pt-2">
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button variant="outline" onClick={onClose} className="rounded-xl">
+            Cancel
+          </Button>
           <Button
-            onClick={() => onSubmit(name, description)}
+            onClick={() => onSubmit(name.trim(), description.trim())}
             disabled={!name.trim() || isPending}
+            className="rounded-xl"
           >
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save Plan
+            Save
           </Button>
         </div>
       </DialogContent>
