@@ -104,6 +104,15 @@ export default function AddKidPage() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit((d) => mutation.mutate({ data: { ...d, dietType: d.dietType as CreateKidRequestDietType, dietSubCategory: d.dietType === "classic" ? d.dietSubCategory : undefined } }))} className="space-y-6">
               
+              <FormField control={form.control} name="kidCode" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>PHN No.</FormLabel>
+                  <FormControl><Input className="rounded-xl bg-slate-50 font-mono" placeholder="e.g. PHN45129" {...field} /></FormControl>
+                  <FormMessage />
+                  <p className="text-xs text-slate-500">Enter the Patient Health Number assigned externally (e.g. PHN45129).</p>
+                </FormItem>
+              )} />
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField control={form.control} name="name" render={({ field }) => (
                   <FormItem>
@@ -192,15 +201,6 @@ export default function AddKidPage() {
                   </FormItem>
                 )} />
               </div>
-
-              <FormField control={form.control} name="kidCode" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>PHN No.</FormLabel>
-                  <FormControl><Input className="rounded-xl bg-slate-50 font-mono" placeholder="e.g. PHN45129" {...field} /></FormControl>
-                  <FormMessage />
-                  <p className="text-xs text-slate-500">Enter the Patient Health Number assigned externally (e.g. PHN45129).</p>
-                </FormItem>
-              )} />
 
               <p className="text-xs text-slate-500">You can adjust specific macros later in the Medical Controls tab.</p>
 
