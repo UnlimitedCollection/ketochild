@@ -298,7 +298,7 @@ export default function AnalyticsPage() {
                 <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Diet Type</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Days Tracked</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Compliance</th>
-                <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Risk</th>
+                <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Side Effect</th>
                 <th className="text-center px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Profile</th>
               </tr>
             </thead>
@@ -340,7 +340,7 @@ export default function AnalyticsPage() {
                         backgroundColor: `${RISK_COLORS[p.risk]}18`,
                       }}
                     >
-                      {p.risk === "good" ? "Good" : p.risk === "moderate" ? "Moderate" : "High Risk"}
+                      {p.risk === "good" ? "Good" : p.risk === "moderate" ? "Moderate" : "Side Effect"}
                     </span>
                   </td>
                   <td className="px-6 py-3">
