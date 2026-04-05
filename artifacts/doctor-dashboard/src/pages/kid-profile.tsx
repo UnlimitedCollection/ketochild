@@ -31,7 +31,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useCanWrite } from "@/hooks/useRole";
-import { Activity, User, Scale, Calendar, FileText, Trash2, Settings, Plus, Loader2, BarChart2, TrendingUp, Flame, FlaskConical, AlertTriangle, ClipboardList, CheckCircle2, Circle, ChevronDown, ChevronUp, Coffee, Sun, Moon, LayoutGrid, Camera, ImageIcon, X, Pencil, LineChart as LineChartIcon, UtensilsCrossed } from "lucide-react";
+import { Activity, User, Scale, Calendar, FileText, Trash2, Settings, Plus, Loader2, BarChart2, TrendingUp, Flame, FlaskConical, AlertTriangle, ClipboardList, CheckCircle2, Circle, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Coffee, Sun, Moon, LayoutGrid, Camera, ImageIcon, X, Pencil, LineChart as LineChartIcon, UtensilsCrossed } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function KidProfilePage() {
@@ -1748,11 +1748,20 @@ function MealDayAccordion({ kidId, date, onManage }: { kidId: number; date: stri
   );
 }
 
+const MEAL_LOG_PAGE_SIZE = 10;
+
 function MealHistoryTab({ kidId, medical }: { kidId: number; medical: MedicalData }) {
   const { data: rawHistory, isLoading } = useGetKidMealHistory(kidId);
   const [chartView, setChartView] = useState<"7d" | "30d">("7d");
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
   const [detailDate, setDetailDate] = useState<string | null>(null);
+  const [logPage, setLogPage] = useState(1);
+
+  // Reset to page 1 whenever the patient changes
+  useEffect(() => {
+    setLogPage(1);
+    setExpandedDate(null);
+  }, [kidId]);
 
   if (isLoading) return <div className="p-8 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" /></div>;
 
@@ -1782,12 +1791,114 @@ function MealHistoryTab({ kidId, medical }: { kidId: number; medical: MedicalDat
     { key: "protein" as const, label: "Protein", unit: "g", color: "#10b981", target: targets.protein },
   ];
 
+  const totalLogPages = rawHistory ? Math.max(1, Math.ceil(rawHistory.length / MEAL_LOG_PAGE_SIZE)) : 1;
+  // Clamp current page to valid range in case history length changed
+  const safePage = Math.min(logPage, totalLogPages);
+  const pagedHistory = rawHistory
+    ? rawHistory.slice((safePage - 1) * MEAL_LOG_PAGE_SIZE, safePage * MEAL_LOG_PAGE_SIZE)
+    : [];
+
   function toggleDay(date: string) {
     setExpandedDate(prev => prev === date ? null : date);
   }
 
   return (
     <div className="space-y-6">
+      {/* Meal History Accordion List */}
+      <Card className="rounded-2xl shadow-sm border-slate-200 overflow-hidden bg-white">
+        <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-slate-500" /> Daily Meal Log
+          </CardTitle>
+          <CardDescription className="text-xs">Click any day to expand per-meal food breakdown</CardDescription>
+        </CardHeader>
+        <div className="divide-y divide-slate-100">
+          {!rawHistory || rawHistory.length === 0 ? (
+            <div className="py-10 text-center text-slate-500 text-sm">No meal history recorded.</div>
+          ) : pagedHistory.map((day) => {
+            const isExpanded = expandedDate === day.date;
+            return (
+              <div key={day.date} className="bg-white hover:bg-slate-50/40 transition-colors">
+                {/* Row header */}
+                <button
+                  className="w-full text-left px-4 py-3 flex items-center gap-3 focus:outline-none"
+                  onClick={() => toggleDay(day.date)}
+                  aria-expanded={isExpanded}
+                >
+                  <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-2 items-center text-sm">
+                    <div>
+                      <div className="font-semibold text-slate-800">{format(parseISO(day.date), 'EEE, MMM d')}</div>
+                      <div className="text-xs text-slate-400">{format(parseISO(day.date), 'yyyy')}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${day.completionRate < 0.5 ? 'bg-destructive' : day.completionRate < 0.8 ? 'bg-orange-500' : 'bg-green-500'}`}
+                          style={{ width: `${Math.round(day.completionRate * 100)}%` }}
+                        />
+                      </div>
+                      <span className="font-medium text-slate-700">{Math.round(day.completionRate * 100)}%</span>
+                    </div>
+                    <div className="text-slate-600 hidden md:block">
+                      <span className="text-green-600 font-semibold">{day.completedMeals}</span>/{day.totalMeals} meals
+                      {day.missedMeals > 0 && <span className="text-destructive ml-1 text-xs">({day.missedMeals} missed)</span>}
+                    </div>
+                    <div className="text-slate-500 hidden md:block text-xs font-mono">
+                      {Math.round(day.totalCalories ?? 0)} kcal · F{Math.round(day.totalFat ?? 0)} P{Math.round(day.totalProtein ?? 0)} C{Math.round(day.totalCarbs ?? 0)}
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-slate-400">
+                    {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </div>
+                </button>
+
+                {/* Accordion detail */}
+                {isExpanded && (
+                  <MealDayAccordion
+                    kidId={kidId}
+                    date={day.date}
+                    onManage={() => setDetailDate(day.date)}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {totalLogPages > 1 && (
+          <div className="flex items-center justify-center gap-2 py-3 border-t border-slate-100 bg-slate-50/50">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 text-xs"
+              disabled={safePage === 1}
+              onClick={() => { setLogPage(p => Math.max(1, p - 1)); setExpandedDate(null); }}
+            >
+              <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
+            </Button>
+            {Array.from({ length: totalLogPages }, (_, i) => i + 1).map(page => (
+              <Button
+                key={page}
+                size="sm"
+                variant={page === safePage ? "default" : "ghost"}
+                className="h-7 w-7 p-0 text-xs"
+                onClick={() => { setLogPage(page); setExpandedDate(null); }}
+              >
+                {page}
+              </Button>
+            ))}
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 text-xs"
+              disabled={safePage === totalLogPages}
+              onClick={() => { setLogPage(p => Math.min(totalLogPages, p + 1)); setExpandedDate(null); }}
+            >
+              Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
+            </Button>
+          </div>
+        )}
+      </Card>
+
       {/* Nutrition Charts Section */}
       <Card className="rounded-2xl shadow-sm border-slate-200 bg-white">
         <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-slate-100">
@@ -1845,68 +1956,6 @@ function MealHistoryTab({ kidId, medical }: { kidId: number; medical: MedicalDat
             </div>
           )}
         </CardContent>
-      </Card>
-
-      {/* Meal History Accordion List */}
-      <Card className="rounded-2xl shadow-sm border-slate-200 overflow-hidden bg-white">
-        <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-slate-500" /> Daily Meal Log
-          </CardTitle>
-          <CardDescription className="text-xs">Click any day to expand per-meal food breakdown</CardDescription>
-        </CardHeader>
-        <div className="divide-y divide-slate-100">
-          {!rawHistory || rawHistory.length === 0 ? (
-            <div className="py-10 text-center text-slate-500 text-sm">No meal history recorded.</div>
-          ) : rawHistory.map((day) => {
-            const isExpanded = expandedDate === day.date;
-            return (
-              <div key={day.date} className="bg-white hover:bg-slate-50/40 transition-colors">
-                {/* Row header */}
-                <button
-                  className="w-full text-left px-4 py-3 flex items-center gap-3 focus:outline-none"
-                  onClick={() => toggleDay(day.date)}
-                  aria-expanded={isExpanded}
-                >
-                  <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-2 items-center text-sm">
-                    <div>
-                      <div className="font-semibold text-slate-800">{format(parseISO(day.date), 'EEE, MMM d')}</div>
-                      <div className="text-xs text-slate-400">{format(parseISO(day.date), 'yyyy')}</div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${day.completionRate < 0.5 ? 'bg-destructive' : day.completionRate < 0.8 ? 'bg-orange-500' : 'bg-green-500'}`}
-                          style={{ width: `${Math.round(day.completionRate * 100)}%` }}
-                        />
-                      </div>
-                      <span className="font-medium text-slate-700">{Math.round(day.completionRate * 100)}%</span>
-                    </div>
-                    <div className="text-slate-600 hidden md:block">
-                      <span className="text-green-600 font-semibold">{day.completedMeals}</span>/{day.totalMeals} meals
-                      {day.missedMeals > 0 && <span className="text-destructive ml-1 text-xs">({day.missedMeals} missed)</span>}
-                    </div>
-                    <div className="text-slate-500 hidden md:block text-xs font-mono">
-                      {Math.round(day.totalCalories ?? 0)} kcal · F{Math.round(day.totalFat ?? 0)} P{Math.round(day.totalProtein ?? 0)} C{Math.round(day.totalCarbs ?? 0)}
-                    </div>
-                  </div>
-                  <div className="shrink-0 text-slate-400">
-                    {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </div>
-                </button>
-
-                {/* Accordion detail */}
-                {isExpanded && (
-                  <MealDayAccordion
-                    kidId={kidId}
-                    date={day.date}
-                    onManage={() => setDetailDate(day.date)}
-                  />
-                )}
-              </div>
-            );
-          })}
-        </div>
       </Card>
 
       {detailDate && <MealDayDetailDialog kidId={kidId} date={detailDate} onClose={() => setDetailDate(null)} />}
