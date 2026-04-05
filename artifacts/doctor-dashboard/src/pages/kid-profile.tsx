@@ -915,14 +915,14 @@ function MedicalSettingsForm({ kidId, initialData, lastWeight }: { kidId: number
 
   const canAutoCalc = isClassicKeto && parsedRatio !== null && lastWeight !== undefined && lastWeight > 0;
 
-  function handleAutoCalc() {
+  useEffect(() => {
     if (!canAutoCalc || parsedRatio === null || lastWeight === undefined) return;
     const { calories, fat, protein, carbs } = computeKetoMacros(lastWeight, parsedRatio);
     form.setValue("dailyCalories", Math.min(calories, 2200), { shouldDirty: true });
     form.setValue("dailyFat", Math.min(fat, fatMax), { shouldDirty: true });
     form.setValue("dailyProtein", Math.min(protein, 50), { shouldDirty: true });
     form.setValue("dailyCarbs", Math.min(carbs, carbsMax), { shouldDirty: true });
-  }
+  }, [watchedMedDietType, watchedMedDietSubCategory, canAutoCalc, parsedRatio, lastWeight, fatMax, carbsMax]);
 
   const calculatedRatio = useMemo(() => {
     const f = Number(watchedFat) || 0;
@@ -993,26 +993,6 @@ function MedicalSettingsForm({ kidId, initialData, lastWeight }: { kidId: number
                   </FormItem>
                 )} />
 
-                {/* Auto-Calculate button */}
-                {canAutoCalc && canWrite && (
-                  <div className="rounded-xl border border-green-200 bg-green-50 p-3 flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-semibold text-green-800">Auto-Calculate from Last Weight</p>
-                      <p className="text-[11px] text-green-600 mt-0.5">
-                        Last weight: <span className="font-bold">{lastWeight} kg</span> · Ratio: <span className="font-bold">{watchedMedDietSubCategory}</span>
-                      </p>
-                    </div>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="shrink-0 rounded-lg border-green-400 text-green-800 hover:bg-green-100"
-                      onClick={handleAutoCalc}
-                    >
-                      Calculate
-                    </Button>
-                  </div>
-                )}
 
                 {/* Macro Sliders */}
                 <div className="space-y-5 pt-2">
