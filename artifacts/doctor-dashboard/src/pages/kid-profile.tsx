@@ -1152,17 +1152,17 @@ function MedicalSettingsForm({ kidId, initialData, lastWeight }: { kidId: number
                     </FormControl>
                   </FormItem>
                 )} />
+
+                {canWrite && (
+                  <div className="flex justify-end pt-4">
+                    <Button type="submit" disabled={mutation.isPending} className="rounded-xl px-8 shadow-md">
+                      {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Save Medical Controls
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
-
-            {canWrite && (
-              <div className="flex justify-end pt-4 border-t border-slate-100">
-                <Button type="submit" disabled={mutation.isPending} className="rounded-xl px-8 shadow-md">
-                  {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Save Medical Controls
-                </Button>
-              </div>
-            )}
           </form>
         </Form>
       </CardContent>
