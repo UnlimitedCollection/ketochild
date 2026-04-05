@@ -5,7 +5,7 @@ import { PrintButton } from "@/components/print-button";
 import { PrintFilterDialog, type PrintFilterResult } from "@/components/print-filter-dialog";
 import { DayHoverPopup } from "@/components/day-hover-popup";
 import { useParams, Link, useLocation } from "wouter";
-import { useGetKid, useAddWeightRecord, useDeleteWeightRecord, useUpdateKidMedical, useUpdateKid, useDeleteKid, useGetKidMealHistory, useGetKidKetoneReadings, useAddKetoneReading, useDeleteKetoneReading, useGetKidMealLogs, useAddMealLog, useDeleteMealLog, useGetKidMealLog, useGetKidAssignedMealPlan, useAssignKidMealPlan, useGetLibraryMealPlans, useGetFoods, useUpdateMealLogImage, getGetKidAssignedMealPlanQueryKey, useListMealTypes, useGetKidMealPlanHistory, getGetKidMealPlanHistoryQueryKey, getGetKidQueryKey, getGetKidMedicalQueryKey, type WeightRecordResponse, type LibraryMealPlanDetail, type LibraryMealPlanItem, type MedicalSettingsRequest, type UpdateKidRequest, type MealPlanAssignmentHistory, type MealDay } from "@workspace/api-client-react";
+import { useGetKid, useAddWeightRecord, useDeleteWeightRecord, useUpdateKidMedical, useUpdateKid, useDeleteKid, useGetKidMealHistory, useGetKidKetoneReadings, useAddKetoneReading, useDeleteKetoneReading, useGetKidMealLogs, useAddMealLog, useDeleteMealLog, useGetKidMealLog, useGetKidAssignedMealPlan, useGetFoods, useUpdateMealLogImage, useListMealTypes, getGetKidQueryKey, getGetKidMedicalQueryKey, type WeightRecordResponse, type LibraryMealPlanDetail, type LibraryMealPlanItem, type MedicalSettingsRequest, type UpdateKidRequest, type MealDay } from "@workspace/api-client-react";
 import { useUpload } from "@workspace/object-storage-web";
 import { z } from "zod";
 import { useForm, useWatch } from "react-hook-form";
@@ -2187,210 +2187,18 @@ function getPlanStyle(name: string) {
   return KNOWN_PLAN_STYLES[name.toLowerCase()] ?? DEFAULT_PLAN_STYLE;
 }
 
-const PLAN_COLORS = [
-  "#6366f1", "#f59e0b", "#10b981", "#ef4444", "#3b82f6", "#8b5cf6", "#ec4899", "#14b8a6",
-];
-
-function MealPlanAssignmentHistorySection({ history, isLoading }: { history: MealPlanAssignmentHistory[]; isLoading: boolean }) {
-  if (isLoading) {
-    return (
-      <Card className="rounded-2xl border-slate-200 shadow-sm">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Assignment History</CardTitle>
-        </CardHeader>
-        <CardContent className="flex justify-center py-8">
-          <Loader2 className="h-5 w-5 animate-spin text-primary" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (history.length === 0) {
-    return (
-      <Card className="rounded-2xl border-slate-200 shadow-sm">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Assignment History</CardTitle>
-          <CardDescription>No meal plan assignments yet.</CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
-
-  const uniquePlanNames = Array.from(new Set(history.map((h) => h.planName ?? "Unassigned")));
-  const planColorMap: Record<string, string> = {};
-  uniquePlanNames.forEach((name, i) => {
-    planColorMap[name] = PLAN_COLORS[i % PLAN_COLORS.length];
-  });
-
-  const chronological = [...history].reverse();
-
-  const barChartData = chronological.map((h) => ({
-    date: format(parseISO(h.assignedAt), "MMM d, yy"),
-    assignedAt: h.assignedAt,
-    planName: h.planName ?? "Unassigned",
-    duration: Math.max(h.durationDays, 1),
-    color: planColorMap[h.planName ?? "Unassigned"],
-    isCurrentPeriod: h.isCurrentPeriod,
-    doctorName: h.doctorName,
-    action: h.action,
-  }));
-
-  return (
-    <Card className="rounded-2xl border-slate-200 shadow-sm">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base">Assignment History</CardTitle>
-        <CardDescription>Visual timeline of meal plan assignments over time</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Timeline Bar Chart — dates on X-axis, bar height = duration */}
-        <div className="h-52">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={barChartData} margin={{ top: 4, right: 8, bottom: 32, left: 8 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis
-                dataKey="date"
-                tick={{ fontSize: 10 }}
-                angle={-35}
-                textAnchor="end"
-                height={48}
-                interval={0}
-              />
-              <YAxis
-                tick={{ fontSize: 10 }}
-                tickFormatter={(v) => `${v}d`}
-                label={{ value: "Days active", angle: -90, position: "insideLeft", offset: 10, fontSize: 10 }}
-                width={44}
-              />
-              <Tooltip
-                content={({ active, payload }) => {
-                  if (!active || !payload?.length) return null;
-                  const d = payload[0].payload;
-                  return (
-                    <div className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs shadow-md space-y-1">
-                      <p className="font-semibold text-slate-800">{d.planName}</p>
-                      <p className="text-slate-500">From: {format(parseISO(d.assignedAt), "MMM d, yyyy")}</p>
-                      <p className="text-slate-500">Duration: {d.isCurrentPeriod ? `${d.duration} days (ongoing)` : `${d.duration} days`}</p>
-                      <p className="text-slate-500">Action: <span className="capitalize">{d.action}</span></p>
-                      <p className="text-slate-500">By: {d.doctorName}</p>
-                    </div>
-                  );
-                }}
-              />
-              <Bar dataKey="duration" radius={[4, 4, 0, 0]}>
-                {barChartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Color Legend */}
-        <div className="flex flex-wrap gap-3">
-          {uniquePlanNames.map((name) => (
-            <div key={name} className="flex items-center gap-1.5">
-              <div className="h-3 w-3 rounded-sm shrink-0" style={{ backgroundColor: planColorMap[name] }} />
-              <span className="text-xs text-slate-600 truncate max-w-[120px]">{name}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* History Table — chronological order (oldest first) */}
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="text-xs">Date</TableHead>
-                <TableHead className="text-xs">Plan</TableHead>
-                <TableHead className="text-xs">Action</TableHead>
-                <TableHead className="text-xs text-right">Duration</TableHead>
-                <TableHead className="text-xs">Doctor</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {chronological.map((h) => (
-                <TableRow key={h.id}>
-                  <TableCell className="text-xs whitespace-nowrap">
-                    {format(parseISO(h.assignedAt), "MMM d, yyyy HH:mm")}
-                  </TableCell>
-                  <TableCell className="text-xs">
-                    <div className="flex items-center gap-1.5">
-                      <div
-                        className="h-2.5 w-2.5 rounded-sm shrink-0"
-                        style={{ backgroundColor: planColorMap[h.planName ?? "Unassigned"] }}
-                      />
-                      <span className="truncate max-w-[140px]">{h.planName ?? <em className="text-slate-400">Unassigned</em>}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-xs capitalize">
-                    <Badge
-                      variant="outline"
-                      className={
-                        h.action === "assigned" ? "border-green-200 text-green-700 bg-green-50" :
-                        h.action === "unassigned" ? "border-red-200 text-red-700 bg-red-50" :
-                        "border-blue-200 text-blue-700 bg-blue-50"
-                      }
-                    >
-                      {h.action}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-xs text-right whitespace-nowrap">
-                    {h.isCurrentPeriod
-                      ? <span className="text-primary font-medium">{h.durationDays}d (current)</span>
-                      : `${h.durationDays}d`}
-                  </TableCell>
-                  <TableCell className="text-xs text-slate-500 whitespace-nowrap">{h.doctorName}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 function MealPlanTab({ kidId, medical }: { kidId: number; medical: MedicalSettings }) {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const canWrite = useCanWrite();
   const mealTypeNames = useMemo(() => getMealTypesForDiet(medical.dietType), [medical.dietType]);
   const [expandedMeal, setExpandedMeal] = useState<string | null>(null);
-  const [pendingPlanId, setPendingPlanId] = useState<string>("");
 
   const { data: rawAssigned, isLoading: assignedLoading } = useGetKidAssignedMealPlan(kidId);
-  const { data: libraryPlans, isLoading: libraryLoading } = useGetLibraryMealPlans();
   const { data: mealHistory } = useGetKidMealHistory(kidId);
-  const assignPlan = useAssignKidMealPlan();
 
-  // Narrow the void | LibraryMealPlanDetail union to a proper typed variable
   const plan: LibraryMealPlanDetail | undefined =
     rawAssigned && typeof rawAssigned === "object" ? rawAssigned : undefined;
 
-  // Today's actual intake from the meal history (history is newest-first from the API)
   const todayStr = format(new Date(), "yyyy-MM-dd");
   const todayRecord = mealHistory?.find((d) => d.date === todayStr) ?? null;
-
-  const { data: assignmentHistory, isLoading: historyLoading } = useGetKidMealPlanHistory(kidId);
-
-  function handleAssign(planIdStr: string) {
-    const planId = planIdStr === "none" ? null : parseInt(planIdStr, 10);
-    setPendingPlanId(planIdStr);
-    assignPlan.mutate(
-      { kidId, data: { planId } },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getGetKidAssignedMealPlanQueryKey(kidId) });
-          queryClient.invalidateQueries({ queryKey: getGetKidMealPlanHistoryQueryKey(kidId) });
-          toast({ title: planId ? "Meal plan assigned" : "Meal plan unassigned" });
-        },
-        onError: () => {
-          toast({ title: "Failed to update meal plan", variant: "destructive" });
-          setPendingPlanId("");
-        },
-      }
-    );
-  }
 
   const getMealItems = (mealType: string): LibraryMealPlanItem[] =>
     plan?.items?.filter((i: LibraryMealPlanItem) => i.mealType.toLowerCase() === mealType.toLowerCase()) ?? [];
@@ -2415,8 +2223,6 @@ function MealPlanTab({ kidId, medical }: { kidId: number; medical: MedicalSettin
         protein: todayRecord.totalProtein ?? 0,
       }
     : null;
-
-  const currentPlanId = plan?.id;
 
   return (
     <div className="space-y-4">
@@ -2444,53 +2250,6 @@ function MealPlanTab({ kidId, medical }: { kidId: number; medical: MedicalSettin
           </Card>
         ))}
       </div>
-
-      {/* Assignment control */}
-      <Card className="rounded-2xl border-slate-200 shadow-sm">
-        <CardContent className="pt-5 pb-4">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-slate-800 mb-1">Assigned Library Plan</p>
-              <p className="text-xs text-slate-500">
-                Select a plan from your library to assign it to this patient.
-              </p>
-            </div>
-            {canWrite && (
-              <div className="flex items-center gap-2 min-w-[240px]">
-                <Select
-                  value={assignPlan.isPending ? pendingPlanId : (currentPlanId?.toString() ?? "none")}
-                  onValueChange={handleAssign}
-                  disabled={assignPlan.isPending || libraryLoading || assignedLoading}
-                >
-                  <SelectTrigger className="rounded-xl flex-1">
-                    <SelectValue placeholder={assignedLoading ? "Loading…" : "No plan assigned"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No plan assigned</SelectItem>
-                    {(libraryPlans ?? []).map((p) => (
-                      <SelectItem key={p.id} value={String(p.id)}>
-                        {p.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {currentPlanId && !assignPlan.isPending && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="rounded-xl shrink-0 text-red-600 border-red-200 hover:bg-red-50"
-                    onClick={() => handleAssign("none")}
-                    title="Unassign plan"
-                  >
-                    Unassign
-                  </Button>
-                )}
-                {assignPlan.isPending && <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />}
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Plan detail */}
       {assignedLoading ? (
@@ -2629,8 +2388,6 @@ function MealPlanTab({ kidId, medical }: { kidId: number; medical: MedicalSettin
         </>
       )}
 
-      {/* Assignment History — always visible */}
-      <MealPlanAssignmentHistorySection history={assignmentHistory ?? []} isLoading={historyLoading} />
     </div>
   );
 }
