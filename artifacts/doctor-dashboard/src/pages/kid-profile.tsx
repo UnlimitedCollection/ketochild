@@ -3,8 +3,9 @@ import { usePrint } from "@/hooks/usePrint";
 import { PrintLayout } from "@/components/print-layout";
 import { PrintButton } from "@/components/print-button";
 import { PrintFilterDialog, type PrintFilterResult } from "@/components/print-filter-dialog";
+import { DayHoverPopup } from "@/components/day-hover-popup";
 import { useParams, Link, useLocation } from "wouter";
-import { useGetKid, useAddWeightRecord, useDeleteWeightRecord, useUpdateKidMedical, useUpdateKid, useDeleteKid, useGetKidMealHistory, useGetKidKetoneReadings, useAddKetoneReading, useDeleteKetoneReading, useGetKidMealLogs, useAddMealLog, useDeleteMealLog, useGetKidMealLog, useGetKidAssignedMealPlan, useAssignKidMealPlan, useGetLibraryMealPlans, useGetFoods, useUpdateMealLogImage, getGetKidAssignedMealPlanQueryKey, useListMealTypes, useGetKidMealPlanHistory, getGetKidMealPlanHistoryQueryKey, getGetKidQueryKey, getGetKidMedicalQueryKey, type WeightRecordResponse, type LibraryMealPlanDetail, type LibraryMealPlanItem, type MedicalSettingsRequest, type UpdateKidRequest, type MealPlanAssignmentHistory } from "@workspace/api-client-react";
+import { useGetKid, useAddWeightRecord, useDeleteWeightRecord, useUpdateKidMedical, useUpdateKid, useDeleteKid, useGetKidMealHistory, useGetKidKetoneReadings, useAddKetoneReading, useDeleteKetoneReading, useGetKidMealLogs, useAddMealLog, useDeleteMealLog, useGetKidMealLog, useGetKidAssignedMealPlan, useAssignKidMealPlan, useGetLibraryMealPlans, useGetFoods, useUpdateMealLogImage, getGetKidAssignedMealPlanQueryKey, useListMealTypes, useGetKidMealPlanHistory, getGetKidMealPlanHistoryQueryKey, getGetKidQueryKey, getGetKidMedicalQueryKey, type WeightRecordResponse, type LibraryMealPlanDetail, type LibraryMealPlanItem, type MedicalSettingsRequest, type UpdateKidRequest, type MealPlanAssignmentHistory, type MealDay } from "@workspace/api-client-react";
 import { useUpload } from "@workspace/object-storage-web";
 import { z } from "zod";
 import { useForm, useWatch } from "react-hook-form";
@@ -1927,8 +1928,9 @@ function ComplianceCalendarMonth({
   completionMap,
 }: {
   month: Date;
-  completionMap: Map<string, number>;
+  completionMap: Map<string, MealDay>;
 }) {
+  const [hovered, setHovered] = useState<{ day: MealDay; x: number; y: number } | null>(null);
   const firstDay = startOfMonth(month);
   const lastDay = endOfMonth(month);
   const days = eachDayOfInterval({ start: firstDay, end: lastDay });
@@ -1952,21 +1954,33 @@ function ComplianceCalendarMonth({
         ))}
         {days.map((day) => {
           const dateKey = format(day, "yyyy-MM-dd");
-          const rate = completionMap.get(dateKey);
+          const mealDay = completionMap.get(dateKey);
+          const rate = mealDay?.completionRate;
           const color = getComplianceColor(rate);
-          const tooltip =
-            rate !== undefined
-              ? `${format(day, "MMM d")}: ${(rate * 100).toFixed(1)}%`
-              : `${format(day, "MMM d")}: No data`;
           return (
             <div
               key={dateKey}
-              title={tooltip}
               className={`aspect-square rounded-sm ${color} cursor-default transition-opacity hover:opacity-80`}
+              onMouseEnter={(e) => {
+                const dayData: MealDay = mealDay ?? {
+                  date: dateKey,
+                  completionRate: 0,
+                  totalMeals: 0,
+                  completedMeals: 0,
+                  missedMeals: 0,
+                  isFilled: false,
+                };
+                setHovered({ day: dayData, x: e.clientX, y: e.clientY });
+              }}
+              onMouseMove={(e) => {
+                if (hovered) setHovered((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null);
+              }}
+              onMouseLeave={() => setHovered(null)}
             />
           );
         })}
       </div>
+      {hovered && <DayHoverPopup day={hovered.day} x={hovered.x} y={hovered.y} />}
     </div>
   );
 }
@@ -1975,8 +1989,8 @@ function ComplianceTab({ kidId }: { kidId: number }) {
   const { data: rawHistory, isLoading } = useGetKidMealHistory(kidId);
 
   const completionMap = useMemo(() => {
-    const map = new Map<string, number>();
-    rawHistory?.forEach((d) => map.set(d.date, d.completionRate));
+    const map = new Map<string, MealDay>();
+    rawHistory?.forEach((d) => map.set(d.date, d));
     return map;
   }, [rawHistory]);
 

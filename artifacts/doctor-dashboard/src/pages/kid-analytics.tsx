@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useParams, useLocation } from "wouter";
 import {
   useGetKid,
@@ -6,7 +6,9 @@ import {
   useGetKidKetoneReadings,
   useGetKidAssignedMealPlan,
   type LibraryMealPlanItem,
+  type MealDay,
 } from "@workspace/api-client-react";
+import { DayHoverPopup } from "@/components/day-hover-popup";
 import {
   LineChart, Line, BarChart, Bar, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -43,8 +45,9 @@ function ComplianceCalendarMonth({
   completionMap,
 }: {
   month: Date;
-  completionMap: Map<string, number>;
+  completionMap: Map<string, MealDay>;
 }) {
+  const [hovered, setHovered] = useState<{ day: MealDay; x: number; y: number } | null>(null);
   const firstDay = startOfMonth(month);
   const lastDay = endOfMonth(month);
   const days = eachDayOfInterval({ start: firstDay, end: lastDay });
@@ -67,21 +70,33 @@ function ComplianceCalendarMonth({
         ))}
         {days.map((day) => {
           const dateKey = format(day, "yyyy-MM-dd");
-          const rate = completionMap.get(dateKey);
+          const mealDay = completionMap.get(dateKey);
+          const rate = mealDay?.completionRate;
           const color = getComplianceColor(rate);
-          const tooltip =
-            rate !== undefined
-              ? `${format(day, "MMM d")}: ${(rate * 100).toFixed(1)}%`
-              : `${format(day, "MMM d")}: No data`;
           return (
             <div
               key={dateKey}
-              title={tooltip}
               className={`aspect-square rounded-sm ${color} cursor-default transition-opacity hover:opacity-80`}
+              onMouseEnter={(e) => {
+                const dayData: MealDay = mealDay ?? {
+                  date: dateKey,
+                  completionRate: 0,
+                  totalMeals: 0,
+                  completedMeals: 0,
+                  missedMeals: 0,
+                  isFilled: false,
+                };
+                setHovered({ day: dayData, x: e.clientX, y: e.clientY });
+              }}
+              onMouseMove={(e) => {
+                if (hovered) setHovered((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null);
+              }}
+              onMouseLeave={() => setHovered(null)}
             />
           );
         })}
       </div>
+      {hovered && <DayHoverPopup day={hovered.day} x={hovered.x} y={hovered.y} />}
     </div>
   );
 }
@@ -132,8 +147,8 @@ export default function KidAnalyticsPage() {
   );
 
   const completionMap = useMemo(() => {
-    const map = new Map<string, number>();
-    mealHistory?.forEach((d) => map.set(d.date, d.completionRate));
+    const map = new Map<string, MealDay>();
+    mealHistory?.forEach((d) => map.set(d.date, d));
     return map;
   }, [mealHistory]);
 
