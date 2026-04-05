@@ -2328,10 +2328,7 @@ function MealPlanTab({ kidId }: { kidId: number }) {
             <div className="flex-1">
               <p className="text-sm font-semibold text-slate-800 mb-1">Assigned Library Plan</p>
               <p className="text-xs text-slate-500">
-                Select a plan from your library to assign it to this patient.{" "}
-                <Link to="/meal-plans" className="text-primary underline underline-offset-2 hover:opacity-80">
-                  Manage plans in the library →
-                </Link>
+                Select a plan from your library to assign it to this patient.
               </p>
             </div>
             {canWrite && (
@@ -2382,7 +2379,7 @@ function MealPlanTab({ kidId }: { kidId: number }) {
             <ClipboardList className="h-10 w-10 opacity-20" />
             <p className="text-sm">No meal plan assigned yet</p>
             <p className="text-xs text-slate-400 text-center max-w-xs">
-              Create plans in the Meal Plans library and assign them here.
+              No meal plan has been assigned to this patient yet.
             </p>
           </CardContent>
         </Card>

@@ -18,7 +18,6 @@ import KidsListPage from "@/pages/kids-list";
 import KidProfilePage from "@/pages/kid-profile";
 import AddKidPage from "@/pages/add-kid";
 import FoodsPage from "@/pages/foods";
-import MealPlansRecipesPage from "@/pages/meal-plans-recipes";
 import TokensPage from "@/pages/tokens";
 import SettingsPage from "@/pages/settings";
 import UsersPage from "@/pages/users";
@@ -112,8 +111,6 @@ function Router() {
       <Route path="/kids/:id/analytics" component={() => <ProtectedRoute component={KidAnalyticsPage} />} />
       <Route path="/kids/:id" component={() => <ProtectedRoute component={KidProfilePage} />} />
       <Route path="/foods" component={() => <ProtectedRoute component={FoodsPage} />} />
-      <Route path="/meal-plans" component={() => <ProtectedRoute component={MealPlansRecipesPage} />} />
-      <Route path="/recipes" component={() => <RedirectTo to="/meal-plans" />} />
       <Route path="/tokens" component={() => <ProtectedRoute component={TokensPage} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={SettingsPage} />} />
       <Route path="/analytics" component={() => <ProtectedRoute component={AnalyticsPage} />} />
