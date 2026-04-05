@@ -31,7 +31,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useCanWrite } from "@/hooks/useRole";
-import { Activity, User, Scale, Calendar, FileText, Trash2, Settings, Plus, Loader2, BarChart2, TrendingUp, Flame, FlaskConical, AlertTriangle, ClipboardList, CheckCircle2, Circle, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Coffee, Sun, Moon, LayoutGrid, Camera, ImageIcon, X, Pencil, LineChart as LineChartIcon, UtensilsCrossed } from "lucide-react";
+import { Activity, User, Scale, Calendar, FileText, Trash2, Settings, Plus, Loader2, BarChart2, TrendingUp, Flame, FlaskConical, AlertTriangle, ClipboardList, CheckCircle2, Circle, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Coffee, Sun, Moon, LayoutGrid, Camera, ImageIcon, X, Pencil, LineChart as LineChartIcon, UtensilsCrossed, Zap } from "lucide-react";
+import { getMealTypesForDiet } from "@/lib/keto-meal-types";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function KidProfilePage() {
@@ -320,7 +321,7 @@ export default function KidProfilePage() {
         </TabsContent>
 
         <TabsContent value="mealplan" className="focus-visible:outline-none">
-          <MealPlanTab kidId={kidId} />
+          <MealPlanTab kidId={kidId} medical={medical} />
         </TabsContent>
 
         <TabsContent value="compliance" className="focus-visible:outline-none">
@@ -397,7 +398,7 @@ export default function KidProfilePage() {
             <>
               <hr className="border-slate-300 my-4" />
               <h2 className="text-lg font-bold text-slate-800">Assigned Meal Plan</h2>
-              <MealPlanPrintSection kidId={kidId} />
+              <MealPlanPrintSection kidId={kidId} medical={medical} />
             </>
           )}
           {printSections.has("compliance") && (
@@ -447,16 +448,13 @@ function MedicalSummaryPrint({ data }: { data: MedicalSettings }) {
  * signals readiness once all in-flight queries have settled.
  */
 function PrintReadySignal({ kidId, onReady }: { kidId: number; onReady: (status: "loading" | "ready" | "error", msg?: string) => void }) {
-  // Explicitly track loading AND error state of all queries used in the print section.
-  // Includes useListMealTypes because MealPlanPrintSection depends on it for meal-type labels.
   const { isLoading: kidLoading, isError: kidError } = useGetKid(kidId);
   const { isLoading: mealHistoryLoading, isError: mealHistoryError } = useGetKidMealHistory(kidId);
   const { isLoading: ketoneLoading, isError: ketoneError } = useGetKidKetoneReadings(kidId);
   const { isLoading: assignedPlanLoading, isError: assignedPlanError } = useGetKidAssignedMealPlan(kidId);
-  const { isLoading: mealTypesLoading, isError: mealTypesError } = useListMealTypes();
 
-  const isLoading = kidLoading || mealHistoryLoading || ketoneLoading || assignedPlanLoading || mealTypesLoading;
-  const hasError = kidError || mealHistoryError || ketoneError || assignedPlanError || mealTypesError;
+  const isLoading = kidLoading || mealHistoryLoading || ketoneLoading || assignedPlanLoading;
+  const hasError = kidError || mealHistoryError || ketoneError || assignedPlanError;
 
   const signaled = useRef(false);
 
@@ -2152,6 +2150,7 @@ function ComplianceTab({ kidId }: { kidId: number }) {
 const KNOWN_PLAN_STYLES: Record<string, { icon: typeof Coffee; color: string }> = {
   breakfast: { icon: Coffee, color: "text-amber-600 bg-amber-50 border-amber-100" },
   lunch: { icon: Sun, color: "text-blue-600 bg-blue-50 border-blue-100" },
+  snack: { icon: UtensilsCrossed, color: "text-green-600 bg-green-50 border-green-100" },
   dinner: { icon: Moon, color: "text-indigo-600 bg-indigo-50 border-indigo-100" },
 };
 const DEFAULT_PLAN_STYLE = { icon: UtensilsCrossed, color: "text-slate-600 bg-slate-50 border-slate-100" };
@@ -2323,12 +2322,11 @@ function MealPlanAssignmentHistorySection({ history, isLoading }: { history: Mea
   );
 }
 
-function MealPlanTab({ kidId }: { kidId: number }) {
+function MealPlanTab({ kidId, medical }: { kidId: number; medical: MedicalSettings }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const canWrite = useCanWrite();
-  const { data: mealTypesData } = useListMealTypes();
-  const mealTypeNames = useMemo(() => (mealTypesData ?? []).map((mt) => mt.name), [mealTypesData]);
+  const mealTypeNames = useMemo(() => getMealTypesForDiet(medical.dietType), [medical.dietType]);
   const [expandedMeal, setExpandedMeal] = useState<string | null>(null);
   const [pendingPlanId, setPendingPlanId] = useState<string>("");
 
@@ -2394,6 +2392,31 @@ function MealPlanTab({ kidId }: { kidId: number }) {
 
   return (
     <div className="space-y-4">
+      {/* Daily Macro Target KPI Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {([
+          { label: "Daily Calories", value: Math.round(medical.dailyCalories), unit: "kcal", icon: Flame, color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-100" },
+          { label: "Daily Fat", value: medical.dailyFat, unit: "g", icon: Zap, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
+          { label: "Daily Protein", value: medical.dailyProtein, unit: "g", icon: TrendingUp, color: "text-green-600", bg: "bg-green-50", border: "border-green-100" },
+          { label: "Daily Carbs", value: medical.dailyCarbs, unit: "g", icon: Activity, color: "text-yellow-600", bg: "bg-yellow-50", border: "border-yellow-100" },
+        ] as const).map(({ label, value, unit, icon: KpiIcon, color, bg, border }) => (
+          <Card key={label} className={`rounded-xl ${border} shadow-sm`}>
+            <CardContent className="py-3 px-4 flex items-center gap-3">
+              <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${bg} ${color} shrink-0`}>
+                <KpiIcon className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 font-medium">{label}</p>
+                <p className={`text-lg font-bold ${color}`}>
+                  {typeof value === "number" && value % 1 !== 0 ? value.toFixed(1) : value}
+                  <span className="text-xs font-normal text-slate-400 ml-1">{unit}</span>
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
       {/* Assignment control */}
       <Card className="rounded-2xl border-slate-200 shadow-sm">
         <CardContent className="pt-5 pb-4">
@@ -2446,83 +2469,78 @@ function MealPlanTab({ kidId }: { kidId: number }) {
         <div className="flex justify-center py-8">
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
-      ) : !plan ? (
-        <Card className="border-dashed border-2 border-slate-200">
-          <CardContent className="flex flex-col items-center justify-center py-12 gap-3 text-slate-400">
-            <ClipboardList className="h-10 w-10 opacity-20" />
-            <p className="text-sm">No meal plan assigned yet</p>
-            <p className="text-xs text-slate-400 text-center max-w-xs">
-              No meal plan has been assigned to this patient yet.
-            </p>
-          </CardContent>
-        </Card>
       ) : (
         <>
-          {/* Plan header */}
-          <Card className="rounded-2xl border-slate-200 shadow-sm">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">{plan.name}</CardTitle>
-              </div>
-              {plan.description && (
-                <CardDescription>{plan.description}</CardDescription>
-              )}
-            </CardHeader>
+          {plan && (
+            <Card className="rounded-2xl border-slate-200 shadow-sm">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">{plan.name}</CardTitle>
+                </div>
+                {plan.description && (
+                  <CardDescription>{plan.description}</CardDescription>
+                )}
+              </CardHeader>
 
-            {/* Planned vs Actual macro comparison */}
-            <CardContent className="pt-0">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
-                Today's Compliance — {format(new Date(), "MMM d, yyyy")}
-              </p>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-xs text-slate-500 border-b border-slate-100">
-                      <th className="text-left pb-2 font-medium">Macro</th>
-                      <th className="text-right pb-2 font-medium">Planned</th>
-                      <th className="text-right pb-2 font-medium">Actual (today)</th>
-                      <th className="text-right pb-2 font-medium">% of Plan</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {(
-                      [
-                        { label: "Calories", planned: plannedTotals.calories, actual: actualTotals?.calories, unit: "kcal", color: "text-orange-600" },
-                        { label: "Carbs", planned: plannedTotals.carbs, actual: actualTotals?.carbs, unit: "g", color: "text-yellow-600" },
-                        { label: "Fat", planned: plannedTotals.fat, actual: actualTotals?.fat, unit: "g", color: "text-blue-600" },
-                        { label: "Protein", planned: plannedTotals.protein, actual: actualTotals?.protein, unit: "g", color: "text-green-600" },
-                      ] as const
-                    ).map(({ label, planned, actual, unit, color }) => {
-                      const pct = planned > 0 && actual !== undefined ? Math.round((actual / planned) * 100) : null;
-                      const pctColor =
-                        pct === null ? "text-slate-300" :
-                        pct >= 90 && pct <= 110 ? "text-green-600" :
-                        pct >= 75 ? "text-yellow-600" : "text-red-500";
-                      return (
-                        <tr key={label} className="py-2">
-                          <td className={`py-2 font-medium ${color}`}>{label}</td>
-                          <td className="py-2 text-right text-slate-700">
-                            {label === "Calories" ? Math.round(planned) : planned.toFixed(1)} {unit}
-                          </td>
-                          <td className="py-2 text-right text-slate-700">
-                            {actual !== undefined
-                              ? `${label === "Calories" ? Math.round(actual) : actual.toFixed(1)} ${unit}`
-                              : <span className="text-slate-300 text-xs italic">no data</span>}
-                          </td>
-                          <td className={`py-2 text-right font-semibold ${pctColor}`}>
-                            {pct !== null ? `${pct}%` : "—"}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              {!actualTotals && (
-                <p className="text-xs text-slate-400 mt-2 italic">No meal logs recorded today — actual intake will appear once the patient logs meals.</p>
-              )}
-            </CardContent>
-          </Card>
+              {/* Planned vs Actual macro comparison */}
+              <CardContent className="pt-0">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
+                  Today's Compliance — {format(new Date(), "MMM d, yyyy")}
+                </p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-xs text-slate-500 border-b border-slate-100">
+                        <th className="text-left pb-2 font-medium">Macro</th>
+                        <th className="text-right pb-2 font-medium">Planned</th>
+                        <th className="text-right pb-2 font-medium">Actual (today)</th>
+                        <th className="text-right pb-2 font-medium">% of Plan</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {(
+                        [
+                          { label: "Calories", planned: plannedTotals.calories, actual: actualTotals?.calories, unit: "kcal", color: "text-orange-600" },
+                          { label: "Carbs", planned: plannedTotals.carbs, actual: actualTotals?.carbs, unit: "g", color: "text-yellow-600" },
+                          { label: "Fat", planned: plannedTotals.fat, actual: actualTotals?.fat, unit: "g", color: "text-blue-600" },
+                          { label: "Protein", planned: plannedTotals.protein, actual: actualTotals?.protein, unit: "g", color: "text-green-600" },
+                        ] as const
+                      ).map(({ label, planned, actual, unit, color }) => {
+                        const pct = planned > 0 && actual !== undefined ? Math.round((actual / planned) * 100) : null;
+                        const pctColor =
+                          pct === null ? "text-slate-300" :
+                          pct >= 90 && pct <= 110 ? "text-green-600" :
+                          pct >= 75 ? "text-yellow-600" : "text-red-500";
+                        return (
+                          <tr key={label} className="py-2">
+                            <td className={`py-2 font-medium ${color}`}>{label}</td>
+                            <td className="py-2 text-right text-slate-700">
+                              {label === "Calories" ? Math.round(planned) : planned.toFixed(1)} {unit}
+                            </td>
+                            <td className="py-2 text-right text-slate-700">
+                              {actual !== undefined
+                                ? `${label === "Calories" ? Math.round(actual) : actual.toFixed(1)} ${unit}`
+                                : <span className="text-slate-300 text-xs italic">no data</span>}
+                            </td>
+                            <td className={`py-2 text-right font-semibold ${pctColor}`}>
+                              {pct !== null ? `${pct}%` : "—"}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                {!actualTotals && (
+                  <p className="text-xs text-slate-400 mt-2 italic">No meal logs recorded today — actual intake will appear once the patient logs meals.</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {!plan && (
+            <p className="text-sm text-slate-400 text-center py-2">No meal plan assigned — showing empty meal slots for the patient's diet type.</p>
+          )}
 
           {/* Meal sections — read-only view */}
           {mealTypeNames.map((mealTypeName) => {
@@ -2593,10 +2611,9 @@ function MealPlanTab({ kidId }: { kidId: number }) {
  * Read-only print version of the assigned meal plan.
  * Shows all meal type sections expanded with all items — no interactive buttons.
  */
-function MealPlanPrintSection({ kidId }: { kidId: number }) {
+function MealPlanPrintSection({ kidId, medical }: { kidId: number; medical: MedicalSettings }) {
   const { data: rawAssigned, isLoading: assignedLoading } = useGetKidAssignedMealPlan(kidId);
-  const { data: mealTypesData } = useListMealTypes();
-  const mealTypeNames = useMemo(() => (mealTypesData ?? []).map((mt: { name: string }) => mt.name), [mealTypesData]);
+  const mealTypeNames = useMemo(() => getMealTypesForDiet(medical.dietType), [medical.dietType]);
 
   const plan: LibraryMealPlanDetail | undefined =
     rawAssigned && typeof rawAssigned === "object" ? rawAssigned : undefined;
@@ -2605,12 +2622,23 @@ function MealPlanPrintSection({ kidId }: { kidId: number }) {
     plan?.items?.filter((i: LibraryMealPlanItem) => i.mealType.toLowerCase() === mealType.toLowerCase()) ?? [];
 
   if (assignedLoading) return <p className="text-xs text-slate-400 italic">Loading meal plan…</p>;
-  if (!plan) return <p className="text-xs text-slate-400 italic">No meal plan assigned.</p>;
 
   return (
     <div className="space-y-3">
-      <p className="text-sm font-semibold text-slate-700">{plan.name}</p>
-      {plan.description && <p className="text-xs text-slate-500">{plan.description}</p>}
+      <div className="flex gap-4 text-xs text-slate-600 mb-2">
+        <span><strong>{Math.round(medical.dailyCalories)}</strong> kcal target</span>
+        <span><strong>{medical.dailyFat % 1 !== 0 ? medical.dailyFat.toFixed(1) : medical.dailyFat}</strong>g fat</span>
+        <span><strong>{medical.dailyProtein % 1 !== 0 ? medical.dailyProtein.toFixed(1) : medical.dailyProtein}</strong>g protein</span>
+        <span><strong>{medical.dailyCarbs % 1 !== 0 ? medical.dailyCarbs.toFixed(1) : medical.dailyCarbs}</strong>g carbs</span>
+      </div>
+      {plan ? (
+        <>
+          <p className="text-sm font-semibold text-slate-700">{plan.name}</p>
+          {plan.description && <p className="text-xs text-slate-500">{plan.description}</p>}
+        </>
+      ) : (
+        <p className="text-xs text-slate-400 italic">No meal plan assigned.</p>
+      )}
       {mealTypeNames.map((mealTypeName) => {
         const items = getMealItems(mealTypeName);
         const mealCals = items.reduce((a: number, i: LibraryMealPlanItem) => a + (i.calories ?? 0), 0);
