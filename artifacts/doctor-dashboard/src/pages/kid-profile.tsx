@@ -1181,11 +1181,22 @@ function getKetoneStatus(value: number): { label: string; color: string; bg: str
   return { label: "Dangerously High", color: "text-red-700", bg: "bg-red-50" };
 }
 
+const URINE_VALUES = ["-2", "-1.5", "-1", "-0.5", "0", "0.5", "1", "1.5", "2"] as const;
+
 const ketoneFormSchema = z.object({
-  value: z.coerce.number().min(0).max(30),
+  value: z.coerce.number(),
   date: z.string().min(1, "Date required"),
   readingType: z.enum(["blood", "urine"]),
   notes: z.string().optional(),
+}).refine((data) => {
+  if (isNaN(data.value)) return false;
+  if (data.readingType === "blood") {
+    return data.value >= 0 && data.value <= 30;
+  }
+  return URINE_VALUES.includes(String(data.value) as typeof URINE_VALUES[number]);
+}, {
+  message: "Invalid value for the selected reading type",
+  path: ["value"],
 });
 
 function KetoneTab({ kidId }: { kidId: number }) {
@@ -1205,6 +1216,8 @@ function KetoneTab({ kidId }: { kidId: number }) {
       notes: "",
     },
   });
+
+  const readingType = form.watch("readingType");
 
   async function onSubmit(values: z.infer<typeof ketoneFormSchema>) {
     try {
@@ -1336,7 +1349,7 @@ function KetoneTab({ kidId }: { kidId: number }) {
                 <FormField control={form.control} name="readingType" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Type</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select value={field.value} onValueChange={(v) => { field.onChange(v); form.setValue("value", NaN as unknown as number); }}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue />
@@ -1352,10 +1365,25 @@ function KetoneTab({ kidId }: { kidId: number }) {
                 )} />
                 <FormField control={form.control} name="value" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Value (mmol/L)</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="0.1" placeholder="e.g. 2.5" {...field} />
-                    </FormControl>
+                    <FormLabel>Value {readingType === "blood" ? "(mmol/L)" : ""}</FormLabel>
+                    {readingType === "urine" ? (
+                      <Select value={String(field.value)} onValueChange={(v) => field.onChange(Number(v))}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select value" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {URINE_VALUES.map((v) => (
+                            <SelectItem key={v} value={v}>{v}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <FormControl>
+                        <Input type="number" step="0.1" placeholder="e.g. 2.5" {...field} />
+                      </FormControl>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )} />
