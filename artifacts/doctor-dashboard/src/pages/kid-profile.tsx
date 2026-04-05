@@ -31,7 +31,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useCanWrite } from "@/hooks/useRole";
-import { Activity, User, Scale, Calendar, FileText, Trash2, Settings, Plus, Loader2, BarChart2, TrendingUp, Flame, FlaskConical, AlertTriangle, ClipboardList, CheckCircle2, Circle, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Coffee, Sun, Moon, LayoutGrid, Camera, ImageIcon, X, Pencil, LineChart as LineChartIcon, UtensilsCrossed, Zap } from "lucide-react";
+import { Activity, User, Scale, Calendar, FileText, Trash2, Settings, Plus, Loader2, BarChart2, TrendingUp, Flame, FlaskConical, AlertTriangle, ClipboardList, CheckCircle2, Circle, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Coffee, Sun, Moon, LayoutGrid, Camera, ImageIcon, X, Pencil, LineChart as LineChartIcon, UtensilsCrossed, Zap, Filter } from "lucide-react";
 import { getMealTypesForDiet } from "@/lib/keto-meal-types";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
@@ -1207,6 +1207,42 @@ function KetoneTab({ kidId }: { kidId: number }) {
   const addReading = useAddKetoneReading();
   const deleteReading = useDeleteKetoneReading();
 
+  const [filterType, setFilterType] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterDateFrom, setFilterDateFrom] = useState<string>("");
+  const [filterDateTo, setFilterDateTo] = useState<string>("");
+
+  const hasActiveFilters = filterType !== "all" || filterStatus !== "all" || filterDateFrom !== "" || filterDateTo !== "";
+
+  const filteredReadings = useMemo(() => {
+    if (!readings) return readings;
+    return readings.filter((r) => {
+      if (filterType !== "all" && r.readingType !== filterType) return false;
+      if (filterStatus !== "all") {
+        const status = getKetoneStatus(r.value);
+        if (status.label !== filterStatus) return false;
+      }
+      if (filterDateFrom) {
+        const from = new Date(filterDateFrom);
+        const readingDate = parseISO(r.date);
+        if (readingDate < from) return false;
+      }
+      if (filterDateTo) {
+        const to = new Date(filterDateTo + "T23:59:59");
+        const readingDate = parseISO(r.date);
+        if (readingDate > to) return false;
+      }
+      return true;
+    });
+  }, [readings, filterType, filterStatus, filterDateFrom, filterDateTo]);
+
+  const clearFilters = () => {
+    setFilterType("all");
+    setFilterStatus("all");
+    setFilterDateFrom("");
+    setFilterDateTo("");
+  };
+
   const form = useForm({
     resolver: zodResolver(ketoneFormSchema),
     defaultValues: {
@@ -1420,6 +1456,54 @@ function KetoneTab({ kidId }: { kidId: number }) {
         <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-3">
           <CardTitle className="text-base">Reading History</CardTitle>
         </CardHeader>
+        <div className="flex flex-wrap items-center gap-2 px-4 py-3 border-b border-slate-100 bg-white">
+          <Filter className="h-4 w-4 text-slate-400 shrink-0" />
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger className="h-8 w-[120px] rounded-full text-xs border-slate-200 bg-slate-50 hover:bg-slate-100">
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="blood">Blood</SelectItem>
+              <SelectItem value="urine">Urine</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="h-8 w-[160px] rounded-full text-xs border-slate-200 bg-slate-50 hover:bg-slate-100">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="Below Range">Below Range</SelectItem>
+              <SelectItem value="Sub-therapeutic">Sub-therapeutic</SelectItem>
+              <SelectItem value="Therapeutic">Therapeutic</SelectItem>
+              <SelectItem value="High">High</SelectItem>
+              <SelectItem value="Dangerously High">Dangerously High</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="flex items-center gap-1.5">
+            <Input
+              type="date"
+              value={filterDateFrom}
+              onChange={(e) => setFilterDateFrom(e.target.value)}
+              className="h-8 w-[130px] rounded-full text-xs border-slate-200 bg-slate-50"
+              placeholder="From"
+            />
+            <span className="text-xs text-slate-400">to</span>
+            <Input
+              type="date"
+              value={filterDateTo}
+              onChange={(e) => setFilterDateTo(e.target.value)}
+              className="h-8 w-[130px] rounded-full text-xs border-slate-200 bg-slate-50"
+              placeholder="To"
+            />
+          </div>
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 rounded-full text-xs text-slate-500 hover:text-slate-700 px-3">
+              <X className="h-3 w-3 mr-1" /> Clear
+            </Button>
+          )}
+        </div>
         {isLoading ? (
           <div className="p-8 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" /></div>
         ) : (
@@ -1436,11 +1520,13 @@ function KetoneTab({ kidId }: { kidId: number }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {!readings || readings.length === 0 ? (
+                {!filteredReadings || filteredReadings.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-slate-500">No ketone readings recorded.</TableCell>
+                    <TableCell colSpan={6} className="text-center py-8 text-slate-500">
+                      {hasActiveFilters ? "No readings match the current filters." : "No ketone readings recorded."}
+                    </TableCell>
                   </TableRow>
-                ) : readings.map((r) => {
+                ) : filteredReadings.map((r) => {
                   const status = getKetoneStatus(r.value);
                   return (
                     <TableRow key={r.id} className="hover:bg-slate-50/50 transition-colors">
