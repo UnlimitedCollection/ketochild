@@ -5,7 +5,7 @@ import { PrintLayout } from "@/components/print-layout";
 import { PrintFilterDialog, type PrintFilterResult } from "@/components/print-filter-dialog";
 import { Link, useSearch, useLocation } from "wouter";
 import { useGetKids, useGetKid, useGetKidKetoneReadings, useDeleteKid, type GetKidsParams } from "@workspace/api-client-react";
-import { Search, Filter, Loader2, User, Eye, Flame, Clock, Trash2, Pencil, Scale, FlaskConical, TrendingUp, TrendingDown, Activity, Calendar, Utensils, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Filter, Loader2, User, UserRound, Flame, Clock, Trash2, Pencil, Scale, FlaskConical, TrendingUp, TrendingDown, Activity, Calendar, Utensils, ChevronLeft, ChevronRight } from "lucide-react";
 import { PrintButton } from "@/components/print-button";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -695,7 +695,7 @@ export default function KidsListPage() {
                           onClick={() => setViewingKidId(kid.id)}
                           aria-label="View patient"
                         >
-                          <Eye className="h-4 w-4" />
+                          <UserRound className="h-4 w-4" />
                         </Button>
                         {canWrite && (
                           <Button

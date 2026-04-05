@@ -8,7 +8,7 @@ import {
   kidSideEffectsTable,
   sideEffectsTable,
 } from "@workspace/db";
-import { gte, desc, eq } from "drizzle-orm";
+import { gte, desc, eq, and, inArray } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -16,7 +16,10 @@ router.get("/population", async (req, res) => {
   try {
     const now = new Date();
 
-    const allKids = await db.select().from(kidsTable);
+    const doctorId = req.session.doctorId!;
+    const isPrivileged = req.session.doctorRole === "moderator" || req.session.doctorRole === "admin";
+    const conditions = isPrivileged ? [] : [eq(kidsTable.doctorId, doctorId)];
+    const allKids = await db.select().from(kidsTable).where(and(...conditions));
     const kidIds = allKids.map((k) => k.id);
 
     if (kidIds.length === 0) {
@@ -38,7 +41,7 @@ router.get("/population", async (req, res) => {
     const allMealDays = await db
       .select()
       .from(mealDaysTable)
-      .where(gte(mealDaysTable.date, eightWeeksAgo.toISOString().slice(0, 10)));
+      .where(and(inArray(mealDaysTable.kidId, kidIds), gte(mealDaysTable.date, eightWeeksAgo.toISOString().slice(0, 10))));
 
     const weekBuckets: Record<string, { filled: number; total: number }> = {};
     for (let w = 0; w < 8; w++) {
@@ -95,7 +98,7 @@ router.get("/population", async (req, res) => {
     }));
 
     // ─── Per-patient compliance summary ─────────────────────────────────────
-    const allKidMealDays = await db.select().from(mealDaysTable);
+    const allKidMealDays = await db.select().from(mealDaysTable).where(inArray(mealDaysTable.kidId, kidIds));
     const kidMealMap: Record<number, { filled: number; total: number }> = {};
     for (const day of allKidMealDays) {
       if (!kidMealMap[day.kidId]) kidMealMap[day.kidId] = { filled: 0, total: 0 };
@@ -111,7 +114,8 @@ router.get("/population", async (req, res) => {
         name: sideEffectsTable.name,
       })
       .from(kidSideEffectsTable)
-      .leftJoin(sideEffectsTable, eq(kidSideEffectsTable.sideEffectId, sideEffectsTable.id));
+      .leftJoin(sideEffectsTable, eq(kidSideEffectsTable.sideEffectId, sideEffectsTable.id))
+      .where(inArray(kidSideEffectsTable.kidId, kidIds));
 
     const kidSideEffectMap: Record<number, string[]> = {};
     for (const row of allKidSideEffects) {
@@ -150,7 +154,7 @@ router.get("/population", async (req, res) => {
     const recentKetones = await db
       .select()
       .from(ketoneReadingsTable)
-      .where(gte(ketoneReadingsTable.date, thirtyDaysAgo.toISOString().slice(0, 10)));
+      .where(and(inArray(ketoneReadingsTable.kidId, kidIds), gte(ketoneReadingsTable.date, thirtyDaysAgo.toISOString().slice(0, 10))));
 
     const ketoneDist = { low: 0, optimal: 0, high: 0, total: recentKetones.length };
     for (const k of recentKetones) {
@@ -166,7 +170,7 @@ router.get("/population", async (req, res) => {
     const recentWeights = await db
       .select()
       .from(weightRecordsTable)
-      .where(gte(weightRecordsTable.date, sixMonthsAgo.toISOString().slice(0, 10)))
+      .where(and(inArray(weightRecordsTable.kidId, kidIds), gte(weightRecordsTable.date, sixMonthsAgo.toISOString().slice(0, 10))))
       .orderBy(desc(weightRecordsTable.date));
 
     const monthlyWeights: Record<string, number[]> = {};
