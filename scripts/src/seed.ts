@@ -37,9 +37,10 @@ function generatePHNCode(usedCodes?: Set<string>): string {
 
 async function migrateLegacyKidCodes() {
   const legacyKids = await db.select({ id: kidsTable.id, kidCode: kidsTable.kidCode }).from(kidsTable);
-  const legacyToMigrate = legacyKids.filter((k) => k.kidCode.startsWith("KID-") || k.kidCode.startsWith("KKC-"));
+  const newFormatRegex = /^\d{4}-\d{6}-\d$/;
+  const legacyToMigrate = legacyKids.filter((k) => !newFormatRegex.test(k.kidCode));
   if (legacyToMigrate.length === 0) {
-    console.log("No legacy KID- codes to migrate.");
+    console.log("No legacy codes to migrate — all PHNs are in XXXX-XXXXXX-X format.");
     return;
   }
   const usedCodes = new Set(legacyKids.map((k) => k.kidCode));
@@ -52,7 +53,7 @@ async function migrateLegacyKidCodes() {
     await db.update(kidsTable).set({ kidCode: newCode }).where(eq(kidsTable.id, kid.id));
     console.log(`Migrated kid ${kid.id}: ${kid.kidCode} → ${newCode}`);
   }
-  console.log(`Migrated ${legacyToMigrate.length} legacy KID- codes to PHN format.`);
+  console.log(`Migrated ${legacyToMigrate.length} legacy codes to XXXX-XXXXXX-X format.`);
 }
 
 async function seed() {
