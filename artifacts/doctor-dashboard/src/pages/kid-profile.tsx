@@ -914,16 +914,46 @@ function MedicalSettingsForm({ kidId, initialData, lastWeight }: { kidId: number
     return isNaN(r) || r <= 0 ? null : r;
   }, [isClassicKeto, watchedMedDietSubCategory]);
 
-  const canAutoCalc = isClassicKeto && parsedRatio !== null && lastWeight !== undefined && lastWeight > 0;
+  const FALLBACK_WEIGHT = 20;
+  const effectiveWeight = (lastWeight !== undefined && lastWeight > 0) ? lastWeight : FALLBACK_WEIGHT;
+
+  const prevDietTypeRef = useRef(watchedMedDietType);
+  const prevSubCategoryRef = useRef(watchedMedDietSubCategory);
 
   useEffect(() => {
-    if (!canAutoCalc || parsedRatio === null || lastWeight === undefined) return;
-    const { calories, fat, protein, carbs } = computeKetoMacros(lastWeight, parsedRatio);
-    form.setValue("dailyCalories", Math.min(calories, 2200), { shouldDirty: true });
-    form.setValue("dailyFat", Math.min(fat, fatMax), { shouldDirty: true });
-    form.setValue("dailyProtein", Math.min(protein, 50), { shouldDirty: true });
-    form.setValue("dailyCarbs", Math.min(carbs, carbsMax), { shouldDirty: true });
-  }, [watchedMedDietType, watchedMedDietSubCategory, canAutoCalc, parsedRatio, lastWeight, fatMax, carbsMax]);
+    const dietChanged = prevDietTypeRef.current !== watchedMedDietType;
+    const subCategoryChanged = prevSubCategoryRef.current !== watchedMedDietSubCategory;
+    prevDietTypeRef.current = watchedMedDietType;
+    prevSubCategoryRef.current = watchedMedDietSubCategory;
+
+    if (!dietChanged && !subCategoryChanged) return;
+
+    if (isClassicKeto) {
+      if (parsedRatio === null) return;
+      const { calories, fat, protein, carbs } = computeKetoMacros(effectiveWeight, parsedRatio);
+      form.setValue("dailyCalories", Math.min(calories, 2200), { shouldDirty: true });
+      form.setValue("dailyFat", Math.min(fat, fatMax), { shouldDirty: true });
+      form.setValue("dailyProtein", Math.min(protein, 50), { shouldDirty: true });
+      form.setValue("dailyCarbs", Math.min(carbs, carbsMax), { shouldDirty: true });
+    } else if (dietChanged) {
+      if (watchedMedDietType === "mad") {
+        form.setValue("dailyCalories", 1500, { shouldDirty: true });
+        form.setValue("dailyFat", 65, { shouldDirty: true });
+        form.setValue("dailyProtein", 30, { shouldDirty: true });
+        form.setValue("dailyCarbs", 20, { shouldDirty: true });
+      } else if (watchedMedDietType === "mct") {
+        form.setValue("dailyCalories", 1400, { shouldDirty: true });
+        form.setValue("dailyFat", 70, { shouldDirty: true });
+        form.setValue("dailyProtein", 25, { shouldDirty: true });
+        form.setValue("dailyCarbs", 30, { shouldDirty: true });
+      } else if (watchedMedDietType === "lowgi") {
+        form.setValue("dailyCalories", 1600, { shouldDirty: true });
+        form.setValue("dailyFat", 50, { shouldDirty: true });
+        form.setValue("dailyProtein", 30, { shouldDirty: true });
+        form.setValue("dailyCarbs", 60, { shouldDirty: true });
+      }
+    }
+  }, [watchedMedDietType, watchedMedDietSubCategory, parsedRatio, effectiveWeight, fatMax, carbsMax]);
 
   const calculatedRatio = useMemo(() => {
     const f = Number(watchedFat) || 0;
@@ -965,8 +995,8 @@ function MedicalSettingsForm({ kidId, initialData, lastWeight }: { kidId: number
                       value={combinedMedDietValue}
                       onValueChange={(v) => {
                         const parsed = parseDietCombinedValue(v);
-                        form.setValue("dietType", parsed.dietType as "classic" | "mad" | "mct" | "lowgi");
-                        form.setValue("dietSubCategory", parsed.dietSubCategory);
+                        form.setValue("dietType", parsed.dietType as "classic" | "mad" | "mct" | "lowgi", { shouldValidate: true, shouldDirty: true });
+                        form.setValue("dietSubCategory", parsed.dietSubCategory, { shouldValidate: true, shouldDirty: true });
                       }}
                     >
                       <FormControl>
