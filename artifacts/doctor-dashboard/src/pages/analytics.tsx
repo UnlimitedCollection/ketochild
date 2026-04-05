@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, AlertTriangle, TrendingUp, Users, CheckCircle2, Activity, UserRound } from "lucide-react";
+import { Loader2, AlertTriangle, TrendingUp, Users, CheckCircle2, Activity, Eye } from "lucide-react";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -373,7 +373,7 @@ export default function AnalyticsPage() {
                         className="text-blue-600 hover:text-blue-800 transition-colors"
                         aria-label="View patient overview"
                       >
-                        <UserRound className="w-4 h-4" />
+                        <Eye className="w-4 h-4" />
                       </button>
                     </div>
                   </td>
