@@ -1305,6 +1305,23 @@ function KetoneTab({ kidId }: { kidId: number }) {
           <CardContent className="pt-4">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField control={form.control} name="readingType" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Type</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="blood">Blood</SelectItem>
+                        <SelectItem value="urine">Urine</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
                 <FormField control={form.control} name="value" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Value (mmol/L)</FormLabel>
@@ -1320,23 +1337,6 @@ function KetoneTab({ kidId }: { kidId: number }) {
                     <FormControl>
                       <Input type="date" {...field} />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="readingType" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Type</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="blood">Blood</SelectItem>
-                        <SelectItem value="urine">Urine</SelectItem>
-                      </SelectContent>
-                    </Select>
                     <FormMessage />
                   </FormItem>
                 )} />
