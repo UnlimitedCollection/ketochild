@@ -31,6 +31,8 @@ type AnalyticsData = {
     filledDays: number;
     totalDays: number;
     risk: "high" | "moderate" | "good";
+    hasSideEffects: boolean;
+    sideEffectNames: string[];
   }[];
   ketoneDistribution: { low: number; optimal: number; high: number; total: number };
   weightTrend: { month: string; label: string; avgWeight: number; count: number }[];
@@ -333,15 +335,22 @@ export default function AnalyticsPage() {
                     )}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <span
-                      className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                      style={{
-                        color: RISK_COLORS[p.risk],
-                        backgroundColor: `${RISK_COLORS[p.risk]}18`,
-                      }}
-                    >
-                      {p.risk === "good" ? "Good" : p.risk === "moderate" ? "Moderate" : "Side Effect"}
-                    </span>
+                    {p.hasSideEffects ? (
+                      <div className="flex flex-wrap gap-1 justify-center">
+                        {p.sideEffectNames.map((name) => (
+                          <span
+                            key={name}
+                            className="text-xs font-semibold px-2 py-0.5 rounded-full border bg-destructive/10 text-destructive border-destructive/20"
+                          >
+                            {name}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full border bg-green-50 text-green-700 border-green-200">
+                        Absent
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-3">
                     <div className="flex justify-center">

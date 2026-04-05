@@ -5,8 +5,10 @@ import {
   weightRecordsTable,
   mealDaysTable,
   ketoneReadingsTable,
+  kidSideEffectsTable,
+  sideEffectsTable,
 } from "@workspace/db";
-import { gte, desc } from "drizzle-orm";
+import { gte, desc, eq } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -101,10 +103,27 @@ router.get("/population", async (req, res) => {
       if (day.isFilled) kidMealMap[day.kidId].filled++;
     }
 
+    // Fetch all side effect associations in one query
+    const allKidSideEffects = await db
+      .select({
+        kidId: kidSideEffectsTable.kidId,
+        customName: kidSideEffectsTable.customName,
+        name: sideEffectsTable.name,
+      })
+      .from(kidSideEffectsTable)
+      .leftJoin(sideEffectsTable, eq(kidSideEffectsTable.sideEffectId, sideEffectsTable.id));
+
+    const kidSideEffectMap: Record<number, string[]> = {};
+    for (const row of allKidSideEffects) {
+      if (!kidSideEffectMap[row.kidId]) kidSideEffectMap[row.kidId] = [];
+      kidSideEffectMap[row.kidId].push(row.customName ?? row.name ?? "Unknown");
+    }
+
     const patientCompliance = allKids
       .map((kid) => {
         const stats = kidMealMap[kid.id] ?? { filled: 0, total: 0 };
         const rate = stats.total > 0 ? Math.round((stats.filled / stats.total) * 100) : null;
+        const sideEffectNames = kidSideEffectMap[kid.id] ?? [];
         return {
           id: kid.id,
           name: kid.name,
@@ -114,6 +133,8 @@ router.get("/population", async (req, res) => {
           filledDays: stats.filled,
           totalDays: stats.total,
           risk: rate !== null && rate < 60 && stats.total > 0 ? "high" : rate !== null && rate < 80 ? "moderate" : "good",
+          hasSideEffects: sideEffectNames.length > 0,
+          sideEffectNames,
         };
       })
       .sort((a, b) => {
