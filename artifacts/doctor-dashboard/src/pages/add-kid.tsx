@@ -45,7 +45,7 @@ const createKidSchema = z.object({
   parentContact: z.string().regex(/^\d{10}$/, "Mobile number must be exactly 10 digits"),
   dietType: z.enum(["classic", "mad", "mct", "lowgi"]),
   dietSubCategory: z.string().optional(),
-  kidCode: z.string().regex(/^PHN\d{4,}$/, "PHN must start with 'PHN' followed by at least 4 digits (e.g. PHN45129)"),
+  kidCode: z.string().regex(/^\d{4}-\d{6}-\d$/, "PHN must be in the format XXXX-XXXXXX-X (e.g. 0180-498827-2)"),
 });
 
 export default function AddKidPage() {
@@ -107,9 +107,20 @@ export default function AddKidPage() {
               <FormField control={form.control} name="kidCode" render={({ field }) => (
                 <FormItem>
                   <FormLabel>PHN No.</FormLabel>
-                  <FormControl><Input className="rounded-xl bg-slate-50 font-mono" placeholder="e.g. PHN45129" {...field} /></FormControl>
+                  <FormControl><Input className="rounded-xl bg-slate-50 font-mono" placeholder="e.g. 0180-498827-2" {...field} onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
+                    let formatted = digits;
+                    if (digits.length > 10) {
+                      formatted = `${digits.slice(0, 4)}-${digits.slice(4, 10)}-${digits.slice(10)}`;
+                    } else if (digits.length === 10) {
+                      formatted = `${digits.slice(0, 4)}-${digits.slice(4)}-`;
+                    } else if (digits.length > 4) {
+                      formatted = `${digits.slice(0, 4)}-${digits.slice(4)}`;
+                    }
+                    field.onChange(formatted);
+                  }} /></FormControl>
                   <FormMessage />
-                  <p className="text-xs text-slate-500">Enter the Patient Health Number assigned externally (e.g. PHN45129).</p>
+                  <p className="text-xs text-slate-500">Enter the Patient Health Number in the format XXXX-XXXXXX-X (e.g. 0180-498827-2).</p>
                 </FormItem>
               )} />
 

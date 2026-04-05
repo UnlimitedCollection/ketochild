@@ -142,7 +142,7 @@ export const KidGender = {
 export interface Kid {
   id: number;
   name: string;
-  /** Patient Health Number (PHN) in format PHNxxxxx (e.g. PHN45129). Auto-generated unique identifier. */
+  /** Patient Health Number (PHN) in format XXXX-XXXXXX-X (e.g. 0180-498827-2). Unique identifier. */
   kidCode: string;
   dateOfBirth: string;
   ageMonths: number;
@@ -277,8 +277,8 @@ export interface CreateKidRequest {
   dietType: CreateKidRequestDietType;
   dietSubCategory?: CreateKidRequestDietSubCategory;
   /**
-   * Patient Health Number (PHN) in format PHN followed by at least 4 digits (e.g. PHN45129). Must be unique.
-   * @pattern ^PHN\d{4,}$
+   * Patient Health Number (PHN) in format XXXX-XXXXXX-X (e.g. 0180-498827-2). Must be unique.
+   * @pattern ^\d{4}-\d{6}-\d$
    */
   kidCode: string;
 }

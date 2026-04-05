@@ -181,7 +181,7 @@ export const GetKidsResponseItem = zod.object({
   kidCode: zod
     .string()
     .describe(
-      "Patient Health Number (PHN) in format PHNxxxxx (e.g. PHN45129). Auto-generated unique identifier.",
+      "Patient Health Number (PHN) in format XXXX-XXXXXX-X (e.g. 0180-498827-2). Unique identifier.",
     ),
   dateOfBirth: zod.date(),
   ageMonths: zod.number(),
@@ -215,7 +215,7 @@ export const GetKidsResponse = zod.array(GetKidsResponseItem);
 /**
  * @summary Create a new kid profile
  */
-export const createKidBodyKidCodeRegExp = new RegExp("^PHN\\d{4,}$");
+export const createKidBodyKidCodeRegExp = new RegExp("^\\d{4}-\\d{6}-\\d$");
 
 export const CreateKidBody = zod.object({
   name: zod.string(),
@@ -229,7 +229,7 @@ export const CreateKidBody = zod.object({
     .string()
     .regex(createKidBodyKidCodeRegExp)
     .describe(
-      "Patient Health Number (PHN) in format PHN followed by at least 4 digits (e.g. PHN45129). Must be unique.",
+      "Patient Health Number (PHN) in format XXXX-XXXXXX-X (e.g. 0180-498827-2). Must be unique.",
     ),
 });
 
@@ -247,7 +247,7 @@ export const GetKidResponse = zod.object({
     kidCode: zod
       .string()
       .describe(
-        "Patient Health Number (PHN) in format PHNxxxxx (e.g. PHN45129). Auto-generated unique identifier.",
+        "Patient Health Number (PHN) in format XXXX-XXXXXX-X (e.g. 0180-498827-2). Unique identifier.",
       ),
     dateOfBirth: zod.date(),
     ageMonths: zod.number(),
@@ -350,7 +350,7 @@ export const UpdateKidResponse = zod.object({
   kidCode: zod
     .string()
     .describe(
-      "Patient Health Number (PHN) in format PHNxxxxx (e.g. PHN45129). Auto-generated unique identifier.",
+      "Patient Health Number (PHN) in format XXXX-XXXXXX-X (e.g. 0180-498827-2). Unique identifier.",
     ),
   dateOfBirth: zod.date(),
   ageMonths: zod.number(),

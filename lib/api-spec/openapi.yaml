@@ -2025,8 +2025,8 @@ components:
           type: string
         kidCode:
           type: string
-          description: Patient Health Number (PHN) in format PHNxxxxx (e.g. PHN45129). Auto-generated unique identifier.
-          example: PHN45129
+          description: Patient Health Number (PHN) in format XXXX-XXXXXX-X (e.g. 0180-498827-2). Unique identifier.
+          example: 0180-498827-2
         dateOfBirth:
           type: string
           format: date
@@ -2132,9 +2132,9 @@ components:
           nullable: true
         kidCode:
           type: string
-          description: Patient Health Number (PHN) in format PHN followed by at least 4 digits (e.g. PHN45129). Must be unique.
-          pattern: "^PHN\\d{4,}$"
-          example: PHN45129
+          description: Patient Health Number (PHN) in format XXXX-XXXXXX-X (e.g. 0180-498827-2). Must be unique.
+          pattern: "^\\d{4}-\\d{6}-\\d$"
+          example: 0180-498827-2
       required:
         - name
         - dateOfBirth

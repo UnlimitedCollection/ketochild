@@ -12,7 +12,7 @@ import type { KidGender } from "./kidGender";
 export interface Kid {
   id: number;
   name: string;
-  /** Patient Health Number (PHN) in format PHNxxxxx (e.g. PHN45129). Auto-generated unique identifier. */
+  /** Patient Health Number (PHN) in format XXXX-XXXXXX-X (e.g. 0180-498827-2). Unique identifier. */
   kidCode: string;
   dateOfBirth: Date;
   ageMonths: number;

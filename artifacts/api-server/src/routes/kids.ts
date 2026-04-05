@@ -41,7 +41,7 @@ import {
 
 const router: IRouter = Router();
 
-const PHN_FORMAT_REGEX = /^PHN\d{4,}$/;
+const PHN_FORMAT_REGEX = /^\d{4}-\d{6}-\d$/;
 
 async function getKidSideEffects(kidId: number): Promise<{ hasSideEffects: boolean; sideEffectNames: string[] }> {
   const rows = await db
@@ -229,7 +229,7 @@ router.post("/", async (req, res) => {
 
   const { kidCode } = parsed.data;
   if (!PHN_FORMAT_REGEX.test(kidCode)) {
-    res.status(400).json({ error: "VALIDATION_ERROR", message: "PHN must start with 'PHN' followed by at least 4 digits (e.g. PHN45129)" });
+    res.status(400).json({ error: "VALIDATION_ERROR", message: "PHN must be in the format XXXX-XXXXXX-X (e.g. 0180-498827-2)" });
     return;
   }
 

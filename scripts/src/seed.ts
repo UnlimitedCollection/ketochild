@@ -26,8 +26,10 @@ import bcrypt from "bcryptjs";
 function generatePHNCode(usedCodes?: Set<string>): string {
   let code: string;
   do {
-    const digits = Math.floor(10000 + Math.random() * 90000);
-    code = `PHN${digits}`;
+    const d1 = String(Math.floor(Math.random() * 10000)).padStart(4, "0");
+    const d2 = String(Math.floor(Math.random() * 1000000)).padStart(6, "0");
+    const d3 = String(Math.floor(Math.random() * 10));
+    code = `${d1}-${d2}-${d3}`;
   } while (usedCodes && usedCodes.has(code));
   if (usedCodes) usedCodes.add(code);
   return code;
