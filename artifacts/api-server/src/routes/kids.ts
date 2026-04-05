@@ -43,12 +43,19 @@ const router: IRouter = Router();
 
 const PHN_FORMAT_REGEX = /^PHN\d{4,}$/;
 
-async function getKidHasSideEffects(kidId: number): Promise<boolean> {
-  const [row] = await db
-    .select({ count: sql<number>`count(*)::int` })
+async function getKidSideEffects(kidId: number): Promise<{ hasSideEffects: boolean; sideEffectNames: string[] }> {
+  const rows = await db
+    .select({
+      sideEffectId: kidSideEffectsTable.sideEffectId,
+      customName: kidSideEffectsTable.customName,
+      name: sideEffectsTable.name,
+    })
     .from(kidSideEffectsTable)
+    .leftJoin(sideEffectsTable, eq(kidSideEffectsTable.sideEffectId, sideEffectsTable.id))
     .where(eq(kidSideEffectsTable.kidId, kidId));
-  return (row?.count ?? 0) > 0;
+
+  const names = rows.map((r) => r.customName ?? r.name ?? "Unknown");
+  return { hasSideEffects: names.length > 0, sideEffectNames: names };
 }
 
 async function getKidCompletionRate(kidId: number): Promise<number> {
@@ -164,12 +171,12 @@ router.get("/", async (req, res) => {
         const dobMatch = search ? kid.dateOfBirth.includes(search) : true;
         if (search && !nameMatch && !codeMatch && !parentMatch && !dobMatch) return null;
 
-        const [completionRate, { weight, date }, inKetoStatus, last24hCompletionRate, hasSideEffects] = await Promise.all([
+        const [completionRate, { weight, date }, inKetoStatus, last24hCompletionRate, { hasSideEffects, sideEffectNames }] = await Promise.all([
           getKidCompletionRate(kid.id),
           getKidCurrentWeight(kid.id),
           getKidKetoStatus(kid.id),
           getLast24hCompletionRate(kid.id),
-          getKidHasSideEffects(kid.id),
+          getKidSideEffects(kid.id),
         ]);
 
         if (sideEffectsFilter !== undefined && hasSideEffects !== sideEffectsFilter) return null;
@@ -186,6 +193,7 @@ router.get("/", async (req, res) => {
           parentName: kid.parentName,
           parentContact: kid.parentContact,
           hasSideEffects,
+          sideEffectNames,
           mealCompletionRate: completionRate,
           inKetoStatus,
           last24hCompletionRate,
@@ -341,12 +349,12 @@ router.get("/:kidId", async (req, res) => {
       .where(eq(notesTable.kidId, kidId))
       .orderBy(desc(notesTable.createdAt));
 
-    const [completionRate, { weight, date }, inKetoStatus, last24hCompletionRate, hasSideEffects] = await Promise.all([
+    const [completionRate, { weight, date }, inKetoStatus, last24hCompletionRate, { hasSideEffects, sideEffectNames }] = await Promise.all([
       getKidCompletionRate(kidId),
       getKidCurrentWeight(kidId),
       getKidKetoStatus(kidId),
       getLast24hCompletionRate(kidId),
-      getKidHasSideEffects(kidId),
+      getKidSideEffects(kidId),
     ]);
 
     const medicalData = medical || {
@@ -375,6 +383,7 @@ router.get("/:kidId", async (req, res) => {
         parentName: kid.parentName,
         parentContact: kid.parentContact,
         hasSideEffects,
+        sideEffectNames,
         mealCompletionRate: completionRate,
         inKetoStatus,
         last24hCompletionRate,
@@ -458,12 +467,12 @@ router.put("/:kidId", async (req, res) => {
       return;
     }
 
-    const [completionRate, { weight, date }, inKetoStatus, last24hCompletionRate, hasSideEffects] = await Promise.all([
+    const [completionRate, { weight, date }, inKetoStatus, last24hCompletionRate, { hasSideEffects, sideEffectNames }] = await Promise.all([
       getKidCompletionRate(kidId),
       getKidCurrentWeight(kidId),
       getKidKetoStatus(kidId),
       getLast24hCompletionRate(kidId),
-      getKidHasSideEffects(kidId),
+      getKidSideEffects(kidId),
     ]);
 
     res.json({
@@ -477,6 +486,7 @@ router.put("/:kidId", async (req, res) => {
       parentName: kid.parentName,
       parentContact: kid.parentContact,
       hasSideEffects,
+      sideEffectNames,
       mealCompletionRate: completionRate,
       inKetoStatus,
       last24hCompletionRate,

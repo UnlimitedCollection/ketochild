@@ -2059,6 +2059,14 @@ components:
         gender:
           type: string
           enum: [male, female]
+        hasSideEffects:
+          type: boolean
+          description: Whether the child has any side effects recorded
+        sideEffectNames:
+          type: array
+          description: Names of the side effects recorded for the child (standard or custom)
+          items:
+            type: string
       required:
         - id
         - name
@@ -2071,6 +2079,8 @@ components:
         - mealCompletionRate
         - inKetoStatus
         - last24hCompletionRate
+        - hasSideEffects
+        - sideEffectNames
 
     KidProfile:
       type: object

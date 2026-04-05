@@ -158,6 +158,10 @@ export interface Kid {
   currentWeight?: number;
   lastWeightDate?: string;
   gender?: KidGender;
+  /** Whether the child has any side effects recorded */
+  hasSideEffects: boolean;
+  /** Names of the side effects recorded for the child (standard or custom) */
+  sideEffectNames: string[];
 }
 
 export type MedicalSettingsDietType =

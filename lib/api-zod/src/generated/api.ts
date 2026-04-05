@@ -129,17 +129,6 @@ export const GetDashboardStatsResponse = zod.object({
       label: zod.string(),
     }),
   ),
-  recentHighRiskKids: zod.array(
-    zod.object({
-      id: zod.number(),
-      name: zod.string(),
-      ageMonths: zod.number(),
-      dietType: zod.enum(["classic", "mad", "mct", "lowgi"]),
-      parentContact: zod.string(),
-      riskReason: zod.string(),
-      mealCompletionRate: zod.number().optional(),
-    }),
-  ),
   totalDoctors: zod.number(),
   tokenSummary: zod.object({
     active: zod.number(),
@@ -180,10 +169,6 @@ export const GetKidsQueryParams = zod.object({
     .array(zod.enum(["classic", "mad", "mct", "lowgi"]))
     .optional()
     .describe("Filter by diet type (supports multiple values)"),
-  highRisk: zod.coerce
-    .boolean()
-    .optional()
-    .describe("Filter high-risk children only"),
   ketoStatus: zod.coerce
     .boolean()
     .optional()
@@ -204,7 +189,6 @@ export const GetKidsResponseItem = zod.object({
   dietSubCategory: zod.enum(["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]).nullish(),
   parentName: zod.string(),
   parentContact: zod.string(),
-  isHighRisk: zod.boolean(),
   mealCompletionRate: zod.number(),
   inKetoStatus: zod
     .boolean()
@@ -217,6 +201,14 @@ export const GetKidsResponseItem = zod.object({
   currentWeight: zod.number().optional(),
   lastWeightDate: zod.date().optional(),
   gender: zod.enum(["male", "female"]).optional(),
+  hasSideEffects: zod
+    .boolean()
+    .describe("Whether the child has any side effects recorded"),
+  sideEffectNames: zod
+    .array(zod.string())
+    .describe(
+      "Names of the side effects recorded for the child (standard or custom)",
+    ),
 });
 export const GetKidsResponse = zod.array(GetKidsResponseItem);
 
@@ -265,7 +257,6 @@ export const GetKidResponse = zod.object({
       .nullish(),
     parentName: zod.string(),
     parentContact: zod.string(),
-    isHighRisk: zod.boolean(),
     mealCompletionRate: zod.number(),
     inKetoStatus: zod
       .boolean()
@@ -278,6 +269,14 @@ export const GetKidResponse = zod.object({
     currentWeight: zod.number().optional(),
     lastWeightDate: zod.date().optional(),
     gender: zod.enum(["male", "female"]).optional(),
+    hasSideEffects: zod
+      .boolean()
+      .describe("Whether the child has any side effects recorded"),
+    sideEffectNames: zod
+      .array(zod.string())
+      .describe(
+        "Names of the side effects recorded for the child (standard or custom)",
+      ),
   }),
   medical: zod.object({
     id: zod.number(),
@@ -359,7 +358,6 @@ export const UpdateKidResponse = zod.object({
   dietSubCategory: zod.enum(["2:1", "2.5:1", "3:1", "3.5:1", "4:1"]).nullish(),
   parentName: zod.string(),
   parentContact: zod.string(),
-  isHighRisk: zod.boolean(),
   mealCompletionRate: zod.number(),
   inKetoStatus: zod
     .boolean()
@@ -372,6 +370,14 @@ export const UpdateKidResponse = zod.object({
   currentWeight: zod.number().optional(),
   lastWeightDate: zod.date().optional(),
   gender: zod.enum(["male", "female"]).optional(),
+  hasSideEffects: zod
+    .boolean()
+    .describe("Whether the child has any side effects recorded"),
+  sideEffectNames: zod
+    .array(zod.string())
+    .describe(
+      "Names of the side effects recorded for the child (standard or custom)",
+    ),
 });
 
 /**

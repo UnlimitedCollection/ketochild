@@ -159,8 +159,12 @@ function KidViewDialog({ kidId, open, onOpenChange }: { kidId: number | null; op
                       </div>
                       <div>
                         <p className="text-slate-500 text-xs">Side Effects</p>
-                        {kid.hasSideEffects ? (
-                          <Badge variant="destructive" className="bg-destructive/10 text-destructive border border-destructive/20 text-xs mt-0.5">Present</Badge>
+                        {kid.sideEffectNames && kid.sideEffectNames.length > 0 ? (
+                          <div className="flex flex-wrap gap-1 mt-0.5">
+                            {kid.sideEffectNames.map((name) => (
+                              <Badge key={name} variant="destructive" className="bg-destructive/10 text-destructive border border-destructive/20 text-xs">{name}</Badge>
+                            ))}
+                          </div>
                         ) : (
                           <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs mt-0.5">Absent</Badge>
                         )}
@@ -658,10 +662,14 @@ export default function KidsListPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {kid.hasSideEffects ? (
-                        <Badge variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20">
-                          Present
-                        </Badge>
+                      {kid.sideEffectNames && kid.sideEffectNames.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {kid.sideEffectNames.map((name) => (
+                            <Badge key={name} variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20">
+                              {name}
+                            </Badge>
+                          ))}
+                        </div>
                       ) : (
                         <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                           Absent
@@ -772,7 +780,15 @@ export default function KidsListPage() {
                       <td className="py-1.5 px-2 text-slate-600">{DIET_TYPE_LABELS[kid.dietType] || kid.dietType}</td>
                       <td className="py-1.5 px-2 text-slate-600">{kid.parentName}</td>
                       <td className="py-1.5 px-2 text-slate-600">{kid.parentContact}</td>
-                      <td className="py-1.5 px-2 text-slate-600">{kid.hasSideEffects ? "Present" : "Absent"}</td>
+                      <td className="py-1.5 px-2 text-slate-600">
+                        {kid.sideEffectNames && kid.sideEffectNames.length > 0 ? (
+                          <span className="flex flex-wrap gap-1">
+                            {kid.sideEffectNames.map((name) => (
+                              <span key={name} className="inline-block rounded-full px-2 py-0.5 text-xs font-medium bg-red-50 text-red-700 border border-red-200">{name}</span>
+                            ))}
+                          </span>
+                        ) : "Absent"}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -848,7 +864,15 @@ export default function KidsListPage() {
                     <tr key={kid.id} className="border-b border-slate-100">
                       <td className="py-1.5 px-2 text-slate-800 font-medium">{kid.name}</td>
                       <td className="py-1.5 px-2 text-slate-600">{DIET_TYPE_LABELS[kid.dietType] || kid.dietType}</td>
-                      <td className="py-1.5 px-2 text-slate-600">{kid.hasSideEffects ? "Present" : "Absent"}</td>
+                      <td className="py-1.5 px-2 text-slate-600">
+                        {kid.sideEffectNames && kid.sideEffectNames.length > 0 ? (
+                          <span className="flex flex-wrap gap-1">
+                            {kid.sideEffectNames.map((name) => (
+                              <span key={name} className="inline-block rounded-full px-2 py-0.5 text-xs font-medium bg-red-50 text-red-700 border border-red-200">{name}</span>
+                            ))}
+                          </span>
+                        ) : "Absent"}
+                      </td>
                       <td className="py-1.5 px-2 text-slate-600">{kid.lastWeightDate ?? "—"}</td>
                       <td className="py-1.5 px-2 text-slate-600">{kid.currentWeight ?? "—"}</td>
                     </tr>
