@@ -1602,4 +1602,75 @@ router.post("/:kidId/side-effects", async (req, res) => {
   }
 });
 
+router.get("/:kidId/overview", async (req, res) => {
+  const kidId = parseInt(req.params.kidId);
+  if (isNaN(kidId)) {
+    res.status(400).json({ error: "BAD_REQUEST", message: "Invalid kid ID" });
+    return;
+  }
+
+  try {
+    const [kid] = await db.select().from(kidsTable).where(eq(kidsTable.id, kidId)).limit(1);
+    if (!kid) {
+      res.status(404).json({ error: "NOT_FOUND", message: "Kid not found" });
+      return;
+    }
+
+    const [medical] = await db
+      .select()
+      .from(medicalSettingsTable)
+      .where(eq(medicalSettingsTable.kidId, kidId))
+      .limit(1);
+
+    const weightRecords = await db
+      .select()
+      .from(weightRecordsTable)
+      .where(eq(weightRecordsTable.kidId, kidId))
+      .orderBy(asc(weightRecordsTable.date));
+
+    const [completionRate, { hasSideEffects }] = await Promise.all([
+      getKidCompletionRate(kidId),
+      getKidSideEffects(kidId),
+    ]);
+
+    const firstWeight = weightRecords[0]?.weight ?? null;
+    const latestWeight = weightRecords[weightRecords.length - 1]?.weight ?? null;
+    const weightChange = firstWeight !== null && latestWeight !== null ? Math.round((latestWeight - firstWeight) * 10) / 10 : null;
+
+    const [latestAssignment] = await db
+      .select()
+      .from(mealPlanAssignmentHistoryTable)
+      .where(eq(mealPlanAssignmentHistoryTable.kidId, kidId))
+      .orderBy(desc(mealPlanAssignmentHistoryTable.assignedAt))
+      .limit(1);
+
+    const dietStartDate = latestAssignment
+      ? new Date(latestAssignment.assignedAt)
+      : new Date(kid.createdAt);
+    const daysOnCurrentDiet = Math.floor((Date.now() - dietStartDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    res.json({
+      id: kid.id,
+      name: kid.name,
+      phn: kid.kidCode,
+      dietType: kid.dietType,
+      dietSubCategory: kid.dietSubCategory ?? null,
+      dateOfBirth: kid.dateOfBirth,
+      gender: kid.gender,
+      parentName: kid.parentName,
+      parentContact: kid.parentContact,
+      hasSideEffects,
+      mealCompletionRate: Math.round(completionRate * 100),
+      ketoRatio: medical?.ketoRatio ?? null,
+      dailyCalories: medical?.dailyCalories ?? null,
+      weightChange,
+      daysOnCurrentDiet,
+      weightHistory: weightRecords.map((w) => ({ date: w.date, weight: w.weight })),
+    });
+  } catch (err) {
+    req.log.error({ err }, "Get kid overview error");
+    res.status(500).json({ error: "SERVER_ERROR", message: "Internal server error" });
+  }
+});
+
 export default router;

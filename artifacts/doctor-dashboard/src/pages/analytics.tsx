@@ -1,10 +1,11 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, AlertTriangle, TrendingUp, Users, CheckCircle2, Activity, Eye } from "lucide-react";
+import { Loader2, AlertTriangle, TrendingUp, Users, CheckCircle2, Activity, UserRound } from "lucide-react";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
-import { Link } from "wouter";
+import { PatientOverviewModal } from "./patient-overview-modal";
 
 const CLASSIC_RATIO_COLORS: Record<string, string> = {
   "2:1":   "#93c5fd",
@@ -73,6 +74,19 @@ const KETONE_DATA = (d: AnalyticsData["ketoneDistribution"]) => [
 ];
 
 export default function AnalyticsPage() {
+  const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  function openModal(id: number) {
+    setSelectedPatientId(id);
+    setModalOpen(true);
+  }
+
+  function closeModal() {
+    setModalOpen(false);
+    setSelectedPatientId(null);
+  }
+
   const { data, isLoading, isError } = useQuery<AnalyticsData>({
     queryKey: ["/api/analytics/population"],
     queryFn: async () => {
@@ -354,13 +368,13 @@ export default function AnalyticsPage() {
                   </td>
                   <td className="px-6 py-3">
                     <div className="flex justify-center">
-                      <Link
-                        href={`/kids/${p.id}`}
+                      <button
+                        onClick={() => openModal(p.id)}
                         className="text-blue-600 hover:text-blue-800 transition-colors"
-                        aria-label="View patient profile"
+                        aria-label="View patient overview"
                       >
-                        <Eye className="w-4 h-4" />
-                      </Link>
+                        <UserRound className="w-4 h-4" />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -369,6 +383,11 @@ export default function AnalyticsPage() {
           </table>
         </div>
       </div>
+      <PatientOverviewModal
+        patientId={selectedPatientId}
+        open={modalOpen}
+        onClose={closeModal}
+      />
     </div>
   );
 }
