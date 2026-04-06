@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "3x-aMjBtsWbPdxVkvu7sx"
+uri = "file://Manual.md"
+type = "text"
+title = "KetoKid Care - System Manual"
