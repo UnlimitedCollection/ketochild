@@ -78,6 +78,7 @@ export const mealLogsTable = pgTable("meal_logs", {
   protein: real("protein").default(0),
   notes: text("notes"),
   imageUrl: text("image_url"),
+  consumptionPercentage: integer("consumption_percentage"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

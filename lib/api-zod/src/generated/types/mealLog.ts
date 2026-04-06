@@ -18,5 +18,10 @@ export interface MealLog {
   protein?: number;
   notes?: string;
   imageUrl?: string | null;
+  /**
+   * @minimum 0
+   * @maximum 100
+   */
+  consumptionPercentage?: number | null;
   createdAt: Date;
 }

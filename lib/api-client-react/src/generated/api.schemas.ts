@@ -411,6 +411,11 @@ export interface MealLog {
   protein?: number;
   notes?: string;
   imageUrl?: string | null;
+  /**
+   * @minimum 0
+   * @maximum 100
+   */
+  consumptionPercentage?: number | null;
   createdAt: string;
 }
 
@@ -442,6 +447,11 @@ export interface AddMealLogRequest {
   fat?: number;
   protein?: number;
   notes?: string;
+  /**
+   * @minimum 0
+   * @maximum 100
+   */
+  consumptionPercentage?: number;
 }
 
 export interface MealEntry {

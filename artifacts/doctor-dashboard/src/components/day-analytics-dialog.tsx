@@ -497,7 +497,22 @@ export function DayAnalyticsDialog({ kidId, date, onClose }: DayAnalyticsDialogP
                           <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${meal.isCompleted ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>
                             {meal.isCompleted ? "Completed" : "Missed"}
                           </span>
+                          {meal.consumptionPercentage != null && (
+                            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${meal.consumptionPercentage >= 80 ? "bg-green-50 text-green-700" : meal.consumptionPercentage >= 50 ? "bg-orange-50 text-orange-600" : "bg-red-50 text-red-600"}`}>
+                              {meal.consumptionPercentage}% eaten
+                            </span>
+                          )}
                         </div>
+                        {meal.consumptionPercentage != null && (
+                          <div className="flex items-center gap-2 mt-1.5">
+                            <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full ${meal.consumptionPercentage >= 80 ? "bg-green-500" : meal.consumptionPercentage >= 50 ? "bg-orange-400" : "bg-red-500"}`}
+                                style={{ width: `${Math.max(0, Math.min(meal.consumptionPercentage, 100))}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
                         {(meal.calories || meal.fat || meal.protein || meal.carbs) ? (
                           <div className="flex gap-3 mt-1 text-[10px] text-slate-500">
                             {meal.calories != null && <span>{Math.round(meal.calories)} kcal</span>}

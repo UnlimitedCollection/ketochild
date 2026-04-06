@@ -2415,6 +2415,11 @@ components:
         imageUrl:
           type: string
           nullable: true
+        consumptionPercentage:
+          type: integer
+          minimum: 0
+          maximum: 100
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -2479,6 +2484,10 @@ components:
           type: number
         notes:
           type: string
+        consumptionPercentage:
+          type: integer
+          minimum: 0
+          maximum: 100
       required:
         - date
         - mealType

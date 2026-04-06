@@ -1840,6 +1840,7 @@ function MealDayAccordion({ kidId, date, onManage }: { kidId: number; date: stri
           const slotCalories = foods.reduce((s: number, f: any) => s + (f.calories ?? 0), 0);
           const logEntry = mealLogs?.find(l => l.mealType.toLowerCase() === typeName.toLowerCase());
           const imageUrl = logEntry?.imageUrl;
+          const consumption = logEntry?.consumptionPercentage;
           return (
             <div key={typeName} className={`rounded-xl border p-3 ${color}`}>
               <div className="flex items-center justify-between mb-2">
@@ -1861,6 +1862,19 @@ function MealDayAccordion({ kidId, date, onManage }: { kidId: number; date: stri
                   )}
                 </div>
               </div>
+              {consumption != null && (
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="flex-1 h-2 bg-black/10 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${consumption >= 80 ? "bg-green-500" : consumption >= 50 ? "bg-orange-400" : "bg-red-500"}`}
+                      style={{ width: `${Math.max(0, Math.min(consumption, 100))}%` }}
+                    />
+                  </div>
+                  <span className={`text-xs font-semibold min-w-[32px] text-right ${consumption >= 80 ? "text-green-700" : consumption >= 50 ? "text-orange-600" : "text-red-600"}`}>
+                    {consumption}%
+                  </span>
+                </div>
+              )}
               {foods.length === 0 ? (
                 <p className="text-xs opacity-60 italic">Not logged</p>
               ) : (

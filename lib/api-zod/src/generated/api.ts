@@ -583,6 +583,9 @@ export const GetKidMealLogsQueryParams = zod.object({
   limit: zod.coerce.number().default(getKidMealLogsQueryLimitDefault),
 });
 
+export const getKidMealLogsResponseConsumptionPercentageMin = 0;
+export const getKidMealLogsResponseConsumptionPercentageMax = 100;
+
 export const GetKidMealLogsResponseItem = zod.object({
   id: zod.number(),
   kidId: zod.number(),
@@ -595,6 +598,11 @@ export const GetKidMealLogsResponseItem = zod.object({
   protein: zod.number().optional(),
   notes: zod.string().optional(),
   imageUrl: zod.string().nullish(),
+  consumptionPercentage: zod
+    .number()
+    .min(getKidMealLogsResponseConsumptionPercentageMin)
+    .max(getKidMealLogsResponseConsumptionPercentageMax)
+    .nullish(),
   createdAt: zod.date(),
 });
 export const GetKidMealLogsResponse = zod.array(GetKidMealLogsResponseItem);
@@ -607,6 +615,8 @@ export const AddMealLogParams = zod.object({
 });
 
 export const addMealLogBodyIsCompletedDefault = true;
+export const addMealLogBodyConsumptionPercentageMin = 0;
+export const addMealLogBodyConsumptionPercentageMax = 100;
 
 export const AddMealLogBody = zod.object({
   date: zod.date(),
@@ -617,6 +627,11 @@ export const AddMealLogBody = zod.object({
   fat: zod.number().optional(),
   protein: zod.number().optional(),
   notes: zod.string().optional(),
+  consumptionPercentage: zod
+    .number()
+    .min(addMealLogBodyConsumptionPercentageMin)
+    .max(addMealLogBodyConsumptionPercentageMax)
+    .optional(),
 });
 
 /**
@@ -647,6 +662,9 @@ export const UpdateMealLogImageBody = zod.object({
     .describe("Object storage path or null to clear"),
 });
 
+export const updateMealLogImageResponseConsumptionPercentageMin = 0;
+export const updateMealLogImageResponseConsumptionPercentageMax = 100;
+
 export const UpdateMealLogImageResponse = zod.object({
   id: zod.number(),
   kidId: zod.number(),
@@ -659,6 +677,11 @@ export const UpdateMealLogImageResponse = zod.object({
   protein: zod.number().optional(),
   notes: zod.string().optional(),
   imageUrl: zod.string().nullish(),
+  consumptionPercentage: zod
+    .number()
+    .min(updateMealLogImageResponseConsumptionPercentageMin)
+    .max(updateMealLogImageResponseConsumptionPercentageMax)
+    .nullish(),
   createdAt: zod.date(),
 });
 

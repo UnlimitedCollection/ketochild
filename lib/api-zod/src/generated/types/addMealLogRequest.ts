@@ -15,4 +15,9 @@ export interface AddMealLogRequest {
   fat?: number;
   protein?: number;
   notes?: string;
+  /**
+   * @minimum 0
+   * @maximum 100
+   */
+  consumptionPercentage?: number;
 }

@@ -947,6 +947,7 @@ router.post("/:kidId/meal-logs", async (req, res) => {
         fat: parsed.data.fat,
         protein: parsed.data.protein,
         notes: parsed.data.notes,
+        consumptionPercentage: parsed.data.consumptionPercentage,
       })
       .returning();
 
