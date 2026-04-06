@@ -2290,6 +2290,12 @@ function MealPlanTab({ kidId, medical }: { kidId: number; medical: MedicalSettin
   const mealTypeNames = useMemo(() => getMealTypesForDiet(medical.dietType), [medical.dietType]);
   const [expandedMeal, setExpandedMeal] = useState<string | null>(null);
 
+  const numMeals = mealTypeNames.length || 1;
+  const perMealCal = Math.round(medical.dailyCalories / numMeals);
+  const perMealFat = (medical.dailyFat / numMeals).toFixed(1);
+  const perMealProtein = (medical.dailyProtein / numMeals).toFixed(1);
+  const perMealCarbs = (medical.dailyCarbs / numMeals).toFixed(1);
+
   const { data: rawAssigned, isLoading: assignedLoading } = useGetKidAssignedMealPlan(kidId);
   const { data: mealHistory } = useGetKidMealHistory(kidId);
 
@@ -2432,7 +2438,6 @@ function MealPlanTab({ kidId, medical }: { kidId: number; medical: MedicalSettin
           {mealTypeNames.map((mealTypeName) => {
             const { icon: Icon, color } = getPlanStyle(mealTypeName);
             const items = getMealItems(mealTypeName);
-            const mealCals = items.reduce((a: number, i: LibraryMealPlanItem) => a + (i.calories ?? 0), 0);
             const isExpanded = expandedMeal === mealTypeName;
             return (
               <Card key={mealTypeName} className="border border-slate-200">
@@ -2447,7 +2452,7 @@ function MealPlanTab({ kidId, medical }: { kidId: number; medical: MedicalSettin
                     <div className="flex-1">
                       <p className="font-medium text-slate-800 text-sm">{mealTypeName}</p>
                       <p className="text-xs text-slate-400">
-                        {items.length} item{items.length !== 1 ? "s" : ""} · {Math.round(mealCals)} kcal
+                        {perMealCal} kcal · F:{perMealFat}g · P:{perMealProtein}g · C:{perMealCarbs}g
                       </p>
                     </div>
                     {isExpanded ? (
@@ -2499,6 +2504,12 @@ function MealPlanPrintSection({ kidId, medical }: { kidId: number; medical: Medi
   const { data: rawAssigned, isLoading: assignedLoading } = useGetKidAssignedMealPlan(kidId);
   const mealTypeNames = useMemo(() => getMealTypesForDiet(medical.dietType), [medical.dietType]);
 
+  const numMeals = mealTypeNames.length || 1;
+  const perMealCal = Math.round(medical.dailyCalories / numMeals);
+  const perMealFat = (medical.dailyFat / numMeals).toFixed(1);
+  const perMealProtein = (medical.dailyProtein / numMeals).toFixed(1);
+  const perMealCarbs = (medical.dailyCarbs / numMeals).toFixed(1);
+
   const plan: LibraryMealPlanDetail | undefined =
     rawAssigned && typeof rawAssigned === "object" ? rawAssigned : undefined;
 
@@ -2525,11 +2536,10 @@ function MealPlanPrintSection({ kidId, medical }: { kidId: number; medical: Medi
       )}
       {mealTypeNames.map((mealTypeName) => {
         const items = getMealItems(mealTypeName);
-        const mealCals = items.reduce((a: number, i: LibraryMealPlanItem) => a + (i.calories ?? 0), 0);
         return (
           <div key={mealTypeName}>
             <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
-              {mealTypeName} — {Math.round(mealCals)} kcal
+              {mealTypeName} — {perMealCal} kcal · F:{perMealFat}g · P:{perMealProtein}g · C:{perMealCarbs}g
             </p>
             {items.length === 0 ? (
               <p className="text-xs text-slate-400 italic pl-2">No items</p>
