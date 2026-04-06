@@ -19,6 +19,7 @@ import {
   recipesTable,
   recipeIngredientsTable,
   sideEffectsTable,
+  kidSideEffectsTable,
 } from "@workspace/db";
 import { eq, inArray } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -511,6 +512,7 @@ async function seed() {
   if (existingKids.length > 0) {
     const existingKidIds = existingKids.map((k) => k.id);
     console.log(`Removing ${existingKidIds.length} existing kids for deterministic reseed...`);
+    await db.delete(kidSideEffectsTable).where(inArray(kidSideEffectsTable.kidId, existingKidIds));
     await db.delete(mealEntriesTable).where(inArray(mealEntriesTable.kidId, existingKidIds));
     await db.delete(ketoneReadingsTable).where(inArray(ketoneReadingsTable.kidId, existingKidIds));
     await db.delete(mealLogsTable).where(inArray(mealLogsTable.kidId, existingKidIds));
@@ -694,33 +696,66 @@ async function seed() {
       });
     }
 
-    // Meal logs within the last 24 hours for varied 24h completion rates
-    const last24hRates = [
-      0.80, 0.20, 1.00, 0.60, 0.00, 0.40, 0.80, 0.60, 1.00, 0.20,
-      0.80, 0.40, 0.60, 0.00, 1.00, 0.60, 0.80, 0.20, 1.00, 0.40,
-      0.00, 0.80, 0.60, 1.00, 0.40, 0.20, 0.80, 1.00, 0.60, 0.40,
-      // new patients 31-52
-      0.20, 0.80, 1.00, 0.00, 0.60, 0.40, 1.00, 0.60, 0.20, 0.80,
-      0.40, 1.00, 0.00, 0.80, 0.20, 0.60, 1.00, 0.00, 0.80, 0.40,
-      1.00, 0.20,
-    ];
-    const last24hRate = last24hRates[i] ?? 0.5;
-    const mealTypes = ["breakfast", "morning_snack", "lunch", "afternoon_snack", "dinner"];
-    for (let m = 0; m < mealTypes.length; m++) {
-      const hoursAgo = 2 + m * 4;
-      const logTime = new Date(Date.now() - hoursAgo * 60 * 60 * 1000);
-      const isCompleted = Math.random() < last24hRate;
-      await db.insert(mealLogsTable).values({
-        kidId: kid.id,
-        date: logTime.toISOString().split("T")[0],
-        mealType: mealTypes[m],
-        isCompleted,
-        calories: isCompleted ? med.dailyCalories / 5 : 0,
-        carbs: isCompleted ? med.dailyCarbs / 5 : 0,
-        fat: isCompleted ? med.dailyFat / 5 : 0,
-        protein: isCompleted ? med.dailyProtein / 5 : 0,
-        createdAt: logTime,
-      });
+    // Meal logs for the past 21 days with realistic per-meal data
+    const mealSlots = ["breakfast", "lunch", "dinner"];
+    const consumptionOptions = [40, 50, 60, 70, 75, 80, 85, 90, 95, 100];
+    for (let d = 20; d >= 0; d--) {
+      const date = new Date();
+      date.setDate(date.getDate() - d);
+      const dateStr = date.toISOString().split("T")[0];
+      for (let m = 0; m < mealSlots.length; m++) {
+        const isCompleted = Math.random() < rate;
+        const variation = () => 0.8 + Math.random() * 0.4;
+        const perMealCal = med.dailyCalories / mealSlots.length;
+        const perMealFat = med.dailyFat / mealSlots.length;
+        const perMealPro = med.dailyProtein / mealSlots.length;
+        const perMealCarb = med.dailyCarbs / mealSlots.length;
+        const consumption = isCompleted ? consumptionOptions[Math.floor(Math.random() * consumptionOptions.length)] : 0;
+        const logTime = new Date(date);
+        logTime.setHours(7 + m * 5, Math.floor(Math.random() * 45));
+        await db.insert(mealLogsTable).values({
+          kidId: kid.id,
+          date: dateStr,
+          mealType: mealSlots[m],
+          isCompleted,
+          calories: isCompleted ? Math.round(perMealCal * variation()) : 0,
+          carbs: isCompleted ? Math.round(perMealCarb * variation() * 10) / 10 : 0,
+          fat: isCompleted ? Math.round(perMealFat * variation() * 10) / 10 : 0,
+          protein: isCompleted ? Math.round(perMealPro * variation() * 10) / 10 : 0,
+          consumptionPercentage: isCompleted ? consumption : null,
+          createdAt: logTime,
+        });
+      }
+      if (kid.dietType === "mct") {
+        const snackCompleted = Math.random() < rate;
+        const snackTime = new Date(date);
+        snackTime.setHours(15, Math.floor(Math.random() * 30));
+        await db.insert(mealLogsTable).values({
+          kidId: kid.id,
+          date: dateStr,
+          mealType: "snack",
+          isCompleted: snackCompleted,
+          calories: snackCompleted ? Math.round(med.dailyCalories / 4 * (0.7 + Math.random() * 0.3)) : 0,
+          carbs: snackCompleted ? Math.round(med.dailyCarbs / 4 * 10) / 10 : 0,
+          fat: snackCompleted ? Math.round(med.dailyFat / 4 * 10) / 10 : 0,
+          protein: snackCompleted ? Math.round(med.dailyProtein / 4 * 10) / 10 : 0,
+          consumptionPercentage: snackCompleted ? consumptionOptions[Math.floor(Math.random() * consumptionOptions.length)] : null,
+          createdAt: snackTime,
+        });
+      }
+    }
+
+    // Side effects — assign 1-3 random side effects to ~45% of kids
+    if (Math.random() < 0.45) {
+      const sideEffectIds = [1, 2, 3, 4, 5, 10, 11, 13, 14, 15, 16, 20];
+      const numEffects = 1 + Math.floor(Math.random() * 3);
+      const shuffled = [...sideEffectIds].sort(() => Math.random() - 0.5);
+      for (let s = 0; s < numEffects; s++) {
+        await db.insert(kidSideEffectsTable).values({
+          kidId: kid.id,
+          sideEffectId: shuffled[s],
+        }).catch(() => {});
+      }
     }
   }
 
@@ -780,12 +815,35 @@ async function seed() {
     "Infant patient (6 months). Diet introduced under close supervision. Formula-based ketogenic plan active. Ketones 0.8 mmol/L at day 10.",
   ];
 
+  const followUpNotes = [
+    "Follow-up: Ketone levels stable. Parents handling meal prep well. No changes to protocol needed.",
+    "Follow-up: Discussed meal prep tips with parents. Weight trending upward — good sign.",
+    "Follow-up: Blood work results normal. Cholesterol within acceptable range. Continue monitoring monthly.",
+    "Follow-up: Seizure diary reviewed. Two minor episodes this week. Adjusting evening fat ratio slightly.",
+    "Follow-up: Parents report child sleeping better since diet adjustment. Continue current plan.",
+    "Follow-up: Growth chart reviewed — height and weight tracking along expected percentiles.",
+    "Follow-up: Urine ketones consistently positive. Transitioning to less frequent blood testing.",
+    "Follow-up: Referred to paediatric dietitian for recipe planning support. Family receptive.",
+    "Follow-up: School nurse updated on diet protocol. Emergency carb pack provided for school bag.",
+    "Follow-up: Annual review — excellent long-term compliance. Neurology report positive.",
+  ];
+
   for (let i = 0; i < createdKids.length; i++) {
+    const noteDate1 = new Date();
+    noteDate1.setDate(noteDate1.getDate() - 14);
     await db.insert(notesTable).values({
       kidId: createdKids[i].id,
       doctorId,
       doctorName: "Dr. Sarah Johnson",
       content: noteContents[i] ?? "Regular monitoring note. Patient progressing as expected.",
+      createdAt: noteDate1,
+    });
+    await db.insert(notesTable).values({
+      kidId: createdKids[i].id,
+      doctorId,
+      doctorName: "Dr. Sarah Johnson",
+      content: followUpNotes[i % followUpNotes.length],
+      createdAt: new Date(),
     });
   }
 
