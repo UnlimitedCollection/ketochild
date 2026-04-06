@@ -4,6 +4,7 @@ import { PrintLayout } from "@/components/print-layout";
 import { PrintButton } from "@/components/print-button";
 import { PrintFilterDialog, type PrintFilterResult } from "@/components/print-filter-dialog";
 import { DayHoverPopup } from "@/components/day-hover-popup";
+import { DayAnalyticsDialog } from "@/components/day-analytics-dialog";
 import { useParams, Link, useLocation } from "wouter";
 import { useGetKid, useAddWeightRecord, useDeleteWeightRecord, useUpdateKidMedical, useUpdateKid, useDeleteKid, useGetKidMealHistory, useGetKidKetoneReadings, useAddKetoneReading, useDeleteKetoneReading, useGetKidMealLogs, useAddMealLog, useDeleteMealLog, useGetKidMealLog, useGetKidAssignedMealPlan, useGetFoods, useUpdateMealLogImage, useListMealTypes, getGetKidQueryKey, getGetKidMedicalQueryKey, type WeightRecordResponse, type LibraryMealPlanDetail, type LibraryMealPlanItem, type MedicalSettingsRequest, type UpdateKidRequest, type MealDay } from "@workspace/api-client-react";
 import { useUpload } from "@workspace/object-storage-web";
@@ -2117,11 +2118,14 @@ function getComplianceColor(rate: number | undefined): string {
 function ComplianceCalendarMonth({
   month,
   completionMap,
+  kidId,
 }: {
   month: Date;
   completionMap: Map<string, MealDay>;
+  kidId: number;
 }) {
   const [hovered, setHovered] = useState<{ day: MealDay; x: number; y: number } | null>(null);
+  const [analyticsDate, setAnalyticsDate] = useState<string | null>(null);
   const firstDay = startOfMonth(month);
   const lastDay = endOfMonth(month);
   const days = eachDayOfInterval({ start: firstDay, end: lastDay });
@@ -2151,7 +2155,12 @@ function ComplianceCalendarMonth({
           return (
             <div
               key={dateKey}
-              className={`aspect-square rounded-sm ${color} cursor-default transition-opacity hover:opacity-80`}
+              role="button"
+              tabIndex={0}
+              aria-label={`${format(day, "EEEE, MMM d")} — ${rate !== undefined ? `${Math.round(rate * 100)}% compliance` : "no data"}`}
+              className={`aspect-square rounded-sm ${color} cursor-pointer transition-opacity hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1`}
+              onClick={() => setAnalyticsDate(dateKey)}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setAnalyticsDate(dateKey); } }}
               onMouseEnter={(e) => {
                 const dayData: MealDay = mealDay ?? {
                   date: dateKey,
@@ -2172,6 +2181,9 @@ function ComplianceCalendarMonth({
         })}
       </div>
       {hovered && <DayHoverPopup day={hovered.day} x={hovered.x} y={hovered.y} />}
+      {analyticsDate && (
+        <DayAnalyticsDialog kidId={kidId} date={analyticsDate} onClose={() => setAnalyticsDate(null)} />
+      )}
     </div>
   );
 }
@@ -2250,6 +2262,7 @@ function ComplianceTab({ kidId }: { kidId: number }) {
                 key={format(month, "yyyy-MM")}
                 month={month}
                 completionMap={completionMap}
+                kidId={kidId}
               />
             ))}
           </div>
